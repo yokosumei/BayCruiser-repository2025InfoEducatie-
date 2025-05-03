@@ -5,11 +5,16 @@ import threading
 import time
 
 app = Flask(__name__)
-#doamne ce cod
+
 # Încarcă modelul YOLO o singură dată
-model = torch.hub.load('ultralytics/yolo11s', 'custom', path='./my_model.pt', source='local')
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='./my_model.pt', source='local')
 streaming = False
 stream_lock = threading.Lock()
+
+
+@app.route('/')
+def index():
+    return render_template('index.html')  # Încarcă index.html din folderul templates
 
 
 def generate_frames():
@@ -28,21 +33,21 @@ def generate_frames():
         if not ret:
             break
 
-        # det speedboost
+        # Redimensionare pentru procesare mai rapidă
         small_frame = cv2.resize(frame, (320, 240))
 
-        # YOLO det
-        results = model(small_frame, size=320)
+        # YOLO detection
+        results = model(small_frame)
         annotated = results.render()[0]
 
         # JPEG encoding
         ret, buffer = cv2.imencode('.jpg', annotated)
         frame = buffer.tobytes()
 
-        # frame-->browser
+        # Trimite frame-ul browserului
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-        time.sleep(0.03)  # 30 FPS max
+        time.sleep(0.03)  # ~30 FPS
 
     cap.release()
 
