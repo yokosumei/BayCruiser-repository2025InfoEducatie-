@@ -1,12 +1,9 @@
 from flask import Flask, render_template, Response, jsonify
-import torch
+from ultralytics import YOLO
 import cv2
 
 app = Flask(__name__)
-
-# Încarcă modelul yolo11s (custom yolov5s) din fișier local
-model = torch.hub.load('ultralytics/yolo11s', 'custom', path='my_model.pt', source='local')
-
+model = YOLO('my_model.pt')  # încarcă modelul antrenat
 # Flag global pentru detecție
 detection_flag = False
 
