@@ -7,7 +7,7 @@ import time
 app = Flask(__name__)
 
 # Încarcă modelul YOLO o singură dată
-model = torch.hub.load('ultralytics/yolo11s', 'custom', path='my_model.pt')
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='./my_model.pt', source='local')
 streaming = False
 stream_lock = threading.Lock()
 
