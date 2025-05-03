@@ -39,9 +39,14 @@ def index():
 def video_feed():
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+@app.route('/')
+def index():
+    return render_template('index.html')
+
 @app.route('/detection_status')
 def detection_status():
     return jsonify({'detected': detection_flag})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0')
+    app.run(host='0.0.0.0', port=5000)
+
