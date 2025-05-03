@@ -1,0 +1,240 @@
+h1 {
+    width: 600px;
+    margin: 0 auto;
+    font-size: 60px;
+    text-align: center;
+    padding: 0 20px 20px 20px;
+    border: 5px solid black;
+  }
+  img {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+  }
+  .footer{
+    position:fixed;
+    text-align:right;
+    margin:0;
+    background-color:#d2c8c8;
+    bottom:0;
+  }
+  p{
+    font-size: 16px;
+    line-height: 2;
+    letter-spacing: 1px;
+  }
+  .msgBox {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    width: 200px;
+    background: #000000;
+  }
+
+  .msgBox, .responseBox {
+    border: 1px solid #333;
+    background-color: #0f0d0d;
+    padding: 15px;
+    margin: 10px;
+    border-radius: 8px;
+    max-width: 300px;
+  }
+  .btnContainer {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  
+  .btnContainer button {
+    flex: 1;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #999;
+    background-color: #ddd;
+    cursor: pointer;
+  }
+  .tab {
+    float: left;
+    border: 1px solid #ccc;
+    background-color: #f1f1f1;
+    width: 200px;
+    height: 100vh;
+  }
+  
+  .tab a {
+    display: block;
+    background-color: inherit;
+    color: black;
+    padding: 22px 16px;
+    width: 100%;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  
+  .tab a:hover {
+    background-color: #ddd;
+  }
+  * {box-sizing: border-box}
+
+  /* Style the tab */
+  .tab {
+    float: left;
+    border: 1px solid #ccc;
+    background-color: #f1f1f1;
+    width: 30%;
+    height: 300px;
+  }
+  /*pentru taburi*/
+  .tab button {
+    display: block;
+    background-color: inherit;
+    color: rgb(0, 0, 0);
+    padding: 22px 16px;
+    width: 100%;
+    border: none;
+    outline: none;
+    text-align: left;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  
+
+  .tab button:hover {
+    background-color: #ddd;
+  }
+  
+  .tab button.active {
+    background-color: #ccc;
+  }
+  
+  .tabcontent {
+    float: left;
+    padding: 0px 12px;
+    border: 1px solid #ccc;
+    width: 70%;
+    border-left: none;
+    height: 300px;
+  }  
+  .container {
+    display: flex;
+  }
+  
+  .sidebar {
+    width: 200px;
+    background-color: #f1f1f1;
+    height: 100vh;
+  }
+  
+  .tab {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+  }
+  
+/* Layout pe 2 coloane: aside + articol */
+.main-layout {
+  display: flex;
+  height: calc(100vh - 100px); /* 100px rezervat pentru header + footer */
+}
+
+/* Coloana stângă (sidebar) */
+#sidebar {
+  width: 15%;
+  min-width: 200px;
+  background-color: #222;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+  box-sizing: border-box;
+}
+
+/* Containerul butoanelor */
+.tab-container {
+  display: flex;
+  flex-direction: column;
+  height: 40%;
+}
+
+/* Butoanele tab */
+.tab-button {
+  background: none;
+  border: none;
+  color: white;
+  padding: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.3s;
+
+}
+
+.tab-button:hover,
+.tab-button.active {
+  background-color: #8f2424c5;
+}
+
+/* Zona în care apare conținutul taburilor */
+.tab-content-wrapper {
+  flex-grow: 1;
+  margin-top: 15px;
+  background-color: #272424;
+  padding: 10px;
+  overflow-y: auto;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* Fiecare tab (doar unul vizibil) */
+.tab-content {
+  display: none;
+  color: white;
+}
+.tab-content.active {
+  display: block;
+}
+
+/* Coloana dreaptă: articolul */
+.custom-article {
+  flex-grow: 1;
+  padding: 20px;
+  background-color: #f9f9f9;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.custom-article img {
+  max-width: 100%;
+  margin-top: 10px;
+}
+
+/* Header */
+header {
+  background-color: #222;
+  color: white;
+  padding: 20px;
+  text-align: center;
+}
+
+/* Footer */
+footer {
+  background-color: #eee;
+  text-align: center;
+  padding: 10px;
+}
+
+/* Buton "omg merge?" */
+#omgButton {
+  margin-top: 20px;
+  padding: 10px 20px;
+  font-size: 16px;
+}
