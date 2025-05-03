@@ -13,24 +13,24 @@ camera = cv2.VideoCapture(0)
 
 def generate_frames():
     global detection_flag
+    print("[INFO] Generating frames...")
     while True:
         success, frame = camera.read()
         if not success:
+            print("[ERROR] Camera read failed.")
             break
 
+        print("[INFO] Frame captured.")
         results = model(frame)
         detections = results.pandas().xyxy[0]
-
-        # Verificăm dacă obiectul "sample" este detectat
         detection_flag = any(detections['name'] == 'sample')
-
-        # Desenăm pătrate pe frame
         annotated_frame = results.render()[0]
         _, buffer = cv2.imencode('.jpg', annotated_frame)
         frame_bytes = buffer.tobytes()
 
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+
 
 @app.route('/')
 def index():
