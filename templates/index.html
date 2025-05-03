@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width" />
   <title>kITTY</title>
   <link href="styles/style.css" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
   <style>
     .stream-wrapper {
       display: flex;
@@ -79,5 +80,6 @@
   </footer>
 
   <script src="scripts/main.js"></script>
+  <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
 </body>
 </html>
