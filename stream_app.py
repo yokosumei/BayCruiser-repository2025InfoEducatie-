@@ -7,7 +7,9 @@ import time
 app = Flask(__name__)
 
 # Încarcă modelul YOLO11s
-model = torch.hub.load('ultralytics/yolov5', 'custom', path='my_model.pt', source='local')
+from ultralytics import YOLO
+model = YOLO('my_model.pt')
+
 streaming = False
 stream_lock = threading.Lock()
 object_detected = False  # pentru alertă în frontend
