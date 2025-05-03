@@ -11,22 +11,18 @@ myImage.addEventListener("click", () => {
     myImage.setAttribute("src", "images/firefox-icon.png");
   }
 
-  canShowMessage = false; // dezactivează întrebarea
+  canShowMessage = false;
 });
 
 btn.addEventListener("click", () => {
-  // Resetează tot
   canShowMessage = true;
 
-  // Șterge întrebarea veche (dacă cumva a rămas)
   const oldPanel = document.querySelector(".msgBox");
   if (oldPanel) oldPanel.remove();
 
-  // Șterge răspunsurile vechi
   const oldResponses = document.querySelectorAll(".responseBox");
   oldResponses.forEach(resp => resp.remove());
 
-  // Afișează din nou mesajul
   displayMessage();
 });
 
@@ -39,7 +35,7 @@ function displayMessage() {
   panel.setAttribute("class", "msgBox");
 
   const question = document.createElement("p");
-  question.textContent = "Este alarma reala?";
+  question.textContent = "Este alarma reală?";
   panel.appendChild(question);
 
   const btnContainer = document.createElement("div");
@@ -79,6 +75,7 @@ function showResponse(text) {
 
   body.appendChild(responseBox);
 }
+
 function handleSampleDetection() {
   const result = confirm("Obiectul sample a fost detectat. Continuați?");
   const demo = document.getElementById("demo");
@@ -88,7 +85,8 @@ function handleSampleDetection() {
     demo.textContent = "mac mac";
   }
 }
-///pentru info
+
+// Tabs
 function openContent(id) {
   var tabs = document.getElementsByClassName("tabcontent");
   for (var i = 0; i < tabs.length; i++) {
@@ -96,17 +94,9 @@ function openContent(id) {
   }
 
   var content = document.getElementById(id);
-  if (content.style.display === "block") {
-    content.style.display = "none"; // Dacă e deja afișat, îl ascunde
-  } else {
-    content.style.display = "block"; // Altfel, îl arată
-  }
+  content.style.display = content.style.display === "block" ? "none" : "block";
 }
-///cod pt pi 
-///cd ~/yolo-stream-app
-///pip3 install -r requirements.txt
-///python3 stream_app.py  exemplu de output:Running on http://0.0.0.0:5000
-///taburi :))
+
 function toggleTab(tabId) {
   const contents = document.querySelectorAll('.tab-content');
   const buttons = document.querySelectorAll('.tab-button');
@@ -124,69 +114,25 @@ function toggleTab(tabId) {
   buttons.forEach(btn => btn.classList.remove('active'));
 
   if (isAlreadyOpen) {
-    container.classList.remove('active'); //papa containerul
+    container.classList.remove('active');
     return;
   }
 
   document.getElementById(tabId).classList.add('active');
   container.classList.add('active');
 
-  //butonul este activat
   const activeButton = Array.from(buttons).find(btn => btn.textContent.toLowerCase() === tabId.toLowerCase());
   if (activeButton) activeButton.classList.add('active');
 }
-function toggleStream() {
-  fetch('http://192.168.50.119:5000/toggle_stream')
-    .then(response => response.text())
-    .then(status => alert(status))
-    .catch(error => console.error('Eroare:', error));
-}
 
-// Verificare automată dacă s-a detectat 'sample'
-setInterval(() => {
-  fetch('http://192.168.50.119:5000/detection_status')
-    .then(res => res.json())
-    .then(data => {
-      if (data.detected) {
-        // Simulează click pe butonul de popup
-        document.getElementById('popup-button').click();
-      }
-    });
-}, 1000);
+// Stream control
+let streamActive = false;
 
 function startStream() {
-  fetch("http://192.168.50.119:5000/start_stream")
-    .then(res => res.text())
-    .then(msg => alert("Stream pornit: " + msg))
-    .catch(err => console.error("Eroare la pornire stream:", err));
-}
-
-function stopStream() {
-  fetch("http://192.168.50.119:5000/stop_stream")
-    .then(res => res.text())
-    .then(msg => alert("Stream oprit: " + msg))
-    .catch(err => console.error("Eroare la oprire stream:", err));
-}
-
-setInterval(() => {
-  fetch("http://<IP-ul-PI-ului>:5000/check_detection")
-    .then(response => response.json())
-    .then(data => {
-      if (data.sample_detected) {
-        showPopup(); 
-      }
-    });
-}, 1000); // check that nigg
-function startStream() {
-  fetch('/start_stream');
-  const stream = document.getElementById("yoloStream");
-  stream.src = "/video_feed";
-  stream.style.display = "block";
-}
-
-function stopStream() {
-  fetch('/stop_stream');
-  const stream = document.getElementById("yoloStream");
-  stream.src = "";
-  stream.style.display = "none";
-}
+  fetch('/start_stream')
+    .then(() => {
+      const stream = document.getElementById("yoloStream");
+      stream.src = "/video_feed";
+      stream.style.display = "block";
+      streamActive = true;
+      check
