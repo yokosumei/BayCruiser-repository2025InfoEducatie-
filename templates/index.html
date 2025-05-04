@@ -1,85 +1,73 @@
 <!DOCTYPE html>
 <html lang="en-US">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width" />
-  <title>kITTY</title>
-  <link href="styles/style.css" rel="stylesheet" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
-  <style>
-    .stream-wrapper {
-      display: flex;
-      justify-content: center;
-      padding: 10px;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>kITTY</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}" />
+    <style>
+      .main-layout {
+        display: flex;
+        flex-direction: row;
+      }
 
-    #yoloStream {
-      max-width: 100%;
-      border: 2px solid black;
-    }
+      #sidebar {
+        width: 250px;
+        background-color: #f5f5f5;
+        padding: 15px;
+      }
 
-    .stream-controls {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      justify-content: center;
-      padding: 15px;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>Pagina de control</h1>
-  </header>
+      .custom-article {
+        flex: 1;
+        padding: 15px;
+      }
 
-  <main class="main-layout">
-    <!-- Coloana stângă: taburi -->
-    <aside id="sidebar">
-      <div class="tab-container">
-        <button class="tab-button" onclick="toggleTab('info')">Info</button>
-        <button class="tab-button" onclick="toggleTab('scop')">Scop</button>
-        <button class="tab-button" onclick="toggleTab('alte butoane')">Butoane+</button>
-      </div>
+      .stream-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 10px;
+      }
 
-      <div class="tab-content-wrapper">
-        <div id="info" class="tab-content">
-          <p>Aceasta pagina este conceputa ca o punte dintre drona si salvamar</p>
-          <p>more info idkFEATURES ig</p>
+      #yoloStream {
+        max-width: 100%;
+        border: 2px solid black;
+      }
+
+      .stream-controls {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        padding: 15px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <h1>Pagina de control</h1>
+    </header>
+
+    <main class="main-layout">
+      <aside id="sidebar">
+        <button onclick="alert('info')">Info</button>
+        <button onclick="alert('scop')">Scop</button>
+      </aside>
+
+      <article class="custom-article">
+        <h2>Live YOLO Stream</h2>
+        <div class="stream-wrapper">
+          <img id="yoloStream" src="{{ url_for('video_feed') }}" width="640" height="480" />
         </div>
-        <div id="scop" class="tab-content">
-          <p>De multe ori salvamarii au nevoie de ajutor pe mare si de o interventie rapida
-            insa de multe ori nu pot ajunge la victima in timp util. Aici intervine drona, care 
-            este capabila sa ajunga la victima in cateva secunde si sa ii ofere un colac de salvare.
-          </p>
-        </div>
-        <div id="alte butoane" class="tab-content">
-          <p>probabil aici sunt alte butoane idk</p>
-          <button class="idk buton" onclick="alert('nu stiu ce face')">buton</button>
-        </div>
-      </div>
-    </aside>
+      </article>
+    </main>
 
-    <!-- Dreapta: doar stream -->
-    <article class="custom-article">
-      <h2>Live YOLO Stream</h2>
-      <div class="stream-wrapper">
-        <img id="yoloStream" src="{{ url_for('video_feed') }}" width="640" height="480" style="display: block;" />
-      </div>
-    </article>
-  </main>
+    <div class="stream-controls">
+      <button onclick="location.reload()">Restart Stream</button>
+    </div>
 
-  <!-- Butoanele sub articol, deasupra footerului -->
-  <div class="stream-controls">
-    <button id="omgButton">omg merge?</button>
-    <button onclick="startStream()">Start Stream</button>
-    <button onclick="stopStream()">Stop Stream</button>
-  </div>
-
-  <footer>
-    <p>Pagina creata in scopul concursului IndoEducatie</p>
-  </footer>
-
-  <script src="scripts/main.js"></script>
-  <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
-</body>
+    <footer>
+      <p>Pagina creata in scopul concursului IndoEducatie</p>
+    </footer>
+  </body>
 </html>
