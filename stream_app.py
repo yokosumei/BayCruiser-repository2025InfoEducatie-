@@ -15,7 +15,7 @@ camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
 
 # Flag global pentru streaming și detecție
 streaming = True
-detection_flag = True
+detection_flag = False
 
 def generate_frames():
     global streaming, detection_flag
