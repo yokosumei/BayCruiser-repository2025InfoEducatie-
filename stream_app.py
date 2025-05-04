@@ -4,11 +4,9 @@ import cv2
 
 app = Flask(__name__)
 
-# Încarcă modelul și clasele
 model = YOLO('my_model.pt')
 class_names = model.names
 
-# Inițializează camera
 camera = cv2.VideoCapture(0)
 camera.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
 camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
