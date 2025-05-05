@@ -22,10 +22,76 @@
             border: 4px solid #555;
             border-radius: 10px;
         }
+        .buttons {
+            margin-top: 15px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 0 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: #444;
+            color: #fff;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #666;
+        }
+        #popup {
+            display: none;
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #333;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 24px;
+            color: #fff;
+            border: 2px solid #fff;
+        }
     </style>
 </head>
 <body>
     <h1>YOLO Stream Test</h1>
     <img id="stream" src="{{ url_for('video_feed') }}" alt="Live Stream">
+    
+    <div class="buttons">
+        <button onclick="startStream()">Start Stream</button>
+        <button onclick="stopStream()">Stop Stream</button>
+    </div>
+
+    <div id="popup">Obiectul „sample” a fost detectat!</div>
+
+    <script>
+        let popupShown = false;
+
+        function startStream() {
+            fetch('/start_stream');
+        }
+
+        function stopStream() {
+            fetch('/stop_stream');
+        }
+
+        function checkDetection() {
+            fetch('/detection_status')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.detected && !popupShown) {
+                        const popup = document.getElementById("popup");
+                        popup.style.display = "block";
+                        popupShown = true;
+                        setTimeout(() => {
+                            popup.style.display = "none";
+                            popupShown = false;
+                        }, 2000);
+                    }
+                });
+        }
+
+        setInterval(checkDetection, 1000);
+    </script>
 </body>
 </html>
