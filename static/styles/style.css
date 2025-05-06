@@ -231,10 +231,10 @@ footer {
   text-align: center;
   padding: 10px;
 }
-
-/* Buton "omg merge?" */
-#omgButton {
-  margin-top: 20px;
-  padding: 10px 20px;
-  font-size: 16px;
+#yoloStream {
+  width: 90vw; /* Mare, dar controlat */
+  max-height: 70vh;
+  border: 3px solid #000;
+  object-fit: contain;
 }
+
