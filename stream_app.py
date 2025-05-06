@@ -6,6 +6,9 @@ import threading
 app = Flask(__name__)
 model = YOLO("my_model.pt")
 
+camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+
 streaming = False
 detection_flag = False
 camera = None
