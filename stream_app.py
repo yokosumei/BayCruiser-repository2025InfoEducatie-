@@ -3,9 +3,10 @@ from ultralytics import YOLO
 import cv2
 import threading
 import time
+import os
 
 app = Flask(__name__)
-model = YOLO("my_model.pt")  # modelul tău YOLO
+model = YOLO("my_model.pt")
 class_names = model.names
 
 streaming = False
@@ -53,7 +54,6 @@ def process_stream():
     cap.release()
     with frame_lock:
         last_frame = None
-    detection_flag = False
 
 @app.route('/')
 def index():
@@ -62,12 +62,24 @@ def index():
 @app.route('/video_feed')
 def video_feed():
     def generate():
-        while streaming:
-            with frame_lock:
-                if last_frame is not None:
-                    yield (b'--frame\r\n'
-                           b'Content-Type: image/jpeg\r\n\r\n' + last_frame + b'\r\n')
+        placeholder = None
+        placeholder_path = "static/images/placeholder.jpg"
+
+        if os.path.exists(placeholder_path):
+            with open(placeholder_path, "rb") as f:
+                placeholder = f.read()
+
+        while True:
+            if streaming:
+                with frame_lock:
+                    if last_frame is not None:
+                        yield (b'--frame\r\n'
+                               b'Content-Type: image/jpeg\r\n\r\n' + last_frame + b'\r\n')
+            elif placeholder:
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + placeholder + b'\r\n')
             time.sleep(1 / 30.0)
+
     return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/start_stream')
@@ -75,8 +87,9 @@ def start_stream():
     global streaming, stream_thread
     if not streaming:
         streaming = True
-        stream_thread = threading.Thread(target=process_stream, daemon=True)
-        stream_thread.start()
+        if stream_thread is None or not stream_thread.is_alive():
+            stream_thread = threading.Thread(target=process_stream, daemon=True)
+            stream_thread.start()
     return '', 200
 
 @app.route('/stop_stream')
@@ -87,7 +100,10 @@ def stop_stream():
 
 @app.route('/detection_status')
 def detection_status():
-    return jsonify({'detected': detection_flag})
+    global detection_flag
+    detected = detection_flag
+    detection_flag = False  # reset 
+    return jsonify({'detected': detected})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
