@@ -67,7 +67,7 @@
     <!-- Dreapta: doar stream -->
 <article class="custom-article">
   <div class="stream-wrapper">
-    <img id="video-stream" src="{{ url_for('video_feed') }}" width="640" height="480" alt="YOLO Stream">
+  <img id="video-stream" src="{{ url_for('video_feed') }}" width="640" height="480" onerror="this.src='/static/no_stream.jpg';">
   </div>
   <div id="popup" style="display:none;
         position: fixed;
