@@ -23,23 +23,42 @@ h1 {
     line-height: 2;
     letter-spacing: 1px;
   }
-  .msgBox {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%,-50%);
-    width: 200px;
-    background: #000000;
-  }
 
-  .msgBox, .responseBox {
-    border: 1px solid #333;
-    background-color: #0f0d0d;
-    padding: 15px;
-    margin: 10px;
-    border-radius: 8px;
-    max-width: 300px;
   }
+.msgBox {
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #333;
+  color: white;
+  padding: 20px;
+  border-radius: 10px;
+  border: 2px solid white;
+  text-align: center;
+  z-index: 1000;
+}
+
+.btnContainer {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.responseBox {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #222;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid #fff;
+  z-index: 999;
+}
+
   .btnContainer {
     display: flex;
     justify-content: space-between;
