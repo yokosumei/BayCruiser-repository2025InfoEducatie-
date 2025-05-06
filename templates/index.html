@@ -7,25 +7,28 @@
   <link href="styles/style.css" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
   <style>
-    .stream-wrapper {
-      display: flex;
-      justify-content: center;
-      padding: 10px;
-    }
+  .stream-wrapper {
+    display: flex;
+    justify-content: center;
+    padding: 10px;
+  }
 
-    #yoloStream {
-      max-width: 100%;
-      border: 2px solid black;
-    }
+  #yoloStream {
+    width: 90vw;
+    height: auto;
+    border: 2px solid black;
+    object-fit: contain;
+  }
 
-    .stream-controls {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      justify-content: center;
-      padding: 15px;
-    }
-  </style>
+  .stream-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+  }
+</style>
+
 </head>
 <body>
   <header>
