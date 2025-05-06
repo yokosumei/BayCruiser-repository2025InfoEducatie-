@@ -1,4 +1,5 @@
 let canShowMessage = true;
+let streamActive = false;
 
 const myImage = document.querySelector("img");
 const btn = document.querySelector("#omgButton");
@@ -16,109 +17,53 @@ myImage.addEventListener("click", () => {
 
 btn.addEventListener("click", () => {
   canShowMessage = true;
+  document.querySelectorAll(".msgBox, .responseBox").forEach(el => el.remove());
+});
 
-  const oldPanel = document.querySelector(".msgBox");
-  if (oldPanel) oldPanel.remove();
+function displayMessage() {
+  if (!canShowMessage) return;
 
-  const oldResponses = document.querySelectorAll(".responseBox");
-  oldResponses.forEach(resp => resp.remove());
+  const panel = document.createElement("div");
+  panel.className = "msgBox";
 
-<script>
-  let canShowMessage = true;
+  const question = document.createElement("p");
+  question.textContent = "Este alarma reală?";
+  panel.appendChild(question);
 
-  function displayMessage() {
-    if (!canShowMessage) return;
+  const btnContainer = document.createElement("div");
+  btnContainer.className = "btnContainer";
 
-    const body = document.body;
+  const daBtn = document.createElement("button");
+  daBtn.textContent = "DA";
+  daBtn.onclick = () => {
+    showResponse("oh nu!");
+    panel.remove();
+    canShowMessage = false;
+    document.getElementById("demo").textContent = "mac";
+  };
 
-    const panel = document.createElement("div");
-    panel.setAttribute("class", "msgBox");
+  const nuBtn = document.createElement("button");
+  nuBtn.textContent = "NU";
+  nuBtn.onclick = () => {
+    showResponse("yay");
+    panel.remove();
+    canShowMessage = false;
+    document.getElementById("demo").textContent = "mac mac";
+  };
 
-    const question = document.createElement("p");
-    question.textContent = "Este alarma reală?";
-    panel.appendChild(question);
+  btnContainer.appendChild(daBtn);
+  btnContainer.appendChild(nuBtn);
+  panel.appendChild(btnContainer);
 
-    const btnContainer = document.createElement("div");
-    btnContainer.setAttribute("class", "btnContainer");
-
-    const daBtn = document.createElement("button");
-    daBtn.textContent = "DA";
-    btnContainer.appendChild(daBtn);
-
-    const nuBtn = document.createElement("button");
-    nuBtn.textContent = "NU";
-    btnContainer.appendChild(nuBtn);
-
-    panel.appendChild(btnContainer);
-    body.appendChild(panel);
-
-    daBtn.addEventListener("click", () => {
-      showResponse("oh nu!");
-      panel.remove();
-      canShowMessage = false;
-    });
-
-    nuBtn.addEventListener("click", () => {
-      showResponse("yay");
-      panel.remove();
-      canShowMessage = false;
-    });
-  }
-
-  function showResponse(msg) {
-    const responsePanel = document.createElement("div");
-    responsePanel.setAttribute("class", "responseBox");
-    responsePanel.textContent = msg;
-    document.body.appendChild(responsePanel);
-    setTimeout(() => responsePanel.remove(), 2000);
-  }
-
-  function checkDetection() {
-    fetch('/detection_status')
-      .then(response => response.json())
-      .then(data => {
-        if (data.detected && canShowMessage) {
-          displayMessage();
-        }
-      });
-  }
-
-  setInterval(checkDetection, 1000);
-</script>
-
-
-function showResponse(text) {
-  const body = document.body;
-
-  const responseBox = document.createElement("div");
-  responseBox.setAttribute("class", "responseBox");
-
-  const p = document.createElement("p");
-  p.textContent = text;
-  responseBox.appendChild(p);
-
-  body.appendChild(responseBox);
+  document.body.appendChild(panel);
 }
 
-function handleSampleDetection() {
-  const result = confirm("Obiectul sample a fost detectat. Continuați?");
-  const demo = document.getElementById("demo");
-  if (result) {
-    demo.textContent = "mac";
-  } else {
-    demo.textContent = "mac mac";
-  }
-}
-
-// Tabs
-function openContent(id) {
-  var tabs = document.getElementsByClassName("tabcontent");
-  for (var i = 0; i < tabs.length; i++) {
-    tabs[i].style.display = "none";
-  }
-
-  var content = document.getElementById(id);
-  content.style.display = content.style.display === "block" ? "none" : "block";
+function showResponse(msg) {
+  const responsePanel = document.createElement("div");
+  responsePanel.className = "responseBox";
+  responsePanel.textContent = msg;
+  document.body.appendChild(responsePanel);
+  setTimeout(() => responsePanel.remove(), 2000);
 }
 
 function toggleTab(tabId) {
@@ -149,9 +94,6 @@ function toggleTab(tabId) {
   if (activeButton) activeButton.classList.add('active');
 }
 
-// Stream control
-let streamActive = false;
-
 function startStream() {
   fetch('/start_stream')
     .then(() => {
@@ -173,7 +115,8 @@ function stopStream() {
     })
     .catch(err => console.error("Eroare oprire stream:", err));
 }
-// Simulare detecție obiect "sample"
+
+// Poll server for detections
 setInterval(() => {
   if (!streamActive) return;
 
@@ -181,9 +124,8 @@ setInterval(() => {
     .then(res => res.json())
     .then(data => {
       if (data.detected) {
-        displayMessage(); // apelează funcția deja existentă
+        displayMessage();
       }
     })
     .catch(err => console.warn("Eroare verificare detecție:", err));
 }, 1000);
-
