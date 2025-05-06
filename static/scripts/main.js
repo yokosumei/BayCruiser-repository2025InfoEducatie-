@@ -23,45 +23,69 @@ btn.addEventListener("click", () => {
   const oldResponses = document.querySelectorAll(".responseBox");
   oldResponses.forEach(resp => resp.remove());
 
-  displayMessage();
-});
+<script>
+  let canShowMessage = true;
 
-function displayMessage() {
-  if (!canShowMessage) return;
+  function displayMessage() {
+    if (!canShowMessage) return;
 
-  const body = document.body;
+    const body = document.body;
 
-  const panel = document.createElement("div");
-  panel.setAttribute("class", "msgBox");
+    const panel = document.createElement("div");
+    panel.setAttribute("class", "msgBox");
 
-  const question = document.createElement("p");
-  question.textContent = "Este alarma reală?";
-  panel.appendChild(question);
+    const question = document.createElement("p");
+    question.textContent = "Este alarma reală?";
+    panel.appendChild(question);
 
-  const btnContainer = document.createElement("div");
-  btnContainer.setAttribute("class", "btnContainer");
+    const btnContainer = document.createElement("div");
+    btnContainer.setAttribute("class", "btnContainer");
 
-  const daBtn = document.createElement("button");
-  daBtn.textContent = "DA";
-  btnContainer.appendChild(daBtn);
+    const daBtn = document.createElement("button");
+    daBtn.textContent = "DA";
+    btnContainer.appendChild(daBtn);
 
-  const nuBtn = document.createElement("button");
-  nuBtn.textContent = "NU";
-  btnContainer.appendChild(nuBtn);
+    const nuBtn = document.createElement("button");
+    nuBtn.textContent = "NU";
+    btnContainer.appendChild(nuBtn);
 
-  panel.appendChild(btnContainer);
-  body.appendChild(panel);
+    panel.appendChild(btnContainer);
+    body.appendChild(panel);
 
-  daBtn.addEventListener("click", () => {
-    showResponse("oh nu!");
-    panel.remove();
-  });
+    daBtn.addEventListener("click", () => {
+      showResponse("oh nu!");
+      panel.remove();
+      canShowMessage = false;
+    });
 
-  nuBtn.addEventListener("click", () => {
-    showResponse("yay");
-    panel.remove();
-  });
-}
+    nuBtn.addEventListener("click", () => {
+      showResponse("yay");
+      panel.remove();
+      canShowMessage = false;
+    });
+  }
+
+  function showResponse(msg) {
+    const responsePanel = document.createElement("div");
+    responsePanel.setAttribute("class", "responseBox");
+    responsePanel.textContent = msg;
+    document.body.appendChild(responsePanel);
+    setTimeout(() => responsePanel.remove(), 2000);
+  }
+
+  function checkDetection() {
+    fetch('/detection_status')
+      .then(response => response.json())
+      .then(data => {
+        if (data.detected && canShowMessage) {
+          displayMessage();
+        }
+      });
+  }
+
+  setInterval(checkDetection, 1000);
+</script>
+
 
 function showResponse(text) {
   const body = document.body;
