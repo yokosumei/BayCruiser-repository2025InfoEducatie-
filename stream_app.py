@@ -2,30 +2,27 @@ from flask import Flask, render_template, Response, jsonify
 from ultralytics import YOLO
 import cv2
 import threading
+import time
 
 app = Flask(__name__)
-model = YOLO("my_model.pt")
-
-camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-
-streaming = False
-detection_flag = False
-camera = None
-frame_lock = threading.Lock()
-last_frame = None
+model = YOLO("my_model.pt")  # folosești modelul tău antrenat
 
 class_names = model.names
+streaming = False
+detection_flag = False
+last_frame = None
+frame_lock = threading.Lock()
 
-def gen_frames():
-    global detection_flag, streaming, camera, last_frame
+def process_stream():
+    global last_frame, streaming, detection_flag
 
-    camera = cv2.VideoCapture(0)
-    camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    cap = cv2.VideoCapture(0)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    cap.set(cv2.CAP_PROP_FPS, 15)
 
     while streaming:
-        success, frame = camera.read()
+        success, frame = cap.read()
         if not success:
             break
 
@@ -44,12 +41,14 @@ def gen_frames():
 
         annotated_frame = results[0].plot()
         _, buffer = cv2.imencode('.jpg', annotated_frame)
-        frame_bytes = buffer.tobytes()
+        frame = buffer.tobytes()
 
         with frame_lock:
-            last_frame = frame_bytes
+            last_frame = frame
 
-    camera.release()
+        time.sleep(0.03)  # ~30 FPS
+
+    cap.release()
 
 @app.route('/')
 def index():
@@ -64,6 +63,7 @@ def video_feed():
                 if last_frame is not None:
                     yield (b'--frame\r\n'
                            b'Content-Type: image/jpeg\r\n\r\n' + last_frame + b'\r\n')
+            time.sleep(0.03)
     return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/start_stream')
@@ -71,7 +71,7 @@ def start_stream():
     global streaming
     if not streaming:
         streaming = True
-        thread = threading.Thread(target=gen_frames)
+        thread = threading.Thread(target=process_stream, daemon=True)
         thread.start()
     return '', 200
 
