@@ -78,7 +78,7 @@ def process_stream():
 
 @app.route('/')
 def index():
-@@ -57,22 +62,21 @@ def index():
+    return render_template('index.html')
 @app.route('/video_feed')
 def video_feed():
     def generate():
@@ -105,3 +105,12 @@ def start_stream():
     return '', 200
 
 @app.route('/stop_stream')
+def stop_stream():
+    global streaming
+    streaming = False
+    return '', 200
+@app.route('/detection_status')
+def detection_status():
+    return jsonify({'detected': detection_flag})
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
