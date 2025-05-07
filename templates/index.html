@@ -12,10 +12,12 @@
       justify-content: center;
       padding: 10px;
     }
+
     #yoloStream {
       max-width: 100%;
       border: 2px solid black;
     }
+
     .stream-controls {
       display: flex;
       gap: 10px;
@@ -29,6 +31,7 @@
   <header>
     <h1>Pagina de control</h1>
   </header>
+
   <main class="main-layout">
     <!-- Coloana stângă: taburi -->
     <aside id="sidebar">
@@ -56,64 +59,28 @@
         </div>
       </div>
     </aside>
-    <!-- Dreapta: doar stream -->
-    <!-- Dreapta: doar stream -->
-<article class="custom-article">
-  <div class="stream-wrapper">
-    <img id="yoloStream" src="{{ url_for('video_feed') }}" alt="YOLO Stream">
-  </div>
-  <div id="popup" style="display:none;
-        position: fixed;
-        top: 30%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: #333;
-        padding: 20px;
-        border-radius: 10px;
-        font-size: 24px;
-        color: #fff;
-        border: 2px solid #fff;">
-    Obiectul „sample” a fost detectat!
-    Sample detectat yay!:)
-  </div>
-</article>
 
+    <!-- Dreapta: doar stream -->
+    <article class="custom-article">
+      <h2>Live YOLO Stream</h2>
+      <div class="stream-wrapper">
+        <img id="yoloStream" src="{{ url_for('video_feed') }}" width="640" height="480" style="display: block;" />
+      </div>
+    </article>
   </main>
+
   <!-- Butoanele sub articol, deasupra footerului -->
   <div class="stream-controls">
     <button id="omgButton">omg merge?</button>
     <button onclick="startStream()">Start Stream</button>
     <button onclick="stopStream()">Stop Stream</button>
   </div>
+
   <footer>
     <p>Pagina creata in scopul concursului IndoEducatie</p>
   </footer>
+
   <script src="scripts/main.js"></script>
   <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
-    <script>
-  let popupShown = false;
-  function startStream() {
-    fetch('/start_stream');
-  }
-  function stopStream() {
-    fetch('/stop_stream');
-  }
-  function checkDetection() {
-    fetch('/detection_status')
-      .then(response => response.json())
-      .then(data => {
-        if (data.detected && !popupShown) {
-          const popup = document.getElementById("popup");
-          popup.style.display = "block";
-          popupShown = true;
-          setTimeout(() => {
-            popup.style.display = "none";
-            popupShown = false;
-          }, 2000);
-        }
-      });
-  }
-  setInterval(checkDetection, 1000);
-</script>
 </body>
 </html>
