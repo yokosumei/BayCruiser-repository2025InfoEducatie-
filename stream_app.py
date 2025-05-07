@@ -63,7 +63,6 @@ def process_stream():
 
 @app.route('/')
 def index():
-@@ -57,22 +62,21 @@ def index():
     return render_template('index.html')
 @app.route('/video_feed')
 def video_feed():
