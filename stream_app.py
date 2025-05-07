@@ -11,7 +11,6 @@ camera = cv2.VideoCapture(0)
 camera.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
 camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
 
-# Flag global pentru streaming și detecție
 streaming = True
 detection_flag = False
 
@@ -27,7 +26,7 @@ def generate_frames():
 
         frame_count += 1
         if frame_count % 2 != 0:
-            continue  # Skip un frame din 2 pentru performanță
+            continue
 
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = model(rgb_frame)
@@ -36,8 +35,6 @@ def generate_frames():
         detections = boxes.xyxy.cpu().numpy()
         scores = boxes.conf.cpu().numpy()
         classes = boxes.cls.cpu().numpy()
-
-        detection_flag = False
 
         for box, score, cls_id in zip(detections, scores, classes):
             x1, y1, x2, y2 = map(int, box[:4])
@@ -85,7 +82,10 @@ def stop_stream():
 
 @app.route('/detection_status')
 def detection_status():
-    return jsonify({'detected': detection_flag})
+    global detection_flag
+    current_flag = detection_flag
+    detection_flag = False  # Resetăm după ce trimitem clientului
+    return jsonify({'detected': current_flag})
 
 
 if __name__ == '__main__':
