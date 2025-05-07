@@ -35,7 +35,7 @@ def gen_frames():
         scores = boxes.conf.cpu().numpy()
         classes = boxes.cls.cpu().numpy()
 
-        # ver pt sample
+        # verificăm dacă există clasa "sample"
         for score, cls_id in zip(scores, classes):
             label = class_names[int(cls_id)]
             if score > 0.5 and label == "sample":
@@ -58,6 +58,10 @@ def index():
 @app.route('/video_feed')
 def video_feed():
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/')
+def index():
+    return "<h1>YOLO Stream</h1><img src='/video_feed'>"
 
 @app.route('/start_stream')
 def start_stream():
