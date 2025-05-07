@@ -1,102 +1,213 @@
-from flask import Flask, render_template, Response, jsonify
-from ultralytics import YOLO
-import cv2
-import threading
-import time
+<!DOCTYPE html>
+<html lang="en">
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <title>YOLO Stream</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: #fff;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            margin-top: 20px;
+        }
+        #stream {
+            margin-top: 20px;
+            width: 80%;
+            max-width: 800px;
+            border: 4px solid #555;
+            border-radius: 10px;
+        }
+        .buttons {
+            margin-top: 15px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 0 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: #444;
+            color: #fff;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #666;
+        }
+        #popup {
+            display: none;
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #333;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 24px;
+            color: #fff;
+            border: 2px solid #fff;
+        }
+    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>kITTY</title>
+  <link href="styles/style.css" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
+  <style>
+    .stream-wrapper {
+      display: flex;
+      justify-content: center;
+      padding: 10px;
+    }
 
-app = Flask(__name__)
-model = YOLO("my_model.pt")
+    #yoloStream {
+      max-width: 100%;
+      border: 2px solid black;
+    }
 
-camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-model = YOLO("my_model.pt")  # folosești modelul tău antrenat
+    .stream-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+    }
+  </style>
+</head>
+<body>
+    <h1>YOLO Stream Test</h1>
+    <img id="stream" src="{{ url_for('video_feed') }}" alt="Live Stream">
 
-class_names = model.names
-streaming = False
-detection_flag = False
-camera = None
-frame_lock = threading.Lock()
-last_frame = None
-frame_lock = threading.Lock()
+    <div class="buttons">
+        <button onclick="startStream()">Start Stream</button>
+        <button onclick="stopStream()">Stop Stream</button>
+    </div>
+  <header>
+    <h1>Pagina de control</h1>
+  </header>
 
-class_names = model.names
+  <main class="main-layout">
+    <!-- Coloana stângă: taburi -->
+    <aside id="sidebar">
+      <div class="tab-container">
+        <button class="tab-button" onclick="toggleTab('info')">Info</button>
+        <button class="tab-button" onclick="toggleTab('scop')">Scop</button>
+        <button class="tab-button" onclick="toggleTab('alte butoane')">Butoane+</button>
+      </div>
+      <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
+      <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+      <div class="tab-content-wrapper">
+        <div id="info" class="tab-content">
+          <p>Aceasta pagina este conceputa ca o punte dintre drona si salvamar</p>
+          <p>more info idkFEATURES ig</p>
+        </div>
+        <div id="scop" class="tab-content">
+          <p>De multe ori salvamarii au nevoie de ajutor pe mare si de o interventie rapida
+            insa de multe ori nu pot ajunge la victima in timp util. Aici intervine drona, care 
+            este capabila sa ajunga la victima in cateva secunde si sa ii ofere un colac de salvare.
+          </p>
+        </div>
+        <div id="alte butoane" class="tab-content">
+          <p>probabil aici sunt alte butoane idk</p>
+          <button class="idk buton" onclick="alert('nu stiu ce face')">buton</button>
+        </div>
+      </div>
+    </aside>
 
-def gen_frames():
-    global detection_flag, streaming, camera, last_frame
-def process_stream():
-    global last_frame, streaming, detection_flag
+    <!-- Dreapta: doar stream -->
+    <!-- Dreapta: doar stream -->
+<article class="custom-article">
+  <div class="stream-wrapper">
+    <img id="yoloStream" src="{{ url_for('video_feed') }}" alt="YOLO Stream">
+  </div>
+  <div id="popup" style="display:none;
+        position: fixed;
+        top: 30%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #333;
+        padding: 20px;
+        border-radius: 10px;
+        font-size: 24px;
+        color: #fff;
+        border: 2px solid #fff;">
+    Obiectul „sample” a fost detectat!
+  </div>
+</article>
 
-    camera = cv2.VideoCapture(0)
-    camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-    cap = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-    cap.set(cv2.CAP_PROP_FPS, 15)
+  </main>
 
-    while streaming:
-        success, frame = camera.read()
-        success, frame = cap.read()
-        if not success:
-            break
+    <div id="popup">Obiectul „sample” a fost detectat!</div>
+  <!-- Butoanele sub articol, deasupra footerului -->
+  <div class="stream-controls">
+    <button id="omgButton">omg merge?</button>
+    <button onclick="startStream()">Start Stream</button>
+    <button onclick="stopStream()">Stop Stream</button>
+  </div>
 
-        results = model(frame, verbose=False)
-        detection_flag = False
-        boxes = results[0].boxes
-        scores = boxes.conf.cpu().numpy()
-        classes = boxes.cls.cpu().numpy()
-        for score, cls_id in zip(scores, classes):
-            label = class_names[int(cls_id)]
-            if score > 0.5 and label == "sample":
-                detection_flag = True
-                print(">>> SAMPLE DETECTAT <<<")
+  <footer>
+    <p>Pagina creata in scopul concursului IndoEducatie</p>
+  </footer>
 
-        annotated_frame = results[0].plot()
-        _, buffer = cv2.imencode('.jpg', annotated_frame)
-        frame_bytes = buffer.tobytes()
-        frame = buffer.tobytes()
+  <script src="scripts/main.js"></script>
+  <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+    <script>
+        let popupShown = false;
+  let popupShown = false;
 
-        with frame_lock:
-            last_frame = frame_bytes
-            last_frame = frame
+        function startStream() {
+            fetch('/start_stream');
+        }
+  function startStream() {
+    fetch('/start_stream');
+  }
 
-        time.sleep(0.03)  # ~30 FPS
+        function stopStream() {
+            fetch('/stop_stream');
+        }
+  function stopStream() {
+    fetch('/stop_stream');
+  }
 
-    camera.release()
-    cap.release()
+        function checkDetection() {
+            fetch('/detection_status')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.detected && !popupShown) {
+                        const popup = document.getElementById("popup");
+                        popup.style.display = "block";
+                        popupShown = true;
+                        setTimeout(() => {
+                            popup.style.display = "none";
+                            popupShown = false;
+                        }, 2000);
+                    }
+                });
+  function checkDetection() {
+    fetch('/detection_status')
+      .then(response => response.json())
+      .then(data => {
+        if (data.detected && !popupShown) {
+          const popup = document.getElementById("popup");
+          popup.style.display = "block";
+          popupShown = true;
+          setTimeout(() => {
+            popup.style.display = "none";
+            popupShown = false;
+          }, 2000);
+        }
+      });
+  }
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-@app.route('/video_feed')
-def video_feed():
-    def generate():
-        global last_frame
-        while streaming:
-            with frame_lock:
-                if last_frame is not None:
-                    yield (b'--frame\r\n'
-                           b'Content-Type: image/jpeg\r\n\r\n' + last_frame + b'\r\n')
-            time.sleep(0.03)
-    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+  setInterval(checkDetection, 1000);
+</script>
 
-@app.route('/start_stream')
-def start_stream():
-    global streaming
-    if not streaming:
-        streaming = True
-        thread = threading.Thread(target=gen_frames)
-        thread = threading.Thread(target=process_stream, daemon=True)
-        thread.start()
-    return '', 200
-
-@app.route('/stop_stream')
-def stop_stream():
-    global streaming
-    streaming = False
-    return '', 200
-@app.route('/detection_status')
-def detection_status():
-    return jsonify({'detected': detection_flag})
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+        setInterval(checkDetection, 1000);
+    </script>
+</body>
+</html>
