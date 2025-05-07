@@ -1,213 +1,86 @@
-<!DOCTYPE html>
-<html lang="en">
-<html lang="en-US">
-<head>
-    <meta charset="UTF-8">
-    <title>YOLO Stream</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #1e1e1e;
-            color: #fff;
-            text-align: center;
-            margin: 0;
-            padding: 0;
-        }
-        h1 {
-            margin-top: 20px;
-        }
-        #stream {
-            margin-top: 20px;
-            width: 80%;
-            max-width: 800px;
-            border: 4px solid #555;
-            border-radius: 10px;
-        }
-        .buttons {
-            margin-top: 15px;
-        }
-        button {
-            padding: 10px 20px;
-            margin: 0 10px;
-            font-size: 16px;
-            border: none;
-            border-radius: 5px;
-            background-color: #444;
-            color: #fff;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #666;
-        }
-        #popup {
-            display: none;
-            position: fixed;
-            top: 30%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #333;
-            padding: 20px;
-            border-radius: 10px;
-            font-size: 24px;
-            color: #fff;
-            border: 2px solid #fff;
-        }
-    </style>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width" />
-  <title>kITTY</title>
-  <link href="styles/style.css" rel="stylesheet" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
-  <style>
-    .stream-wrapper {
-      display: flex;
-      justify-content: center;
-      padding: 10px;
-    }
+from flask import Flask, Response
+from flask import Flask, render_template, Response, jsonify
+from ultralytics import YOLO
+import cv2
 
-    #yoloStream {
-      max-width: 100%;
-      border: 2px solid black;
-    }
+app = Flask(__name__)
+model = YOLO("my_model.pt")
 
-    .stream-controls {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      justify-content: center;
-      padding: 15px;
-    }
-  </style>
-</head>
-<body>
-    <h1>YOLO Stream Test</h1>
-    <img id="stream" src="{{ url_for('video_feed') }}" alt="Live Stream">
+# Global flags
+streaming = True
+detection_flag = False
 
-    <div class="buttons">
-        <button onclick="startStream()">Start Stream</button>
-        <button onclick="stopStream()">Stop Stream</button>
-    </div>
-  <header>
-    <h1>Pagina de control</h1>
-  </header>
+camera = cv2.VideoCapture(0)
+camera.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
+camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
 
-  <main class="main-layout">
-    <!-- Coloana stângă: taburi -->
-    <aside id="sidebar">
-      <div class="tab-container">
-        <button class="tab-button" onclick="toggleTab('info')">Info</button>
-        <button class="tab-button" onclick="toggleTab('scop')">Scop</button>
-        <button class="tab-button" onclick="toggleTab('alte butoane')">Butoane+</button>
-      </div>
-      <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
-      <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
-      <div class="tab-content-wrapper">
-        <div id="info" class="tab-content">
-          <p>Aceasta pagina este conceputa ca o punte dintre drona si salvamar</p>
-          <p>more info idkFEATURES ig</p>
-        </div>
-        <div id="scop" class="tab-content">
-          <p>De multe ori salvamarii au nevoie de ajutor pe mare si de o interventie rapida
-            insa de multe ori nu pot ajunge la victima in timp util. Aici intervine drona, care 
-            este capabila sa ajunga la victima in cateva secunde si sa ii ofere un colac de salvare.
-          </p>
-        </div>
-        <div id="alte butoane" class="tab-content">
-          <p>probabil aici sunt alte butoane idk</p>
-          <button class="idk buton" onclick="alert('nu stiu ce face')">buton</button>
-        </div>
-      </div>
-    </aside>
+class_names = model.names
 
-    <!-- Dreapta: doar stream -->
-    <!-- Dreapta: doar stream -->
-<article class="custom-article">
-  <div class="stream-wrapper">
-    <img id="yoloStream" src="{{ url_for('video_feed') }}" alt="YOLO Stream">
-  </div>
-  <div id="popup" style="display:none;
-        position: fixed;
-        top: 30%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: #333;
-        padding: 20px;
-        border-radius: 10px;
-        font-size: 24px;
-        color: #fff;
-        border: 2px solid #fff;">
-    Obiectul „sample” a fost detectat!
-  </div>
-</article>
+def gen_frames():
+    cap = cv2.VideoCapture(0)
+    while True:
+        success, frame = cap.read()
+    global detection_flag, streaming
 
-  </main>
+    while streaming:
+        success, frame = camera.read()
+        if not success:
+            break
+        results = model(frame)
 
-    <div id="popup">Obiectul „sample” a fost detectat!</div>
-  <!-- Butoanele sub articol, deasupra footerului -->
-  <div class="stream-controls">
-    <button id="omgButton">omg merge?</button>
-    <button onclick="startStream()">Start Stream</button>
-    <button onclick="stopStream()">Stop Stream</button>
-  </div>
+        results = model(frame, verbose=False)
+        detection_flag = False
 
-  <footer>
-    <p>Pagina creata in scopul concursului IndoEducatie</p>
-  </footer>
+        boxes = results[0].boxes
+        scores = boxes.conf.cpu().numpy()
+        classes = boxes.cls.cpu().numpy()
 
-  <script src="scripts/main.js"></script>
-  <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
-    <script>
-        let popupShown = false;
-  let popupShown = false;
+        # verificăm dacă există clasa "sample"
+        for score, cls_id in zip(scores, classes):
+            label = class_names[int(cls_id)]
+            if score > 0.5 and label == "sample":
+                detection_flag = True
+                print(">>> SAMPLE DETECTAT <<<")
 
-        function startStream() {
-            fetch('/start_stream');
-        }
-  function startStream() {
-    fetch('/start_stream');
-  }
+        annotated_frame = results[0].plot()
+        _, buffer = cv2.imencode('.jpg', annotated_frame)
+        frame_bytes = buffer.tobytes()
 
-        function stopStream() {
-            fetch('/stop_stream');
-        }
-  function stopStream() {
-    fetch('/stop_stream');
-  }
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
-        function checkDetection() {
-            fetch('/detection_status')
-                .then(res => res.json())
-                .then(data => {
-                    if (data.detected && !popupShown) {
-                        const popup = document.getElementById("popup");
-                        popup.style.display = "block";
-                        popupShown = true;
-                        setTimeout(() => {
-                            popup.style.display = "none";
-                            popupShown = false;
-                        }, 2000);
-                    }
-                });
-  function checkDetection() {
-    fetch('/detection_status')
-      .then(response => response.json())
-      .then(data => {
-        if (data.detected && !popupShown) {
-          const popup = document.getElementById("popup");
-          popup.style.display = "block";
-          popupShown = true;
-          setTimeout(() => {
-            popup.style.display = "none";
-            popupShown = false;
-          }, 2000);
-        }
-      });
-  }
 
-  setInterval(checkDetection, 1000);
-</script>
+@app.route('/')
+def index():
+    return render_template('index.html')
 
-        setInterval(checkDetection, 1000);
-    </script>
-</body>
-</html>
+
+@app.route('/video_feed')
+def video_feed():
+    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/')
+def index():
+    return "<h1>YOLO Stream</h1><img src='/video_feed'>"
+
+@app.route('/start_stream')
+def start_stream():
+    global streaming
+    streaming = True
+    return '', 200
+
+
+@app.route('/stop_stream')
+def stop_stream():
+    global streaming
+    streaming = False
+    return '', 200
+
+
+@app.route('/detection_status')
+def detection_status():
+    return jsonify({'detected': detection_flag})
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
