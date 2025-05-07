@@ -12,12 +12,19 @@
     justify-content: center;
     padding: 10px;
   }
+
   #yoloStream {
+    width: 90vw;
+    height: auto;
+    border: 2px solid black;
+    object-fit: contain;
+  }
   width: 90vw; 
   max-height: 70vh;
   border: 3px solid #000;
   object-fit: contain;
 }
+
   .stream-controls {
     display: flex;
     gap: 10px;
@@ -63,7 +70,6 @@
 <article class="custom-article">
   <div class="stream-wrapper">
     <img id="yoloStream" src="{{ url_for('video_feed') }}" alt="YOLO Stream">
-    <img id="video-stream" src="{{ url_for('video_feed') }}" width="640" height="480" alt="YOLO Stream">
   </div>
   <div id="popup" style="display:none;
         position: fixed;
