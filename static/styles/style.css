@@ -23,55 +23,36 @@ h1 {
     line-height: 2;
     letter-spacing: 1px;
   }
-#yoloStream {
-  width: 90vw;
-  max-height: 70vh;
-  border: 3px solid #000;
-  object-fit: contain;
-  display: none;
-}
-
-.msgBox {
-  position: fixed;
-  top: 30%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: #333;
-  color: white;
-  padding: 20px;
-  border-radius: 10px;
-  border: 2px solid white;
-  text-align: center;
-  z-index: 1000;
-}
-
-.btnContainer {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  margin-top: 10px;
-}
-
-.btnContainer button {
-  padding: 8px 16px;
-  background-color: #eee;
-  border: 1px solid #999;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.responseBox {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #222;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 8px;
-  border: 1px solid #fff;
-  z-index: 999;
-}
+  .msgBox {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    width: 200px;
+    background: #000000;
+  }
+  .msgBox, .responseBox {
+    border: 1px solid #333;
+    background-color: #0f0d0d;
+    padding: 15px;
+    margin: 10px;
+    border-radius: 8px;
+    max-width: 300px;
+  }
+  .btnContainer {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  
+  .btnContainer button {
+    flex: 1;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #999;
+    background-color: #ddd;
+    cursor: pointer;
   }
   .tab {
     float: left;
@@ -97,7 +78,6 @@ h1 {
     background-color: #ddd;
   }
   * {box-sizing: border-box}
-
   /* Style the tab */
   .tab {
     float: left;
@@ -120,7 +100,6 @@ h1 {
     transition: 0.3s;
   }
   
-
   .tab button:hover {
     background-color: #ddd;
   }
@@ -162,7 +141,6 @@ h1 {
   display: flex;
   height: calc(100vh - 100px); /* 100px rezervat pentru header + footer */
 }
-
 /* Coloana stângă (sidebar) */
 #sidebar {
   width: 15%;
@@ -174,14 +152,12 @@ h1 {
   padding: 15px;
   box-sizing: border-box;
 }
-
 /* Containerul butoanelor */
 .tab-container {
   display: flex;
   flex-direction: column;
   height: 40%;
 }
-
 /* Butoanele tab */
 .tab-button {
   background: none;
@@ -191,14 +167,11 @@ h1 {
   text-align: left;
   cursor: pointer;
   transition: background 0.3s;
-
 }
-
 .tab-button:hover,
 .tab-button.active {
   background-color: #8f2424c5;
 }
-
 /* Zona în care apare conținutul taburilor */
 .tab-content-wrapper {
   flex-grow: 1;
@@ -209,7 +182,6 @@ h1 {
   height: 100%;
   box-sizing: border-box;
 }
-
 /* Fiecare tab (doar unul vizibil) */
 .tab-content {
   display: none;
@@ -218,7 +190,6 @@ h1 {
 .tab-content.active {
   display: block;
 }
-
 /* Coloana dreaptă: articolul */
 .custom-article {
   flex-grow: 1;
@@ -229,12 +200,10 @@ h1 {
   flex-direction: column;
   justify-content: flex-start;
 }
-
 .custom-article img {
   max-width: 100%;
   margin-top: 10px;
 }
-
 /* Header */
 header {
   background-color: #222;
@@ -242,17 +211,21 @@ header {
   padding: 20px;
   text-align: center;
 }
-
 /* Footer */
 footer {
   background-color: #eee;
   text-align: center;
   padding: 10px;
 }
+
+/* Buton "omg merge?" */
+#omgButton {
+  margin-top: 20px;
+  padding: 10px 20px;
+  font-size: 16px;
 #yoloStream {
   width: 90vw; /* Mare, dar controlat */
   max-height: 70vh;
   border: 3px solid #000;
   object-fit: contain;
 }
-
