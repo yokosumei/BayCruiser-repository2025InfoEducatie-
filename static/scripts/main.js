@@ -118,12 +118,12 @@ function stopStream() {
 
 // Poll server for detections
 setInterval(() => {
-  if (!streamActive) return;
+  if (!streamActive || !canShowMessage) return;
 
   fetch("/detection_status")
     .then(res => res.json())
     .then(data => {
-      if (data.detected) {
+      if (data.detected && canShowMessage) {
         displayMessage();
       }
     })
