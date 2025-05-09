@@ -1,26 +1,29 @@
-from picamera2 import Picamera2
 import cv2
 from ultralytics import YOLO
+from picamera2 import Picamera2
+import time
 
 # Inițializează camera
 picam2 = Picamera2()
-picam2.configure(picam2.preview_configuration(main={"size": (640, 480)}))
+picam2.configure(picam2.preview_configuration(main={"format": "RGB888", "size": (640, 480)}))
 picam2.start()
+time.sleep(1)
 
-# Încarcă modelul
-model = YOLO("my_model.pt")  # sau "yolov5s.pt", etc.
+# Încarcă modelul YOLO
+model = YOLO("my_model.pt")
 
 while True:
-    # Capturează un frame de la cameră
     frame = picam2.capture_array()
 
-    # Rulează detecția
-    results = model.predict(source=frame, show=True, conf=0.4)
+    # Dacă e cu 4 canale (RGBA), convertește în 3 (RGB)
+    if frame.shape[2] == 4:
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2RGB)
 
-    # Așteaptă tasta 'q' ca să oprească
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    results = model.predict(frame, verbose=False)
+    annotated = results[0].plot()
+
+    cv2.imshow("YOLO + PiCamera2", annotated)
+    if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
-# Eliberează resursele
 cv2.destroyAllWindows()
-picam2.close()
