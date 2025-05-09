@@ -5,7 +5,8 @@ import time
 
 # Inițializează camera
 picam2 = Picamera2()
-picam2.configure(picam2.preview_configuration(main={"format": "RGB888", "size": (640, 480)}))
+config = picam2.create_preview_configuration(main={"format": "RGB888", "size": (640, 480)})
+picam2.configure(config)
 picam2.start()
 time.sleep(1)
 
@@ -15,7 +16,7 @@ model = YOLO("my_model.pt")
 while True:
     frame = picam2.capture_array()
 
-    # Dacă e cu 4 canale (RGBA), convertește în 3 (RGB)
+    # Convertire RGBA → RGB dacă e cazul
     if frame.shape[2] == 4:
         frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2RGB)
 
