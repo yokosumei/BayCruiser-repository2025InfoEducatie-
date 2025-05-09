@@ -1,30 +1,82 @@
-import cv2
+from flask import Flask, render_template, Response, jsonify
 from ultralytics import YOLO
 from picamera2 import Picamera2
+import cv2
+import threading
 import time
 
-# Inițializează camera
-picam2 = Picamera2()
-config = picam2.create_preview_configuration(main={"format": "RGB888", "size": (640, 480)})
-picam2.configure(config)
-picam2.start()
-time.sleep(1)
+app = Flask(__name__)
 
-# Încarcă modelul YOLO
+# Load YOLO model
 model = YOLO("my_model.pt")
 
-while True:
-    frame = picam2.capture_array()
+# Initialize PiCamera2
+picam2 = Picamera2()
+picam2.configure(picam2.create_preview_configuration(main={"format": 'RGB888', "size": (416, 240)}))  # lower res for FPS
+picam2.start()
 
-    # Convertire RGBA → RGB dacă e cazul
-    if frame.shape[2] == 4:
-        frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2RGB)
+# Shared state
+output_frame = None
+lock = threading.Lock()
+streaming = False
+detection_status = {"detected": False}
 
-    results = model.predict(frame, verbose=False)
-    annotated = results[0].plot()
+def detect_objects():
+    global output_frame, streaming, detection_status
+    while streaming:
+        start = time.time()
 
-    cv2.imshow("YOLO + PiCamera2", annotated)
-    if cv2.waitKey(1) & 0xFF == ord("q"):
-        break
+        frame = picam2.capture_array()
+        results = model(frame, verbose=False)
+        result_frame = results[0].plot()
 
-cv2.destroyAllWindows()
+        detection_status["detected"] = any(
+            model.names[int(cls)] == "sample" for cls in results[0].boxes.cls
+        )
+
+        with lock:
+            _, jpeg = cv2.imencode(".jpg", result_frame)
+            output_frame = jpeg.tobytes()
+
+        # Control max 30 FPS
+        elapsed = time.time() - start
+        if elapsed < 1 / 30:
+            time.sleep(1 / 30 - elapsed)
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/video_feed")
+def video_feed():
+    def generate():
+        while streaming:
+            with lock:
+                if output_frame is None:
+                    continue
+                yield (b"--frame\r\n"
+                       b"Content-Type: image/jpeg\r\n\r\n" + output_frame + b"\r\n")
+    return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
+
+@app.route("/start_stream")
+def start_stream():
+    global streaming
+    if not streaming:
+        streaming = True
+        thread = threading.Thread(target=detect_objects)
+        thread.daemon = True
+        thread.start()
+    return ("", 200)
+
+@app.route("/stop_stream")
+def stop_stream():
+    global streaming
+    streaming = False
+    return ("", 200)
+
+@app.route("/detection_status")
+def get_detection_status():
+    return jsonify(detection_status)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
