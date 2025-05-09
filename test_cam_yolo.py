@@ -1,5 +1,4 @@
-from flask import Flask, render_template, Response, jsonify
-from ultralytics import YOLO
+from flask import Flask, render_template, Response
 from picamera2 import Picamera2
 import cv2
 import threading
@@ -7,41 +6,26 @@ import time
 
 app = Flask(__name__)
 
-# Load YOLO model
-model = YOLO("my_model.pt")
-
-# Initialize PiCamera2
 picam2 = Picamera2()
-picam2.configure(picam2.create_preview_configuration(main={"format": 'RGB888', "size": (416, 240)}))  # lower res for FPS
+picam2.configure(picam2.create_preview_configuration(main={"format": 'RGB888', "size": (640, 480)}))
 picam2.start()
 
-# Shared state
 output_frame = None
 lock = threading.Lock()
 streaming = False
-detection_status = {"detected": False}
 
-def detect_objects():
-    global output_frame, streaming, detection_status
+def generate_fake_stream():
+    global output_frame, streaming
     while streaming:
-        start = time.time()
-
         frame = picam2.capture_array()
-        results = model(frame, verbose=False)
-        result_frame = results[0].plot()
 
-        detection_status["detected"] = any(
-            model.names[int(cls)] == "sample" for cls in results[0].boxes.cls
-        )
+        # Desenează un pătrat roșu
+        cv2.rectangle(frame, (100, 100), (200, 200), (255, 0, 0), 3)
 
         with lock:
-            _, jpeg = cv2.imencode(".jpg", result_frame)
-            output_frame = jpeg.tobytes()
+            output_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
-        # Control max 30 FPS
-        elapsed = time.time() - start
-        if elapsed < 1 / 30:
-            time.sleep(1 / 30 - elapsed)
+        time.sleep(0.03)
 
 @app.route("/")
 def index():
@@ -54,8 +38,13 @@ def video_feed():
             with lock:
                 if output_frame is None:
                     continue
-                yield (b"--frame\r\n"
-                       b"Content-Type: image/jpeg\r\n\r\n" + output_frame + b"\r\n")
+                ret, buffer = cv2.imencode(".jpg", output_frame)
+                if not ret:
+                    continue
+                frame = buffer.tobytes()
+            yield (b"--frame\r\n"
+                   b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
+            time.sleep(0.03)
     return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
 @app.route("/start_stream")
@@ -63,7 +52,8 @@ def start_stream():
     global streaming
     if not streaming:
         streaming = True
-        thread = threading.Thread(target=detect_objects)
+        print("Stream de test pornit")
+        thread = threading.Thread(target=generate_fake_stream)
         thread.daemon = True
         thread.start()
     return ("", 200)
@@ -72,11 +62,8 @@ def start_stream():
 def stop_stream():
     global streaming
     streaming = False
+    print("Stream oprit")
     return ("", 200)
-
-@app.route("/detection_status")
-def get_detection_status():
-    return jsonify(detection_status)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
