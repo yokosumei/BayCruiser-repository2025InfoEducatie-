@@ -1,106 +1,104 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>YOLO Stream</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-    }
-    #video-stream {
-      width: 640px;
-      height: 480px;
-      border: 2px solid black;
-      margin-top: 10px;
-    }
-    #popup {
-      display: none;
-      position: fixed;
-      top: 30%;
-      left: 50%;
-      transform: translate(-50%, -30%);
-      background-color: white;
-      border: 3px solid #000;
-      padding: 20px;
-      z-index: 1000;
-    }
-    #popup button {
-      margin: 10px;
-    }
-    #overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-      z-index: 999;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>YOLO Stream App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f7f7f7;
+        }
+        #video-container {
+            display: inline-block;
+            margin-top: 20px;
+            border: 4px solid #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        #video {
+            width: 640px;
+            height: 480px;
+            display: block;
+        }
+        #controls {
+            margin-top: 15px;
+        }
+        button {
+            font-size: 16px;
+            padding: 10px 20px;
+            margin: 0 10px;
+            cursor: pointer;
+        }
+        #popup {
+            display: none;
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: 2px solid #666;
+            border-radius: 8px;
+            padding: 20px;
+            z-index: 1000;
+        }
+        #popup button {
+            margin: 10px;
+        }
+    </style>
 </head>
 <body>
-  <h1>YOLO Camera Stream</h1>
+    <h1>YOLO Livestream</h1>
 
-  <div>
-    <button onclick="startStream()">Start Stream</button>
-    <button onclick="stopStream()">Stop Stream</button>
-  </div>
+    <div id="video-container">
+        <img id="video" src="/video_feed" />
+    </div>
 
-  <img id="video-stream" src="/video_feed" alt="Live Stream">
+    <div id="controls">
+        <button onclick="startStream()">Start Stream</button>
+        <button onclick="stopStream()">Stop Stream</button>
+    </div>
 
-  <!-- Popup -->
-  <div id="overlay"></div>
-  <div id="popup">
-    <p>A fost detectat un obiect <strong>sample</strong>. Confirmi?</p>
-    <button onclick="confirmResponse(true)">DA</button>
-    <button onclick="confirmResponse(false)">NU</button>
-  </div>
+    <div id="popup">
+        <p>Obiectul <strong>sample</strong> a fost detectat. Confirmi?</p>
+        <button onclick="handleYes()">DA</button>
+        <button onclick="handleNo()">NU</button>
+    </div>
 
-  <script>
-    let popupShown = false;
+    <script>
+        let streamRunning = false;
 
-    function startStream() {
-      fetch('/start_stream');
-      document.getElementById("video-stream").src = "/video_feed";
-    }
+        function startStream() {
+            fetch('/start_stream');
+            streamRunning = true;
+        }
 
-    function stopStream() {
-      fetch('/stop_stream');
-      document.getElementById("video-stream").src = "";
-    }
+        function stopStream() {
+            fetch('/stop_stream');
+            streamRunning = false;
+        }
 
-    function checkDetection() {
-      fetch('/detection_status')
-        .then(response => response.json())
-        .then(data => {
-          if (data.detected && !popupShown) {
-            showPopup();
-            popupShown = true;
-          }
-        });
-    }
+        function handleYes() {
+            alert("Ai confirmat.");
+            document.getElementById("popup").style.display = "none";
+        }
 
-    function showPopup() {
-      document.getElementById("popup").style.display = "block";
-      document.getElementById("overlay").style.display = "block";
-    }
+        function handleNo() {
+            alert("Ai refuzat.");
+            document.getElementById("popup").style.display = "none";
+        }
 
-    function hidePopup() {
-      document.getElementById("popup").style.display = "none";
-      document.getElementById("overlay").style.display = "none";
-    }
-
-    function confirmResponse(choice) {
-      hidePopup();
-      if (choice) {
-        alert("Ai confirmat detectarea!");
-      } else {
-        alert("Ai respins detectarea.");
-      }
-      popupShown = false;
-    }
-
-    setInterval(checkDetection, 1000); // Verifică detecția la fiecare 1s
-  </script>
+        // Verifică periodic dacă s-a detectat obiectul "sample"
+        setInterval(() => {
+            if (!streamRunning) return;
+            fetch('/detection_status')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.detected) {
+                        document.getElementById("popup").style.display = "block";
+                    }
+                });
+        }, 1000);
+    </script>
 </body>
 </html>
