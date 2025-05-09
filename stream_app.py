@@ -58,7 +58,7 @@ def video_feed():
                 frame = buffer.tobytes()
             yield (b"--frame\r\n"
                    b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
-            time.sleep(0.03)
+            time.sleep(0.01)
     return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
 @app.route("/start_stream")
