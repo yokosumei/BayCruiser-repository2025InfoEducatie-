@@ -1,3 +1,4 @@
-ultralytics
-opencv-python
 flask
+opencv-python
+ultralytics
+picamera2
