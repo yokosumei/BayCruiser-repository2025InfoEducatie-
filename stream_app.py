@@ -1,92 +1,85 @@
 from flask import Flask, render_template, Response, jsonify
 from ultralytics import YOLO
+from picamera2 import Picamera2, Preview
 import cv2
+import threading
+import time
 
 app = Flask(__name__)
 
-model = YOLO('my_model.pt')
-class_names = model.names
+# Load the YOLO model
+model = YOLO("my_model.pt")
 
-camera = cv2.VideoCapture(0)
-camera.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
-camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
+# Initialize camera
+picam2 = Picamera2()
+picam2.configure(picam2.create_preview_configuration(main={"format": 'RGB888', "size": (640, 480)}))
+picam2.start()
 
-streaming = True
-detection_flag = False
+# Shared state
+output_frame = None
+lock = threading.Lock()
+streaming = False
+detection_status = {"detected": False}
 
-def generate_frames():
-    global streaming, detection_flag
-
-    frame_count = 0
-
+# Detection thread
+def detect_objects():
+    global output_frame, streaming, detection_status
     while streaming:
-        success, frame = camera.read()
-        if not success:
-            break
+        frame = picam2.capture_array()
 
-        frame_count += 1
-        if frame_count % 2 != 0:
-            continue
+        # Run YOLO detection
+        results = model(frame, verbose=False)
 
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = model(rgb_frame)
+        # Draw results
+        result_frame = results[0].plot()
 
-        boxes = results[0].boxes
-        detections = boxes.xyxy.cpu().numpy()
-        scores = boxes.conf.cpu().numpy()
-        classes = boxes.cls.cpu().numpy()
+        # Check if class 'sample' was detected
+        detection_status["detected"] = any(
+            model.names[int(cls)] == "sample" for cls in results[0].boxes.cls
+        )
 
-        for box, score, cls_id in zip(detections, scores, classes):
-            x1, y1, x2, y2 = map(int, box[:4])
-            label = class_names[int(cls_id)]
-            confidence = float(score)
+        with lock:
+            output_frame = cv2.cvtColor(result_frame, cv2.COLOR_RGB2BGR)
 
-            if confidence > 0.5:
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv2.putText(frame, f'{label} {confidence:.2f}', (x1, y1 - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        time.sleep(0.03)  # ~30 FPS
 
-                if label == 'sample':
-                    detection_flag = True
-
-        ret, buffer = cv2.imencode('.jpg', frame)
-        frame = buffer.tobytes()
-
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-
-
-@app.route('/')
+@app.route("/")
 def index():
-    return render_template('index.html')
+    return render_template("index.html")
 
-
-@app.route('/video_feed')
+@app.route("/video_feed")
 def video_feed():
-    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    def generate():
+        while streaming:
+            with lock:
+                if output_frame is None:
+                    continue
+                ret, buffer = cv2.imencode(".jpg", output_frame)
+                frame = buffer.tobytes()
+            yield (b"--frame\r\n"
+                   b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
+            time.sleep(0.03)
+    return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
-
-@app.route('/start_stream')
+@app.route("/start_stream")
 def start_stream():
     global streaming
-    streaming = True
-    return '', 200
+    if not streaming:
+        streaming = True
+        thread = threading.Thread(target=detect_objects)
+        thread.daemon = True
+        thread.start()
+    return ("", 200)
 
-
-@app.route('/stop_stream')
+@app.route("/stop_stream")
 def stop_stream():
     global streaming
     streaming = False
-    return '', 200
+    return ("", 200)
 
+@app.route("/detection_status")
+def get_detection_status():
+    return jsonify(detection_status)
 
-@app.route('/detection_status')
-def detection_status():
-    global detection_flag
-    current_flag = detection_flag
-    detection_flag = False  # Resetăm după ce trimitem clientului
-    return jsonify({'detected': current_flag})
-
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
