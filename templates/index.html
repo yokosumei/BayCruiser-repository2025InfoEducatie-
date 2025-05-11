@@ -2,50 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>YOLO Stream Test</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f0f0f0;
-        }
-        #video-container {
-            margin-top: 20px;
-        }
-        button {
-            padding: 10px 20px;
-            margin: 10px;
-            font-size: 16px;
-        }
-        img {
-            border: 2px solid #333;
-            max-width: 90%;
-            height: auto;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLO Detection</title>
 </head>
 <body>
-    <h1>YOLO Stream Test</h1>
-    <div>
-        <button onclick="startStream()">Start Stream</button>
-        <button onclick="stopStream()">Stop Stream</button>
-    </div>
-    <div id="video-container">
-        <img id="video" src="" alt="Video stream will appear here">
-    </div>
-
-    <script>
-        function startStream() {
-            fetch('/start_stream').then(() => {
-                document.getElementById('video').src = '/video_feed';
-            });
-        }
-
-        function stopStream() {
-            fetch('/stop_stream').then(() => {
-                document.getElementById('video').src = '';
-            });
-        }
-    </script>
+    <h1>YOLO Detection Stream</h1>
+    <img src="{{ url_for('video_feed') }}" width="640" height="480" />
 </body>
 </html>
