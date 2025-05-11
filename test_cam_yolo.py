@@ -8,11 +8,11 @@ from ultralytics import YOLO
 app = Flask(__name__)
 
 # Inițializare model YOLO11s
-model = YOLO("yolo11s.pt")  # Înlocuiește cu calea corectă a modelului tău YOLO11s
+model = YOLO("my_model.pt")  # Folosește fișierul tău my_model.pt
 
 # Inițializare Picamera2
 picam2 = Picamera2()
-picam2.configure(picam2.create_still_configuration())
+picam2.configure(picam2.create_video_configuration())  # Configurăm pentru video continuu
 
 # Funcție pentru a captura frame-uri din camera Raspberry Pi
 def gen():
