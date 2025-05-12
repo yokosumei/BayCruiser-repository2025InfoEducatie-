@@ -3,11 +3,11 @@ from ultralytics import YOLO
 from picamera2 import Picamera2, Preview
 import cv2
 import threading
-import time
+import time import sleep #pt servo
 
+servo = AngularServo(18, min_pulse_width=0.0006, max_pulse_width=0.0023)
 app = Flask(__name__)
 
-# Load the YOLO model
 model = YOLO("my_model.pt")
 
 # Initialize camera
@@ -80,6 +80,13 @@ def stop_stream():
 @app.route("/detection_status")
 def get_detection_status():
     return jsonify(detection_status)
+    
+@app.route('/misca')
+def misca_servo():
+    servo.angle = 110
+    sleep(2)
+    servo.angle = 0 
+    return "Servo mișcat la 110°"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
