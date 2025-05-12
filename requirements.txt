@@ -1,4 +1,7 @@
 flask
+flask-cors
 opencv-python
 ultralytics
 picamera2
+gpiozero
+numpy
