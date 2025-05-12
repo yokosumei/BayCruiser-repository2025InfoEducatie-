@@ -14,8 +14,7 @@ myImage.addEventListener("click", () => {
 
   canShowMessage = false;
 });
-
-function displayServoMessage() {
+function displayMessage() {
   if (!canShowMessage) return;
 
   const panel = document.createElement("div");
@@ -31,7 +30,15 @@ function displayServoMessage() {
   const daBtn = document.createElement("button");
   daBtn.textContent = "DA";
   daBtn.onclick = () => {
-    moveServo(); 
+    fetch("/misca")
+      .then(response => response.text())
+      .then(data => {
+        showResponse("Servomotorul a fost mișcat la 110°.");
+      })
+      .catch(error => {
+        showResponse("Eroare la mișcarea servomotorului.");
+        console.error("Eroare:", error);
+      });
     panel.remove();
     canShowMessage = false;
   };
@@ -39,7 +46,7 @@ function displayServoMessage() {
   const nuBtn = document.createElement("button");
   nuBtn.textContent = "NU";
   nuBtn.onclick = () => {
-    showResponse("OK, ignorăm alerta.");
+    showResponse("Alarmă ignorată.");
     panel.remove();
     canShowMessage = false;
   };
@@ -50,6 +57,7 @@ function displayServoMessage() {
 
   document.body.appendChild(panel);
 }
+//servo go vroom
 
 function showResponse(msg) {
   const responsePanel = document.createElement("div");
