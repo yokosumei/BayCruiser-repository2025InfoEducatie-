@@ -8,14 +8,24 @@
 <body>
   <h1>Test Servo Control</h1>
   <button onclick="displayMessage()">Activează alarmă</button>
+  <img src="{{ url_for('video_feed') }}" width="640" height="480" />
 
   <script>
+    // Check for popup every 2 seconds
+    setInterval(() => {
+      fetch("/check_popup")
+        .then(res => res.json())
+        .then(data => {
+          if (data.show) displayMessage();
+        });
+    }, 2000);
+
     function displayMessage() {
       const panel = document.createElement("div");
       panel.className = "msgBox";
 
       const question = document.createElement("p");
-      question.textContent = "Alarmă reala?";
+      question.textContent = "Alarmă reală?";
       panel.appendChild(question);
 
       const btnContainer = document.createElement("div");
@@ -24,10 +34,13 @@
       const daBtn = document.createElement("button");
       daBtn.textContent = "DA";
       daBtn.onclick = () => {
-        fetch("/misca")
-          .then(res => res.text())
+        fetch("/confirm_action", {
+          method: "POST",
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ response: "yes" })
+        }).then(res => res.json())
           .then(msg => {
-            alert(msg);
+            alert("Alarmă activată!");
             panel.remove();
           });
       };
@@ -35,16 +48,19 @@
       const nuBtn = document.createElement("button");
       nuBtn.textContent = "NU";
       nuBtn.onclick = () => {
+        fetch("/confirm_action", {
+          method: "POST",
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ response: "no" })
+        });
         panel.remove();
       };
 
       btnContainer.appendChild(daBtn);
       btnContainer.appendChild(nuBtn);
       panel.appendChild(btnContainer);
-
       document.body.appendChild(panel);
     }
   </script>
 </body>
 </html>
-
