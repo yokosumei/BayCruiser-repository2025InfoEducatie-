@@ -54,10 +54,10 @@ def detect_objects():
             output_frame = cv2.cvtColor(result_frame, cv2.COLOR_RGB2BGR)
 
         time.sleep(0.03)  # ~30 FPS
-
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.test.servo.html")
+
 
 @app.route("/video_feed")
 def video_feed():
