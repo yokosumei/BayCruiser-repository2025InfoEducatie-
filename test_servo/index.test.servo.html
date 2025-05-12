@@ -1,1 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Test Servo</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.test.servo.css') }}">
+</head>
+<body>
+  <h1>Test Servo Control</h1>
+  <button onclick="displayMessage()">Activează alarmă</button>
+
+  <script>
+    function displayMessage() {
+      const panel = document.createElement("div");
+      panel.className = "msgBox";
+
+      const question = document.createElement("p");
+      question.textContent = "Alarmă falsă?";
+      panel.appendChild(question);
+
+      const btnContainer = document.createElement("div");
+      btnContainer.className = "btnContainer";
+
+      const daBtn = document.createElement("button");
+      daBtn.textContent = "DA";
+      daBtn.onclick = () => {
+        fetch("/misca")
+          .then(res => res.text())
+          .then(msg => {
+            alert(msg);
+            panel.remove();
+          });
+      };
+
+      const nuBtn = document.createElement("button");
+      nuBtn.textContent = "NU";
+      nuBtn.onclick = () => {
+        panel.remove();
+      };
+
+      btnContainer.appendChild(daBtn);
+      btnContainer.appendChild(nuBtn);
+      panel.appendChild(btnContainer);
+
+      document.body.appendChild(panel);
+    }
+  </script>
+</body>
+</html>
 
