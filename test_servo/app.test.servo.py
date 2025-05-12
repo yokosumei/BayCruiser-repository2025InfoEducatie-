@@ -10,7 +10,7 @@ servo = AngularServo(18, min_angle=0, max_angle=180, min_pulse_width=0.0006, max
 
 @app.route("/")
 def home():
-    return render_template("index.html")
+    return render_template("index.test.servo.html")
 
 @app.route("/misca")
 def misca_servo():
