@@ -1,0 +1,23 @@
+.msgBox {
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -30%);
+  background: #ffe;
+  padding: 20px;
+  border: 2px solid #aaa;
+  border-radius: 10px;
+  box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+}
+
+.btnContainer {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btnContainer button {
+  padding: 10px 20px;
+  cursor: pointer;
+}
