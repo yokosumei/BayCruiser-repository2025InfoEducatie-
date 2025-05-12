@@ -107,7 +107,7 @@ def confirm_action():
     if data.get("response") == "yes":
         alarm_active = True
         # Move servo
-        servo.angle = 110
+        servo.angle = 90
         sleep(2)
         servo.angle = 0
         alarm_active = False
