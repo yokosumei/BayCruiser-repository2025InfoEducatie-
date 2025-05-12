@@ -17,7 +17,7 @@ def misca_servo():
     servo.angle = 110
     sleep(1)
     servo.angle = 0
-    return "Servo mișcat!"
+    return "Colac aruncat|Initiere salvare!"
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)
