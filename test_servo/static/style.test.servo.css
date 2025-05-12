@@ -1,23 +1,21 @@
 .msgBox {
   position: fixed;
-  top: 30%;
-  left: 50%;
-  transform: translate(-50%, -30%);
-  background: #ffe;
+  top: 20%;
+  left: 30%;
+  width: 40%;
   padding: 20px;
-  border: 2px solid #aaa;
-  border-radius: 10px;
-  box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 5px;
+  text-align: center;
+  z-index: 1000;
 }
 
 .btnContainer {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
   margin-top: 10px;
 }
 
 .btnContainer button {
+  margin: 0 10px;
   padding: 10px 20px;
-  cursor: pointer;
 }
