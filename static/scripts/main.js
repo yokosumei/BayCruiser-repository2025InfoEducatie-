@@ -15,19 +15,14 @@ myImage.addEventListener("click", () => {
   canShowMessage = false;
 });
 
-btn.addEventListener("click", () => {
-  canShowMessage = true;
-  document.querySelectorAll(".msgBox, .responseBox").forEach(el => el.remove());
-});
-
-function displayMessage() {
+function displayServoMessage() {
   if (!canShowMessage) return;
 
   const panel = document.createElement("div");
   panel.className = "msgBox";
 
   const question = document.createElement("p");
-  question.textContent = "Este alarma reală?";
+  question.textContent = "Alarmă falsă?";
   panel.appendChild(question);
 
   const btnContainer = document.createElement("div");
@@ -36,19 +31,17 @@ function displayMessage() {
   const daBtn = document.createElement("button");
   daBtn.textContent = "DA";
   daBtn.onclick = () => {
-    showResponse("oh nu!");
+    moveServo(); 
     panel.remove();
     canShowMessage = false;
-    document.getElementById("demo").textContent = "mac";
   };
 
   const nuBtn = document.createElement("button");
   nuBtn.textContent = "NU";
   nuBtn.onclick = () => {
-    showResponse("yay");
+    showResponse("OK, ignorăm alerta.");
     panel.remove();
     canShowMessage = false;
-    document.getElementById("demo").textContent = "mac mac";
   };
 
   btnContainer.appendChild(daBtn);
@@ -65,7 +58,7 @@ function showResponse(msg) {
   document.body.appendChild(responsePanel);
   setTimeout(() => responsePanel.remove(), 2000);
 }
-
+//taburi
 function toggleTab(tabId) {
   const contents = document.querySelectorAll('.tab-content');
   const buttons = document.querySelectorAll('.tab-button');
