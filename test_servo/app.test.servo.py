@@ -32,28 +32,27 @@ alarm_active = False
 def detect_objects():
     global output_frame, streaming, detection_status, popup_triggered, alarm_active
     while streaming:
-        frame = picam2.capture_array()
+        try:
+            frame = picam2.capture_array()
+            results = model(frame, verbose=False)
+            result_frame = results[0].plot()
 
-        # Run YOLO detection
-        results = model(frame, verbose=False)
+            detected = any(
+                model.names[int(cls)] == "om_la_inec" for cls in results[0].boxes.cls
+            )
+            detection_status["detected"] = detected
 
-        # Draw results
-        result_frame = results[0].plot()
+            if detected and not popup_triggered and not alarm_active:
+                print("[INFO] Detecție activată!")
+                popup_triggered = True
 
-        # Check if class 'om_la_inec' was detected
-        detected = any(
-            model.names[int(cls)] == "om_la_inec" for cls in results[0].boxes.cls
-        )
-
-        detection_status["detected"] = detected
-
-        if detected and not popup_triggered and not alarm_active:
-            popup_triggered = True
-
-        with lock:
-            output_frame = cv2.cvtColor(result_frame, cv2.COLOR_RGB2BGR)
+            with lock:
+                output_frame = cv2.cvtColor(result_frame, cv2.COLOR_RGB2BGR)
+        except Exception as e:
+            print(f"[ERROR] În detect_objects: {e}")
 
         time.sleep(0.03)  # ~30 FPS
+
 @app.route("/")
 def index():
     return render_template("index.test.servo.html")
@@ -62,26 +61,34 @@ def index():
 @app.route("/video_feed")
 def video_feed():
     def generate():
+        import numpy as np
+        black = np.zeros((480, 640, 3), dtype=np.uint8)
+
         while streaming:
             with lock:
-                if output_frame is None:
+                frame = output_frame if output_frame is not None else black
+                ret, buffer = cv2.imencode(".jpg", frame)
+                if not ret:
+                    print("[WARN] Nu s-a putut encoda frame-ul.")
                     continue
-                ret, buffer = cv2.imencode(".jpg", output_frame)
-                frame = buffer.tobytes()
+                frame_bytes = buffer.tobytes()
             yield (b"--frame\r\n"
-                   b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
-            time.sleep(0.01)
+                   b"Content-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n")
+            time.sleep(0.03)  # 30 FPS real
     return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
+
 
 @app.route("/start_stream")
 def start_stream():
     global streaming
     if not streaming:
+        print("[INFO] Pornește stream-ul...")
         streaming = True
         thread = threading.Thread(target=detect_objects)
         thread.daemon = True
         thread.start()
     return ("", 200)
+
 
 @app.route("/stop_stream")
 def stop_stream():
