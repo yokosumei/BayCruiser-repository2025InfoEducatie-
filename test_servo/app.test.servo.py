@@ -1,22 +1,30 @@
 from flask import Flask, Response
 from ultralytics import YOLO
+from picamera2 import Picamera2
 import cv2
+import numpy as np
+import time
 
 app = Flask(__name__)
 model = YOLO("my_model.pt")
 
+picam2 = Picamera2()
+picam2.configure(picam2.create_video_configuration(main={"size": (640, 480)}))
+picam2.start()
+
 def gen_frames():
-    cap = cv2.VideoCapture(0)
     while True:
-        success, frame = cap.read()
-        if not success:
-            break
+        frame = picam2.capture_array()
         results = model(frame)
-        annotated_frame = results[0].plot()
-        _, buffer = cv2.imencode('.jpg', annotated_frame)
+        annotated = results[0].plot()
+
+        # Convert annotated image (NumPy array) to JPEG
+        ret, buffer = cv2.imencode('.jpg', annotated)
         frame_bytes = buffer.tobytes()
+
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+        time.sleep(0.03)  # ușor delay pentru a reduce încărcarea CPU
 
 @app.route('/video_feed')
 def video_feed():
