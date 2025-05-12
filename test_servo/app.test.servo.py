@@ -1,16 +1,16 @@
+from flask import Flask, render_template
 from gpiozero.pins.pigpio import PiGPIOFactory
 from gpiozero import AngularServo
+from time import sleep
+
+app = Flask(__name__)
 
 factory = PiGPIOFactory()
-servo = AngularServo(18, min_pulse_width=0.0006, max_pulse_width=0.0023, pin_factory=factory)
-
-
-app = Flask(__name__, template_folder="templates", static_folder="static")
-
+servo = AngularServo(18, min_angle=0, max_angle=180, min_pulse_width=0.0006, max_pulse_width=0.0023, pin_factory=factory)
 
 @app.route("/")
 def home():
-    return render_template("index.test.servo.html")
+    return render_template("index.html")
 
 @app.route("/misca")
 def misca_servo():
@@ -18,3 +18,6 @@ def misca_servo():
     sleep(1)
     servo.angle = 0
     return "Servo mișcat!"
+
+if __name__ == "__main__":
+    app.run(debug=True)
