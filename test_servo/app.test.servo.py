@@ -4,7 +4,7 @@ from picamera2 import Picamera2
 import cv2
 import numpy as np
 import time
-
+#no more blue
 app = Flask(__name__)
 model = YOLO("my_model.pt")
 
@@ -15,7 +15,7 @@ picam2.start()
 def gen_frames():
     while True:
         frame = picam2.capture_array()
-        frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2RGB)  # conversie spre RGB
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)  # conv BGR
 
         results = model(frame)
         annotated = results[0].plot()
