@@ -27,15 +27,6 @@ input_shape = input_details[0]['shape']
 input_dtype = input_details[0]['dtype']
 _, input_height, input_width, _ = input_shape
 
-print(f"[INFO] Input shape: {input_shape}, dtype: {input_dtype}")
-print(f"[INFO] Output details:")
-for i, detail in enumerate(output_details):
-    print(f"  {i}: name={detail['name']}, shape={detail['shape']}, dtype={detail['dtype']}")
-
-if len(output_details) != 1:
-    print("[EROARE] Modelul nu are un singur tensor de ieșire. Acest script presupune un model YOLOv8 TFLite convertit cu 1 ieșire.")
-    sys.exit(1)
-
 # === FUNCȚII ===
 def preprocess(frame):
     if frame.shape[2] == 4:
@@ -56,26 +47,53 @@ def run_inference(tensor):
     output_data = interpreter.get_tensor(output_details[0]['index'])[0]
     return output_data
 
+def draw_detections(frame, detections):
+    h, w, _ = frame.shape
+    for det in detections:
+        x, y, width, height, score0, score1 = det
+        conf = max(score0, score1)
+        if conf > CONFIDENCE_THRESHOLD:
+            cls = 0 if score0 > score1 else 1
+
+            # Convert YOLO center format to corners
+            x1 = int((x - width / 2) * w)
+            y1 = int((y - height / 2) * h)
+            x2 = int((x + width / 2) * w)
+            y2 = int((y + height / 2) * h)
+
+            label = f"{CLASSES[cls]}: {conf:.2f}"
+            color = (0, 255, 0) if cls == 0 else (255, 0, 0)
+
+            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+            cv2.putText(frame, label, (x1, y1 - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
 # === INIȚIALIZARE CAMERĂ ===
 picam2 = Picamera2()
 picam2.configure(picam2.create_video_configuration(main={"size": (640, 480)}))
 picam2.start()
 time.sleep(2)
 
-print("[INFO] Pornit cu succes. Se inspectează outputul modelului...")
+print("[INFO] Pornit cu succes. Apasă Q pentru a ieși.")
 
-# === BUCLE PENTRU DEBUG ===
+# === BUCLE PRINCIPAL ===
 try:
-    frame = picam2.capture_array()
-    input_tensor = preprocess(frame)
-    detections = run_inference(input_tensor)
+    while True:
+        frame = picam2.capture_array()
+        input_tensor = preprocess(frame)
+        output_data = run_inference(input_tensor)
 
-    print(f"\n=== DEBUG OUTPUT MODEL ===")
-    print(f"Shape output detections: {detections.shape}")
-    print(f"Exemplu output (primele 5 rânduri):\n{detections[:5]}")
+        # Transpune pentru a avea detecțiile ca (8400, 6)
+        output_data = output_data.T
 
-    print("\n[INFO] Ieșire după debug.")
-    sys.exit(0)
+        # Filtrare doar pe cele cu scor decent
+        filtered = [det for det in output_data if max(det[4], det[5]) > CONFIDENCE_THRESHOLD]
+
+        draw_detections(frame, filtered)
+        cv2.imshow("Detecție YOLOv11s (TFLite)", frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
 except KeyboardInterrupt:
     print("\n[INFO] Oprit manual cu Ctrl+C")
