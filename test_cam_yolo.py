@@ -1,68 +1,54 @@
-from flask import Flask, render_template, Response
 import cv2
 import numpy as np
 import tflite_runtime.interpreter as tflite
 from picamera2 import Picamera2
+import time
 
-app = Flask(__name__)
+# === CONFIG ===
+MODEL_PATH = "weights/my_model_final_int8.tflite"
+SCORE_THRESHOLD = 0.5
 
-# Încarcă modelul TFLite
-interpreter = tflite.Interpreter(model_path="weights/my_model_final_in8.tflite")
+# === INIT TFLITE MODEL ===
+interpreter = tflite.Interpreter(model_path=MODEL_PATH)
 interpreter.allocate_tensors()
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
-_, input_height, input_width, _ = input_details[0]['shape']
 
-# Clase
-CLASSES = ["om_la_inec", "inotator"]
-CONFIDENCE_THRESHOLD = 0.5
+# Model input shape (ex: [1, 224, 224, 3])
+input_shape = input_details[0]['shape']
+model_height, model_width = input_shape[1], input_shape[2]
 
-# Cameră
+# === INIT CAMERA ===
 picam2 = Picamera2()
-picam2.configure(picam2.create_video_configuration(main={"size": (640, 480)}))
+picam2.preview_configuration.main.size = (model_width, model_height)
+picam2.preview_configuration.main.format = "RGB888"
+picam2.configure("preview")
 picam2.start()
+time.sleep(1)
 
-def generate_frames():
-    while True:
-        frame = picam2.capture_array()
-        input_image = cv2.resize(frame, (input_width, input_height))
-        input_tensor = np.expand_dims(input_image, axis=0).astype(np.uint8)
+# === PREPROCESS FUNCTION ===
+def preprocess(image):
+    resized = cv2.resize(image, (model_width, model_height))
+    input_data = np.expand_dims(resized, axis=0).astype(np.uint8)
+    return input_data
 
-        interpreter.set_tensor(input_details[0]['index'], input_tensor)
-        interpreter.invoke()
+# === MAIN LOOP ===
+while True:
+    frame = picam2.capture_array()
+    input_data = preprocess(frame)
 
-        boxes = interpreter.get_tensor(output_details[0]['index'])[0]
-        classes = interpreter.get_tensor(output_details[1]['index'])[0]
-        scores = interpreter.get_tensor(output_details[2]['index'])[0]
+    interpreter.set_tensor(input_details[0]['index'], input_data)
+    interpreter.invoke()
 
-        for i in range(len(scores)):
-            if scores[i] > CONFIDENCE_THRESHOLD:
-                ymin, xmin, ymax, xmax = boxes[i]
-                h, w, _ = frame.shape
-                (left, top, right, bottom) = (
-                    int(xmin * w), int(ymin * h),
-                    int(xmax * w), int(ymax * h)
-                )
-                class_id = int(classes[i])
-                label = f"{CLASSES[class_id]}: {scores[i]:.2f}"
-                cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
-                cv2.putText(frame, label, (left, top - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+    # Assume output shape: [1, num_detections, 6] -> [x1, y1, x2, y2, score, class_id]
+    output_data = interpreter.get_tensor(output_details[0]['index'])[0]
 
-        _, buffer = cv2.imencode('.jpg', frame)
-        frame = buffer.tobytes()
+    for detection in output_data:
+        x1, y1, x2, y2, score, class_id = detection
+        if score < SCORE_THRESHOLD:
+            continue
 
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-@app.route('/video_feed')
-def video_feed():
-    return Response(generate_frames(),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+        # Scale bbox to frame size
+        x1 = int(x1 * frame.shape[1])
+        y1 = int(y1 * frame.shape[0])
+        x2 = int(x2
