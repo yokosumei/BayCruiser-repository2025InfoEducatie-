@@ -44,7 +44,6 @@ def gen():
         detections = run_inference(frame)
 
         for det in detections[0]:
-            # Detectăm dacă array-ul are formatul așteptat
             if det[4] < 0.5:
                 continue
             x, y, w, h, conf, cls = det[:6]
@@ -54,12 +53,12 @@ def gen():
             x2 = int(x + w / 2)
             y2 = int(y + h / 2)
 
-            # Desenăm box + label
+            # Draw bounding box
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
             cv2.putText(frame, f"{int(cls)} {conf:.2f}", (x1, y1 - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-        # Codificare JPEG
+        # Encode frame to JPEG
         ret, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
         if not ret:
             continue
