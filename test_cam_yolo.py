@@ -1,87 +1,54 @@
-from flask import Flask, render_template, Response
-from picamera2 import Picamera2
 import cv2
 import numpy as np
 import tflite_runtime.interpreter as tflite
+from picamera2 import Picamera2
+import time
 
-# Flask app
-app = Flask(__name__)
-
-# Initialize camera
-picam2 = Picamera2()
-picam2.configure(picam2.create_video_configuration(main={"size": (320, 240)}))
-picam2.start()
-
-# Load TFLite model
-interpreter = tflite.Interpreter(model_path="my_model_final_int8.tflite")
+# Încarcă modelul TFLite
+interpreter = tflite.Interpreter(model_path="weights/my_model_final.tflite")
 interpreter.allocate_tensors()
 
-# Get model input/output details
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
-input_shape = input_details[0]['shape']
+_, input_height, input_width, _ = input_details[0]['shape']
 
-# Preprocess + inference
-def run_inference(frame):
-    image_resized = cv2.resize(frame, (input_shape[2], input_shape[1]))
-    input_data = np.expand_dims(image_resized, axis=0)
+# Etichete personalizate
+CLASSES = ["om_la_inec", "inotator"]
+CONFIDENCE_THRESHOLD = 0.5
 
-    # Detect model type: quantizat sau float
-    if input_details[0]['dtype'] == np.float32:
-        input_data = input_data.astype(np.float32) / 255.0
-    else:
-        input_data = input_data.astype(np.uint8)
+# Initializează camera
+picam2 = Picamera2()
+picam2.configure(picam2.create_video_configuration(main={"size": (640, 480)}))
+picam2.start()
 
-    interpreter.set_tensor(input_details[0]['index'], input_data)
+while True:
+    frame = picam2.capture_array()
+    input_image = cv2.resize(frame, (input_width, input_height))
+    input_tensor = np.expand_dims(input_image, axis=0).astype(np.uint8)
+
+    interpreter.set_tensor(input_details[0]['index'], input_tensor)
     interpreter.invoke()
-    output_data = interpreter.get_tensor(output_details[0]['index'])
-    return output_data
 
-# Generator video
-def gen():
-    while True:
-        frame = picam2.capture_array()
-        detections = run_inference(frame)
+    boxes = interpreter.get_tensor(output_details[0]['index'])[0]
+    classes = interpreter.get_tensor(output_details[1]['index'])[0]
+    scores = interpreter.get_tensor(output_details[2]['index'])[0]
 
-        for det in detections[0]:
-            if det[4] < 0.5:
-                continue
-            x, y, w, h, conf, cls = det[:6]
-
-            x1 = int(x - w / 2)
-            y1 = int(y - h / 2)
-            x2 = int(x + w / 2)
-            y2 = int(y + h / 2)
-
-            # Draw bounding box
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(frame, f"{int(cls)} {conf:.2f}", (x1, y1 - 10),
+    for i in range(len(scores)):
+        if scores[i] > CONFIDENCE_THRESHOLD:
+            ymin, xmin, ymax, xmax = boxes[i]
+            h, w, _ = frame.shape
+            (left, top, right, bottom) = (
+                int(xmin * w), int(ymin * h),
+                int(xmax * w), int(ymax * h)
+            )
+            label = f"{CLASSES[int(classes[i])]}: {scores[i]:.2f}"
+            cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+            cv2.putText(frame, label, (left, top - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-        # Encode frame to JPEG
-        ret, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
-        if not ret:
-            continue
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes() + b'\r\n\r\n')
+    cv2.imshow("Test Camera YOLOv11s", frame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
 
-# Flask routes
-@app.route('/')
-def index():
-    return '''
-    <html>
-        <head><title>YOLOv11s TFLite Stream</title></head>
-        <body>
-            <h1>Live Feed cu Detecție</h1>
-            <img src="/video_feed" width="640" height="480">
-        </body>
-    </html>
-    '''
-
-@app.route('/video_feed')
-def video_feed():
-    return Response(gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-# Run app
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+cv2.destroyAllWindows()
+picam2.stop()
