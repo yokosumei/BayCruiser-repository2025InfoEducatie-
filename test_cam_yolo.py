@@ -3,79 +3,112 @@ import numpy as np
 import tflite_runtime.interpreter as tflite
 from picamera2 import Picamera2
 import time
+import os
+import sys
 
-# === Configurări ===
-MODEL_PATH = "model.tflite"
-INPUT_SIZE = (640, 640)
-CLASSES = ["fara_inec", "om_la_inec"]
+# === CONFIG ===
+MODEL_PATH = "weights/my_model_final_int8.tflite"
+CLASSES = ["om_la_inec", "inotator"]
 CONFIDENCE_THRESHOLD = 0.5
 
-# === Inițializare cameră ===
-picam2 = Picamera2()
-picam2.preview_configuration.main.size = INPUT_SIZE
-picam2.preview_configuration.main.format = "RGB888"
-picam2.configure("preview")
-picam2.start()
+# === VERIFICARE EXISTENȚĂ MODEL ===
+if not os.path.exists(MODEL_PATH):
+    print(f"[EROARE] Modelul nu există la: {MODEL_PATH}")
+    sys.exit(1)
 
-# === Încărcare model TFLite ===
+# === ÎNCARCĂ MODELUL TFLITE ===
 interpreter = tflite.Interpreter(model_path=MODEL_PATH)
 interpreter.allocate_tensors()
+
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
 
-# === Funcție preprocesare imagine ===
-def preprocess(frame):
-    resized = cv2.resize(frame, INPUT_SIZE)
-    normalized = resized / 255.0
-    input_tensor = np.expand_dims(normalized.astype(np.float32), axis=0)
-    return input_tensor
+input_shape = input_details[0]['shape']
+input_dtype = input_details[0]['dtype']
+_, input_height, input_width, _ = input_shape
 
-# === Funcție rulare inferență ===
+print(f"[INFO] Input shape: {input_shape}, dtype: {input_dtype}")
+print(f"[INFO] Output shape: {output_details[0]['shape']}")
+
+# === FUNCȚII ===
+def preprocess(frame):
+    if frame.shape[2] == 4:
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2RGB)
+    image = cv2.resize(frame, (input_width, input_height))
+    if input_dtype == np.float32:
+        tensor = np.expand_dims(image, axis=0).astype(np.float32) / 255.0
+    elif input_dtype == np.uint8:
+        tensor = np.expand_dims(image, axis=0).astype(np.uint8)
+    else:
+        raise ValueError(f"Tip de input nesuportat: {input_dtype}")
+    return tensor
+
 def run_inference(tensor):
     interpreter.set_tensor(input_details[0]['index'], tensor)
     interpreter.invoke()
-    output_data = interpreter.get_tensor(output_details[0]['index'])[0]  # shape: (6, 8400)
-    output_data = np.transpose(output_data)  # shape: (8400, 6)
+    output_data = interpreter.get_tensor(output_details[0]['index'])[0]
     return output_data
 
-# === Funcție desenare detecții ===
-def draw_detections(frame, detections):
-    h, w, _ = frame.shape
-    for det in detections:
-        x, y, width, height, score0, score1 = det
-        conf = max(score0, score1)
+def postprocess(output_data, original_shape):
+    h, w, _ = original_shape
+    predictions = []
+
+    output_data = output_data.T  # (8400, 6)
+    for det in output_data:
+        x, y, w_box, h_box, conf, cls_id = det
         if conf > CONFIDENCE_THRESHOLD:
-            cls = 0 if score0 > score1 else 1
+            x1 = (x - w_box / 2)
+            y1 = (y - h_box / 2)
+            x2 = (x + w_box / 2)
+            y2 = (y + h_box / 2)
 
-            x1 = int((x - width / 2) * w)
-            y1 = int((y - height / 2) * h)
-            x2 = int((x + width / 2) * w)
-            y2 = int((y + height / 2) * h)
+            # Normalize la dimensiunea originală
+            predictions.append([
+                x1, y1, x2, y2,
+                conf, cls_id
+            ])
+    return predictions
 
-            label = f"{CLASSES[cls]}: {conf:.2f}"
-            color = (0, 255, 0) if cls == 0 else (0, 0, 255)
+def draw_detections(frame, predictions):
+    h, w, _ = frame.shape
+    for det in predictions:
+        x1, y1, x2, y2, conf, cls = det
+        left = int(x1 * w)
+        top = int(y1 * h)
+        right = int(x2 * w)
+        bottom = int(y2 * h)
+        class_id = int(cls)
+        label = f"{CLASSES[class_id]}: {conf:.2f}"
 
-            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-            cv2.putText(frame, label, (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+        cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+        cv2.putText(frame, label, (left, top - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-# === Main loop ===
+# === INIȚIALIZARE CAMERĂ ===
+picam2 = Picamera2()
+picam2.configure(picam2.create_video_configuration(main={"size": (640, 480)}))
+picam2.start()
+time.sleep(2)
+
+print("[INFO] Pornit cu succes. Apasă Q pentru a ieși.")
+
+# === BUCLE PRINCIPAL ===
 try:
     while True:
         frame = picam2.capture_array()
         input_tensor = preprocess(frame)
-        detections = run_inference(input_tensor)
-        filtered = [d for d in detections if max(d[4], d[5]) > CONFIDENCE_THRESHOLD]
+        raw_output = run_inference(input_tensor)
+        predictions = postprocess(raw_output, frame.shape)
+        draw_detections(frame, predictions)
 
-        draw_detections(frame, filtered)
-        cv2.imshow("Detecție YOLOv11s (TFLite)", frame)
-
+        cv2.imshow("YOLOv11s TFLite Live", frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
 except KeyboardInterrupt:
-    print("[INFO] Întrerupt de utilizator.")
+    print("\n[INFO] Oprit manual cu Ctrl+C")
 
 finally:
-    cv2.destroyAllWindows()
     picam2.stop()
+    cv2.destroyAllWindows()
+    print("[INFO] Închidere completă.")
