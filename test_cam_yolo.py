@@ -20,8 +20,10 @@ interpreter.allocate_tensors()
 input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
 _, input_height, input_width, _ = input_details[0]['shape']
+input_dtype = input_details[0]['dtype']
+print(f"Modelul așteaptă input de tip: {input_dtype}")
 
-# Etichete personalizate
+# Etichete
 CLASSES = ["om_la_inec", "inotator"]
 CONFIDENCE_THRESHOLD = 0.5
 
@@ -32,7 +34,15 @@ picam2.start()
 
 def preprocess_frame(frame):
     input_image = cv2.resize(frame, (input_width, input_height))
-    input_tensor = np.expand_dims(input_image, axis=0).astype(np.uint8)
+
+    if input_dtype == np.float32:
+        input_tensor = np.expand_dims(input_image, axis=0).astype(np.float32)
+        input_tensor /= 255.0  # normalize to [0, 1]
+    elif input_dtype == np.uint8:
+        input_tensor = np.expand_dims(input_image, axis=0).astype(np.uint8)
+    else:
+        raise ValueError(f"Tip de input nesuportat: {input_dtype}")
+
     return input_tensor
 
 def run_inference(input_tensor):
