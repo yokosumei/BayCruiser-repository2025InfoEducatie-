@@ -1,53 +1,88 @@
 from flask import Flask, render_template, Response
 from picamera2 import Picamera2
-import numpy as np
 import cv2
-from ultralytics import YOLO
+import numpy as np
+import tflite_runtime.interpreter as tflite
 
-# Inițializăm aplicația Flask
+# Flask app
 app = Flask(__name__)
 
-# Inițializare model YOLO11s
-model = YOLO("my_model.pt")  # Folosește fișierul tău my_model.pt
-
-# Inițializare Picamera2
+# Initialize camera
 picam2 = Picamera2()
-picam2.configure(picam2.create_video_configuration())  # Configurăm pentru video continuu
+picam2.configure(picam2.create_video_configuration(main={"size": (320, 240)}))
+picam2.start()
 
-# Funcție pentru a captura frame-uri din camera Raspberry Pi
+# Load TFLite model
+interpreter = tflite.Interpreter(model_path="my_model_final_int8.tflite")
+interpreter.allocate_tensors()
+
+# Get model input/output details
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
+input_shape = input_details[0]['shape']
+
+# Preprocess + inference
+def run_inference(frame):
+    image_resized = cv2.resize(frame, (input_shape[2], input_shape[1]))
+    input_data = np.expand_dims(image_resized, axis=0)
+
+    # Detect model type: quantizat sau float
+    if input_details[0]['dtype'] == np.float32:
+        input_data = input_data.astype(np.float32) / 255.0
+    else:
+        input_data = input_data.astype(np.uint8)
+
+    interpreter.set_tensor(input_details[0]['index'], input_data)
+    interpreter.invoke()
+    output_data = interpreter.get_tensor(output_details[0]['index'])
+    return output_data
+
+# Generator video
 def gen():
     while True:
-        frame = picam2.capture_array()  # Capturăm un frame
-        results = model(frame)  # Aplicăm detectarea YOLO
+        frame = picam2.capture_array()
+        detections = run_inference(frame)
 
-        # Obținem coordonatele box-urilor detectate
-        for result in results.xywh[0]:
-            x, y, w, h, conf, cls = result
-            if conf > 0.5:  # Filtrăm box-urile cu o confidență mică
-                cv2.rectangle(frame, (int(x - w/2), int(y - h/2)), 
-                              (int(x + w/2), int(y + h/2)), (0, 255, 0), 2)
-                cv2.putText(frame, f"{model.names[int(cls)]} {conf:.2f}", 
-                            (int(x - w/2), int(y - h/2) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, 
-                            (0, 255, 0), 2)
+        for det in detections[0]:
+            # Detectăm dacă array-ul are formatul așteptat
+            if det[4] < 0.5:
+                continue
+            x, y, w, h, conf, cls = det[:6]
 
-        # Codificăm frame-ul în format JPEG
-        ret, jpeg = cv2.imencode('.jpg', frame)
+            x1 = int(x - w / 2)
+            y1 = int(y - h / 2)
+            x2 = int(x + w / 2)
+            y2 = int(y + h / 2)
+
+            # Desenăm box + label
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.putText(frame, f"{int(cls)} {conf:.2f}", (x1, y1 - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+        # Codificare JPEG
+        ret, jpeg = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
         if not ret:
             continue
-        # Trimitem frame-ul codificat în browser
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes() + b'\r\n\r\n')
 
-# Ruta pentru pagina principală
+# Flask routes
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return '''
+    <html>
+        <head><title>YOLOv11s TFLite Stream</title></head>
+        <body>
+            <h1>Live Feed cu Detecție</h1>
+            <img src="/video_feed" width="640" height="480">
+        </body>
+    </html>
+    '''
 
-# Ruta pentru a trimite stream-ul video
 @app.route('/video_feed')
 def video_feed():
     return Response(gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+# Run app
 if __name__ == '__main__':
-    picam2.start()  # Începem capturarea video
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000)
