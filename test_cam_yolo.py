@@ -33,6 +33,10 @@ picam2.configure(picam2.create_video_configuration(main={"size": (640, 480)}))
 picam2.start()
 
 def preprocess_frame(frame):
+    # Elimină canalul alfa dacă există (RGBA -> RGB)
+    if frame.shape[2] == 4:
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2RGB)
+
     input_image = cv2.resize(frame, (input_width, input_height))
 
     if input_dtype == np.float32:
