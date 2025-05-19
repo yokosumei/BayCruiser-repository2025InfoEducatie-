@@ -56,45 +56,26 @@ def run_inference(tensor):
     output_data = interpreter.get_tensor(output_details[0]['index'])[0]
     return output_data
 
-def draw_detections(frame, predictions):
-    h, w, _ = frame.shape
-    for det in predictions:
-        x1, y1, x2, y2, conf, cls = det
-        if conf > CONFIDENCE_THRESHOLD:
-            left = int(x1 * w)
-            top = int(y1 * h)
-            right = int(x2 * w)
-            bottom = int(y2 * h)
-            class_id = int(cls)
-            label = f"{CLASSES[class_id]}: {conf:.2f}"
-
-            cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
-            cv2.putText(frame, label, (left, top - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-
 # === INIȚIALIZARE CAMERĂ ===
 picam2 = Picamera2()
 picam2.configure(picam2.create_video_configuration(main={"size": (640, 480)}))
 picam2.start()
 time.sleep(2)
 
-print("[INFO] Pornit cu succes. Apasă Q pentru a ieși.")
+print("[INFO] Pornit cu succes. Se inspectează outputul modelului...")
 
-# === BUCLE PRINCIPAL ===
+# === BUCLE PENTRU DEBUG ===
 try:
-    while True:
-        frame = picam2.capture_array()
-        input_tensor = preprocess(frame)
-        detections = run_inference(input_tensor)
+    frame = picam2.capture_array()
+    input_tensor = preprocess(frame)
+    detections = run_inference(input_tensor)
 
-        # Verificare dacă detectăm ceva
-        if detections.shape[0] > 0:
-            draw_detections(frame, detections)
+    print(f"\n=== DEBUG OUTPUT MODEL ===")
+    print(f"Shape output detections: {detections.shape}")
+    print(f"Exemplu output (primele 5 rânduri):\n{detections[:5]}")
 
-        cv2.imshow("Detecție YOLOv8 (TFLite)", frame)
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+    print("\n[INFO] Ieșire după debug.")
+    sys.exit(0)
 
 except KeyboardInterrupt:
     print("\n[INFO] Oprit manual cu Ctrl+C")
@@ -103,4 +84,3 @@ finally:
     picam2.stop()
     cv2.destroyAllWindows()
     print("[INFO] Închidere completă.")
-
