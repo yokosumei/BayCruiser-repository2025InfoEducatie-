@@ -21,9 +21,9 @@ input_details = interpreter.get_input_details()
 output_details = interpreter.get_output_details()
 _, input_height, input_width, _ = input_details[0]['shape']
 input_dtype = input_details[0]['dtype']
-print(f"Modelul așteaptă input de tip: {input_dtype}")
+print(f"[INFO] Modelul așteaptă input de tip: {input_dtype}")
 
-# Etichete
+# Etichete clase
 CLASSES = ["om_la_inec", "inotator"]
 CONFIDENCE_THRESHOLD = 0.5
 
@@ -32,16 +32,18 @@ picam2 = Picamera2()
 picam2.configure(picam2.create_video_configuration(main={"size": (640, 480)}))
 picam2.start()
 
+# === Preprocesare imagine ===
 def preprocess_frame(frame):
-    # Elimină canalul alfa dacă există (RGBA -> RGB)
+    # Dacă are 4 canale (RGBA), transformă în RGB
     if frame.shape[2] == 4:
         frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2RGB)
 
+    # Redimensionare
     input_image = cv2.resize(frame, (input_width, input_height))
 
     if input_dtype == np.float32:
         input_tensor = np.expand_dims(input_image, axis=0).astype(np.float32)
-        input_tensor /= 255.0  # normalize to [0, 1]
+        input_tensor /= 255.0
     elif input_dtype == np.uint8:
         input_tensor = np.expand_dims(input_image, axis=0).astype(np.uint8)
     else:
@@ -49,6 +51,7 @@ def preprocess_frame(frame):
 
     return input_tensor
 
+# === Inference ===
 def run_inference(input_tensor):
     interpreter.set_tensor(input_details[0]['index'], input_tensor)
     interpreter.invoke()
@@ -58,6 +61,7 @@ def run_inference(input_tensor):
     scores = interpreter.get_tensor(output_details[2]['index'])[0]
     return boxes, classes, scores
 
+# === Desenează detecțiile ===
 def draw_detections(frame, boxes, classes, scores):
     h, w, _ = frame.shape
     for i in range(len(scores)):
@@ -72,15 +76,7 @@ def draw_detections(frame, boxes, classes, scores):
             cv2.putText(frame, label, (left, top - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-@app.route('/video_feed')
-def video_feed():
-    return Response(generate_frames(),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
-
+# === Stream video către browser ===
 def generate_frames():
     while True:
         frame = picam2.capture_array()
@@ -94,8 +90,19 @@ def generate_frames():
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/video_feed')
+def video_feed():
+    return Response(generate_frames(),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+# === Rulează aplicația ===
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
 
+# === Cleanup ===
 cv2.destroyAllWindows()
 picam2.stop()
