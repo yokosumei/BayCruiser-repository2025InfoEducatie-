@@ -1,85 +1,135 @@
-import cv2
-import numpy as np
-import tflite_runtime.interpreter as tflite
+from flask import Flask, render_template, Response, jsonify
+from ultralytics import YOLO
 from picamera2 import Picamera2
-from time import sleep
-from gpiozero import AngularServo
+import cv2
+import threading
+import time
+import RPi.GPIO as GPIO
 
-# Config
-MODEL_PATH = "weights/my_model_final_int8.tflite"
-CLASSES = ["om_la_inec", "inotator"]
-CONFIDENCE_THRESHOLD = 0.5
+app = Flask(__name__)
 
-# Servo
-servo = AngularServo(18, min_pulse_width=0.0006, max_pulse_width=0.0023)
-servo_activated = False
+# YOLOv8 modelul tău (schimbă dacă ai altul)
+model = YOLO("yolo11s.pt")
 
-# TFLite
-interpreter = tflite.Interpreter(model_path=MODEL_PATH)
-interpreter.allocate_tensors()
-input_details = interpreter.get_input_details()
-output_details = interpreter.get_output_details()
-input_shape = input_details[0]['shape']
-input_dtype = input_details[0]['dtype']
-_, input_height, input_width, _ = input_shape
-
-# Cameră
+# Camera & servo setup
 picam2 = Picamera2()
-picam2.configure(picam2.create_video_configuration(main={"size": (640, 480)}))
-picam2.start()
-sleep(2)
+picam2.configure(picam2.create_preview_configuration(main={"format": 'XRGB8888', "size": (640, 480)}))
 
-# Funcții
-def preprocess(frame):
-    image = cv2.resize(frame, (input_width, input_height))
-    if input_dtype == np.float32:
-        return np.expand_dims(image, axis=0).astype(np.float32) / 255.0
-    elif input_dtype == np.uint8:
-        return np.expand_dims(image, axis=0).astype(np.uint8)
+# GPIO pentru servo
+SERVO_PIN = 17
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(SERVO_PIN, GPIO.OUT)
+servo = GPIO.PWM(SERVO_PIN, 50)
+servo.start(0)
 
-def postprocess(output_data, original_shape):
-    output_data = output_data.reshape((6, 8400)).T  # (8400, 6)
-    h, w, _ = original_shape
-    predictions = []
-    for x, y, w_box, h_box, conf, cls_id in output_data:
-        if conf > CONFIDENCE_THRESHOLD:
-            x1 = int((x - w_box/2) * w)
-            y1 = int((y - h_box/2) * h)
-            x2 = int((x + w_box/2) * w)
-            y2 = int((y + h_box/2) * h)
-            predictions.append((x1, y1, x2, y2, float(conf), int(cls_id)))
-    return predictions
+# Variabile globale
+streaming = False
+output_frame = None
+lock = threading.Lock()
+detection_flag = False
 
-def draw_detections(frame, detections):
-    global servo_activated
-    for x1, y1, x2, y2, conf, cls_id in detections:
-        label = f"{CLASSES[cls_id]} {conf:.2f}"
-        cv2.rectangle(frame, (x1, y1), (x2, y2), (0,255,0), 2)
-        cv2.putText(frame, label, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
 
-        if CLASSES[cls_id] == "om_la_inec" and not servo_activated:
-            print("[ACTIVARE SERVO]")
-            servo.angle = 110
-            sleep(1)
-            servo.angle = 90
-            sleep(1)
-            servo_activated = True
+def move_servo(angle):
+    duty = angle / 18 + 2.5
+    GPIO.output(SERVO_PIN, True)
+    servo.ChangeDutyCycle(duty)
+    time.sleep(0.5)
+    GPIO.output(SERVO_PIN, False)
+    servo.ChangeDutyCycle(0)
 
-# Loop principal
-print("[INFO] Apasă Q pentru a ieși.")
-try:
-    while True:
+
+def detect():
+    global output_frame, detection_flag, streaming
+
+    picam2.start()
+
+    while streaming:
         frame = picam2.capture_array()
-        input_tensor = preprocess(frame)
-        interpreter.set_tensor(input_details[0]['index'], input_tensor)
-        interpreter.invoke()
-        output_data = interpreter.get_tensor(output_details[0]['index'])[0]
-        detections = postprocess(output_data, frame.shape)
-        draw_detections(frame, detections)
+        results = model.predict(source=frame, show=False, stream=False, conf=0.5)
 
-        cv2.imshow("TFLite YOLOv11s", frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-finally:
+        if results:
+            result = results[0]
+            annotated_frame = result.plot()
+
+            # Verifică dacă obiectul "om_la_inec" este detectat
+            detection_flag = False
+            for cls in result.names:
+                if result.names[cls] == "om_la_inec":
+                    detection_flag = True
+                    break
+        else:
+            annotated_frame = frame
+            detection_flag = False
+
+        with lock:
+            output_frame = cv2.cvtColor(annotated_frame, cv2.COLOR_RGB2BGR)
+
     picam2.stop()
-    cv2.destroyAllWindows()
+
+
+def generate_frames():
+    global output_frame
+    while True:
+        with lock:
+            if output_frame is None:
+                continue
+            ret, buffer = cv2.imencode('.jpg', output_frame)
+            frame = buffer.tobytes()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+
+@app.route('/start_stream')
+def start_stream():
+    global streaming
+    if not streaming:
+        streaming = True
+        t = threading.Thread(target=detect)
+        t.daemon = True
+        t.start()
+    return ('', 204)
+
+
+@app.route('/stop_stream')
+def stop_stream():
+    global streaming
+    streaming = False
+    return ('', 204)
+
+
+@app.route('/video_feed')
+def video_feed():
+    return Response(generate_frames(),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+@app.route('/detection_status')
+def detection_status():
+    return jsonify({"detected": detection_flag})
+
+
+@app.route('/misca')
+def misca():
+    move_servo(110)
+    return "Servomotorul s-a mișcat la 110°!"
+
+
+@app.route('/shutdown', methods=['POST'])
+def shutdown():
+    global streaming
+    streaming = False
+    servo.stop()
+    GPIO.cleanup()
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func:
+        func()
+    return "Server oprit."
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
