@@ -1,8 +1,7 @@
-flask
-flask-cors
-picamera2
-opencv-python==4.6.0.66
-numpy
-gpiozero
-tflite-runtime==2.5.0
+flask==3.0.2
+ultralytics==8.1.37
+numpy==1.26.4
+opencv-python==4.9.0.80
+picamera2 @ git+https://github.com/raspberrypi/picamera2.git
+RPi.GPIO==0.7.1
 dronekit
