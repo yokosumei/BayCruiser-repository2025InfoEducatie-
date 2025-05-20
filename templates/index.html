@@ -1,10 +1,196 @@
 <!DOCTYPE html>
-<html>
+<html lang="ro">
 <head>
-    <title>Live YOLOv11s Stream</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>kITTY</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
+  <style>
+    /* Include aici CSS-ul tău din fișierul anterior */
+    /* ... (păstrează tot CSS-ul din mesajul tău, e perfect) ... */
+  </style>
 </head>
 <body>
-    <h1>Feed Camera cu Detectie</h1>
-    <img src="{{ url_for('video_feed') }}" width="640" height="480">
+
+  <header>
+    <h1>Pagina de control</h1>
+  </header>
+
+  <main class="main-layout">
+    <!-- Sidebar -->
+    <aside id="sidebar">
+      <div class="tab-container">
+        <button class="tab-button" onclick="toggleTab('info')">Info</button>
+        <button class="tab-button" onclick="toggleTab('scop')">Scop</button>
+        <button class="tab-button" onclick="toggleTab('alte butoane')">Butoane+</button>
+      </div>
+      <div class="tab-content-wrapper" id="tabContent">
+        <div id="info" class="tab-content">
+          <p>Aceasta pagina este conceputa ca o punte dintre drona si salvamar</p>
+          <p>more info idkFEATURES ig</p>
+        </div>
+        <div id="scop" class="tab-content">
+          <p>Drona ajută salvamarii să intervină rapid pe mare, oferind un colac victimei.</p>
+        </div>
+        <div id="alte butoane" class="tab-content">
+          <p>probabil aici sunt alte butoane idk</p>
+          <button class="idk buton" onclick="alert('nu stiu ce face')">buton</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Articol video stream -->
+    <article class="custom-article">
+      <h2>Live YOLO Stream</h2>
+      <div class="stream-wrapper">
+        <img id="yoloStream" src="" width="640" height="480" style="display: none;" />
+      </div>
+    </article>
+  </main>
+
+  <!-- Butoane sub articol -->
+  <div class="stream-controls">
+    <button onclick="displayServoMessage()">Misca servo</button>
+    <button onclick="startStream()">Start Stream</button>
+    <button onclick="stopStream()">Stop Stream</button>
+  </div>
+
+  <footer>
+    <p>Pagina creata in scopul concursului IndoEducatie</p>
+  </footer>
+
+  <script>
+    let canShowMessage = true;
+    let streamActive = false;
+
+    function startStream() {
+      fetch('/start_stream')
+        .then(() => {
+          const stream = document.getElementById("yoloStream");
+          stream.src = "/video_feed";
+          stream.style.display = "block";
+          streamActive = true;
+        })
+        .catch(err => console.error("Eroare pornire stream:", err));
+    }
+
+    function stopStream() {
+      fetch('/stop_stream')
+        .then(() => {
+          const stream = document.getElementById("yoloStream");
+          stream.src = "";
+          stream.style.display = "none";
+          streamActive = false;
+        })
+        .catch(err => console.error("Eroare oprire stream:", err));
+    }
+
+    function toggleTab(tabId) {
+      const contents = document.querySelectorAll('.tab-content');
+      const buttons = document.querySelectorAll('.tab-button');
+      const container = document.getElementById('tabContent');
+
+      let isAlreadyOpen = false;
+
+      contents.forEach(content => {
+        if (content.id === tabId && content.classList.contains('active')) {
+          isAlreadyOpen = true;
+        }
+        content.classList.remove('active');
+      });
+
+      buttons.forEach(btn => btn.classList.remove('active'));
+
+      if (isAlreadyOpen) {
+        container.classList.remove('active');
+        return;
+      }
+
+      document.getElementById(tabId).classList.add('active');
+      container.classList.add('active');
+
+      const activeButton = Array.from(buttons).find(btn => btn.textContent.toLowerCase() === tabId.toLowerCase());
+      if (activeButton) activeButton.classList.add('active');
+    }
+
+    function displayMessage() {
+      if (!canShowMessage) return;
+
+      const panel = document.createElement("div");
+      panel.className = "msgBox";
+
+      const question = document.createElement("p");
+      question.textContent = "Alarmă falsă?";
+      panel.appendChild(question);
+
+      const btnContainer = document.createElement("div");
+      btnContainer.className = "btnContainer";
+
+      const daBtn = document.createElement("button");
+      daBtn.textContent = "DA";
+      daBtn.onclick = () => {
+        fetch("/misca")
+          .then(response => response.text())
+          .then(data => {
+            showResponse("Servomotorul a fost mișcat la 110°.");
+          })
+          .catch(error => {
+            showResponse("Eroare la mișcarea servomotorului.");
+            console.error("Eroare:", error);
+          });
+        panel.remove();
+        canShowMessage = false;
+      };
+
+      const nuBtn = document.createElement("button");
+      nuBtn.textContent = "NU";
+      nuBtn.onclick = () => {
+        showResponse("Alarmă ignorată.");
+        panel.remove();
+        canShowMessage = false;
+      };
+
+      btnContainer.appendChild(daBtn);
+      btnContainer.appendChild(nuBtn);
+      panel.appendChild(btnContainer);
+
+      document.body.appendChild(panel);
+    }
+
+    function showResponse(msg) {
+      const responsePanel = document.createElement("div");
+      responsePanel.className = "responseBox";
+      responsePanel.textContent = msg;
+      document.body.appendChild(responsePanel);
+      setTimeout(() => responsePanel.remove(), 2000);
+    }
+
+    function displayServoMessage() {
+      fetch("/misca")
+        .then(response => response.text())
+        .then(data => {
+          showResponse("Servomotorul a fost mișcat manual.");
+        })
+        .catch(error => {
+          showResponse("Eroare la mișcarea servomotorului.");
+          console.error("Eroare:", error);
+        });
+    }
+
+    // Poll pentru detectare
+    setInterval(() => {
+      if (!streamActive || !canShowMessage) return;
+
+      fetch("/detection_status")
+        .then(res => res.json())
+        .then(data => {
+          if (data.detected && canShowMessage) {
+            displayMessage();
+          }
+        })
+        .catch(err => console.warn("Eroare verificare detecție:", err));
+    }, 1000);
+  </script>
+
 </body>
 </html>
