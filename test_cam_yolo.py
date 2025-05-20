@@ -6,7 +6,7 @@ import time
 import os
 import sys
 
-# === CONFIG ===
+# === CONFIG ===Cica e cat de bun codu asta
 MODEL_PATH = "weights/my_model_final_int8.tflite"
 CLASSES = ["om_la_inec", "inotator"]
 CONFIDENCE_THRESHOLD = 0.5
