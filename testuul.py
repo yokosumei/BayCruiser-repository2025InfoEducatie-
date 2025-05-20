@@ -8,7 +8,7 @@ import time
 app = Flask(__name__)
 
 # Încarcă modelul YOLO (yolo11n)
-model = YOLO("yolo11n.pt")  # înlocuiește cu path-ul tău, ex: "models/yolo11n.pt"
+model = YOLO("my_model.pt")  # înlocuiește cu path-ul tău, ex: "models/yolo11n.pt"
 
 # Inițializează camera
 picam2 = Picamera2()
