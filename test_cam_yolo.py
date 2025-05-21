@@ -9,13 +9,12 @@ import time
 app = Flask(__name__)
 
 # Încarcă modelul YOLO
-model = YOLO("my_model.pt")
-
+model = YOLO("my_model.pt")  # sau "yolo11n.pt"
 
 # Servo motor
 servo = AngularServo(18, min_pulse_width=0.0006, max_pulse_width=0.0023)
 
-# Camera config
+# Camera
 picam2 = Picamera2()
 picam2.configure(picam2.create_preview_configuration(main={"format": 'RGB888', "size": (640, 480)}))
 picam2.start()
@@ -26,7 +25,7 @@ lock = threading.Lock()
 streaming = False
 detection_status = {"detected": False}
 
-# Thread pentru detecție
+# Thread de detecție
 def detect_objects():
     global output_frame, streaming, detection_status
     while streaming:
@@ -84,10 +83,13 @@ def get_detection_status():
 
 @app.route("/misca")
 def misca_servo():
-    servo.angle = 110
-    time.sleep(2)
-    servo.angle = 0
-    return "Servo mișcat la 110°"
+    try:
+        servo.angle = 110
+        time.sleep(2)
+        servo.angle = 0
+        return "Servo mișcat la 110°"
+    except Exception as e:
+        return f"Eroare la servo: {str(e)}", 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
