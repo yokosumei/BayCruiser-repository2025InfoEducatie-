@@ -1,39 +1,23 @@
-from flask import Flask, Response
-from ultralytics import YOLO
-from picamera2 import Picamera2
-import cv2
-import numpy as np
-import time
-#no more blue
+from flask import Flask
+from gpiozero import AngularServo
+from time import sleep
+
 app = Flask(__name__)
-model = YOLO("my_model.pt")
 
-picam2 = Picamera2()
-picam2.configure(picam2.create_video_configuration(main={"size": (640, 480)}))
-picam2.start()
+servo1 = AngularServo(18, min_pulse_width=0.0006, max_pulse_width=0.0023)
+servo2 = AngularServo(17, min_pulse_width=0.0006, max_pulse_width=0.0023)
 
-def gen_frames():
-    while True:
-        frame = picam2.capture_array()
-        frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)  # conv BGR
-
-        results = model(frame)
-        annotated = results[0].plot()
-
-        _, buffer = cv2.imencode('.jpg', annotated)
-        frame_bytes = buffer.tobytes()
-
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-
-
-@app.route('/video_feed')
-def video_feed():
-    return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
-@app.route('/')
+@app.route("/")
 def index():
-    return "<h1>YOLO Stream</h1><img src='/video_feed'>"
+    return render_template("index.html")
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+@app.route("misca")
+def activate():
+    servo1.angle = 110
+    servo2.angle = 110
+    sleep(2)
+    servo1.angle = 90
+    servo2.angle = 90
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
