@@ -6,15 +6,20 @@ import threading
 import cv2
 import time
 
+# 🔒 Fix pentru PyTorch 2.6+ (dacă modelul este de încredere)
+import torch
+from ultralytics.nn.tasks import DetectionModel
+torch.serialization.add_safe_globals({'ultralytics.nn.tasks.DetectionModel': DetectionModel})
+
 app = Flask(__name__)
 
-# Încarcă modelul YOLO
+# Modelul YOLO
 model = YOLO("my_model.pt")
 
-# Configurează servomotorul
+# Servo motor
 servo = AngularServo(18, min_pulse_width=0.0006, max_pulse_width=0.0023)
 
-# Configurează camera
+# Camera config
 picam2 = Picamera2()
 picam2.configure(picam2.create_preview_configuration(main={"format": 'RGB888', "size": (640, 480)}))
 picam2.start()
@@ -25,7 +30,7 @@ lock = threading.Lock()
 streaming = False
 detection_status = {"detected": False}
 
-# Funcție de detecție obiecte
+# Thread pentru detecție
 def detect_objects():
     global output_frame, streaming, detection_status
     while streaming:
@@ -41,9 +46,7 @@ def detect_objects():
         with lock:
             output_frame = cv2.cvtColor(result_frame, cv2.COLOR_RGB2BGR)
 
-        time.sleep(0.05)  # ~20 FPS
-
-# Rute Flask
+        time.sleep(0.05)
 
 @app.route("/")
 def index():
@@ -60,7 +63,7 @@ def video_feed():
                 frame = buffer.tobytes()
             yield (b"--frame\r\n"
                    b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
-            time.sleep(0.03)  # ~30 FPS
+            time.sleep(0.03)
     return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
 @app.route("/start_stream")
@@ -90,6 +93,5 @@ def misca_servo():
     servo.angle = 0
     return "Servo mișcat la 110°"
 
-# Pornire aplicație
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
