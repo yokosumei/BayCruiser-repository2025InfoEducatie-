@@ -1,10 +1,6 @@
 <!DOCTYPE html>
-<html lang="en">
 <html lang="en-US">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YOLO Detection</title>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width" />
   <title>kITTY</title>
@@ -30,11 +26,17 @@
       justify-content: center;
       padding: 15px;
     }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
   </style>
 </head>
 <body>
-    <h1>YOLO Detection Stream</h1>
-    <img src="{{ url_for('video_feed') }}" width="640" height="480" />
   <header>
     <h1>Pagina de control</h1>
   </header>
@@ -69,12 +71,12 @@
     <article class="custom-article">
       <h2>Live YOLO Stream</h2>
       <div class="stream-wrapper">
-        <img id="yoloStream" src="" width="640" height="480" style="display: none;" />
+        <img id="yoloStream" src="" width="640" height="480" />
       </div>
     </article>
   </main>
 
-  <!-- Butoanele sub articol, deasupra footerului -->
+  <!-- Butoanele sub articol -->
   <div class="stream-controls">
     <button onclick="displayServoMessage()">Misca servo</button>
     <button onclick="startStream()">Start Stream</button>
@@ -86,5 +88,13 @@
   </footer>
 
   <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+  <script>
+    function toggleTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.getElementById(tabId).classList.add('active');
+    }
+  </script>
 </body>
 </html>
