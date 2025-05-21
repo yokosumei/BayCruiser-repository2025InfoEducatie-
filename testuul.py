@@ -36,29 +36,6 @@ def detect_objects():
 
 @app.route("/")
 def index():
-    return render_template_string("""
-        <!doctype html>
-        <html>
-        <head>
-            <title>YOLO Stream</title>
-            <script>
-                function startStream() {
-                    fetch('/start_stream');
-                }
-                function stopStream() {
-                    fetch('/stop_stream');
-                }
-            </script>
-        </head>
-        <body>
-            <h1>YOLO Stream Control</h1>
-            <img id="video" src="/video_feed" width="640" height="480">
-            <br><br>
-            <button onclick="startStream()">Start Stream</button>
-            <button onclick="stopStream()">Stop Stream</button>
-        </body>
-        </html>
-    """)
 
 @app.route("/video_feed")
 def video_feed():
