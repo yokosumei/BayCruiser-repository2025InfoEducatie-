@@ -6,11 +6,6 @@ import threading
 import cv2
 import time
 
-# ✅ FIX pentru PyTorch 2.6+
-import torch
-import ultralytics.nn.tasks as tasks
-torch.serialization.add_safe_globals({tasks.DetectionModel})  # nu folosi string!
-
 app = Flask(__name__)
 
 # Încarcă modelul YOLO
