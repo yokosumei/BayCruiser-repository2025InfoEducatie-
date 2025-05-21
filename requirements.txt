@@ -1,10 +1,6 @@
-flask==3.0.2
-flask-cors
-ultralytics==8.1.37
-numpy==1.26.4
-opencv-python==4.9.0.80
-picamera2 @ git+https://github.com/raspberrypi/picamera2.git
-RPi.GPIO==0.7.1
+flask
+ultralytics
+opencv-python
+picamera2
 gpiozero
-tflite-runtime
-dronekit
+numpy
