@@ -9,7 +9,7 @@ servo2 = AngularServo(17, min_pulse_width=0.0006, max_pulse_width=0.0023)
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.test.servo.html")
 
 @app.route("misca")
 def activate():
