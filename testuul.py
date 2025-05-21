@@ -34,8 +34,10 @@ def detect_objects():
             output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
         time.sleep(0.05)
 
+
 @app.route("/")
 def index():
+    return render_template("index.html")
 
 @app.route("/video_feed")
 def video_feed():
