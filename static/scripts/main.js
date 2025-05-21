@@ -3,30 +3,15 @@ let canShowMessage = true;
 let streamActive = false;
 
 // === CONTROL STREAM VIDEO ===
-function startStream() {
-  fetch('/start_stream')
-    .then(() => {
-      const stream = document.getElementById("yoloStream");
-      stream.src = "/video_feed";
-      stream.style.display = "block";
-      streamActive = true;
-    })
-    .catch(err => console.error("Eroare pornire stream:", err));
-}
-
-function stopStream() {
-  fetch('/stop_stream')
-    .then(() => {
-      const stream = document.getElementById("yoloStream");
-      stream.src = "";
-      stream.style.display = "none";
-      streamActive = false;
-    })
-    .catch(err => console.error("Eroare oprire stream:", err));
-}
+  function startStream() {
+                    fetch('/start_stream');
+                }
+ function stopStream() {
+                     fetch('/stop_stream');
+                }
 
 // === TABURI ===
-function toggleTab(tabId) {
+     function toggleTab(tabId) {
   const contents = document.querySelectorAll('.tab-content');
   const buttons = document.querySelectorAll('.tab-button');
   const container = document.getElementById('tabContent');
