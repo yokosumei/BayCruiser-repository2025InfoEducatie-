@@ -2,10 +2,10 @@ from flask import Flask, render_template, Response, jsonify
 from ultralytics import YOLO
 from picamera2 import Picamera2
 from gpiozero import AngularServo
+import numpy as np 
 import threading
 import cv2
 import time
-app = Flask(__name__)
 model = YOLO("my_model.pt")
 picam2 = Picamera2()
 picam2.configure(picam2.create_video_configuration(main={"format": "RGB888", "size": (640, 480)}))
@@ -35,6 +35,7 @@ def detect_objects():
 def index():
     return render_template("index.html")
 
+@app.route("/video_feed")  
 def video_feed():
     def generate():
         global output_frame
@@ -43,9 +44,6 @@ def video_feed():
                 time.sleep(0.1)
                 continue
             with lock:
-                if output_frame is None:
-                    continue
-                frame = output_frame
                 frame = output_frame if streaming and output_frame is not None else blank_frame()
             yield (b"--frame\r\n"
                    b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
