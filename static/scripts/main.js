@@ -3,13 +3,21 @@ let canShowMessage = true;
 let streamActive = false;
 
 // === CONTROL STREAM VIDEO ===
-  function startStream() {
-                    fetch('/start_stream');
-                }
- function stopStream() {
-                     fetch('/stop_stream');
-                }
+ function startStream() {
+    fetch('/start_stream')
+        .then(() => {
+            streamActive = true;
+            document.getElementById('video').style.display = 'block';
+        });
+}
 
+function stopStream() {
+    fetch('/stop_stream')
+        .then(() => {
+            streamActive = false;
+            document.getElementById('video').style.display = 'none';
+        });
+}
 // === TABURI ===
      function toggleTab(tabId) {
   const contents = document.querySelectorAll('.tab-content');
