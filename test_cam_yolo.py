@@ -5,60 +5,51 @@ from gpiozero import AngularServo
 import threading
 import cv2
 import time
-
 app = Flask(__name__)
-
-# Încarcă modelul YOLO
-model = YOLO("my_model.pt")  # sau "yolo11n.pt"
-
-# Servo motor
+model = YOLO("my_model.pt")
+picam2 = Picamera2()
+picam2.configure(picam2.create_video_configuration(main={"format": "RGB888", "size": (640, 480)}))
+picam2.start()
+streaming = False
+lock = threading.Lock()
+output_frame = None
+app = Flask(__name__)
 servo = AngularServo(18, min_pulse_width=0.0006, max_pulse_width=0.0023)
 
-# Camera
-picam2 = Picamera2()
-picam2.configure(picam2.create_preview_configuration(main={"format": 'RGB888', "size": (640, 480)}))
-picam2.start()
+def blank_frame():
+    img = np.zeros((480, 640, 3), dtype=np.uint8)
+    _, buffer = cv2.imencode('.jpg', img)
+    return buffer.tobytes()
 
-# Variabile globale
-output_frame = None
-lock = threading.Lock()
-streaming = False
-detection_status = {"detected": False}
-
-# Thread de detecție
 def detect_objects():
-    global output_frame, streaming, detection_status
+    global output_frame, streaming
     while streaming:
         frame = picam2.capture_array()
-
         results = model(frame, verbose=False)
-        result_frame = results[0].plot()
-
-        detection_status["detected"] = any(
-            model.names[int(cls)] == "om_la_inec" for cls in results[0].boxes.cls
-        )
-
+        annotated = results[0].plot()
         with lock:
-            output_frame = cv2.cvtColor(result_frame, cv2.COLOR_RGB2BGR)
-
+            output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
         time.sleep(0.05)
 
 @app.route("/")
 def index():
     return render_template("index.html")
 
-@app.route("/video_feed")
 def video_feed():
     def generate():
-        while streaming:
+        global output_frame
+        while True:
+            if not streaming:
+                time.sleep(0.1)
+                continue
             with lock:
                 if output_frame is None:
                     continue
-                ret, buffer = cv2.imencode(".jpg", output_frame)
-                frame = buffer.tobytes()
+                frame = output_frame
+                frame = output_frame if streaming and output_frame is not None else blank_frame()
             yield (b"--frame\r\n"
                    b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
-            time.sleep(0.03)
+            time.sleep(0.05)
     return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
 @app.route("/start_stream")
@@ -69,17 +60,12 @@ def start_stream():
         thread = threading.Thread(target=detect_objects)
         thread.daemon = True
         thread.start()
-    return ("", 200)
-
+    return jsonify({"status": "started"})
 @app.route("/stop_stream")
 def stop_stream():
     global streaming
     streaming = False
-    return ("", 200)
-
-@app.route("/detection_status")
-def get_detection_status():
-    return jsonify(detection_status)
+    return jsonify({"status": "stopped"})
 
 @app.route("/misca")
 def misca_servo():
