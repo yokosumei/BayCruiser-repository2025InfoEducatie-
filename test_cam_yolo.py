@@ -6,15 +6,16 @@ import threading
 import cv2
 import time
 
-# 🔒 Fix pentru PyTorch 2.6+ (dacă modelul este de încredere)
+# ✅ FIX pentru PyTorch 2.6+
 import torch
-from ultralytics.nn.tasks import DetectionModel
-torch.serialization.add_safe_globals({'ultralytics.nn.tasks.DetectionModel': DetectionModel})
+import ultralytics.nn.tasks as tasks
+torch.serialization.add_safe_globals({tasks.DetectionModel})  # nu folosi string!
 
 app = Flask(__name__)
 
-# Modelul YOLO
+# Încarcă modelul YOLO
 model = YOLO("my_model.pt")
+
 
 # Servo motor
 servo = AngularServo(18, min_pulse_width=0.0006, max_pulse_width=0.0023)
