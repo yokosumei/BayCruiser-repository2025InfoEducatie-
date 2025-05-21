@@ -18,6 +18,12 @@ streaming = False
 lock = threading.Lock()
 output_frame = None
 
+# frame negru ca fallback
+def blank_frame():
+    img = np.zeros((480, 640, 3), dtype=np.uint8)
+    _, buffer = cv2.imencode('.jpg', img)
+    return buffer.tobytes()
+
 def detect_objects():
     global output_frame, streaming
     while streaming:
@@ -57,14 +63,10 @@ def index():
 @app.route("/video_feed")
 def video_feed():
     def generate():
+        global output_frame
         while True:
-            if not streaming:
-                time.sleep(0.1)
-                continue
             with lock:
-                if output_frame is None:
-                    continue
-                frame = output_frame
+                frame = output_frame if streaming and output_frame is not None else blank_frame()
             yield (b"--frame\r\n"
                    b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
             time.sleep(0.05)
