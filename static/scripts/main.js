@@ -1,6 +1,8 @@
+// === VARIABILE DE STARE ===
 let canShowMessage = true;
 let streamActive = false;
 
+// === CONTROL STREAM VIDEO ===
 function startStream() {
   fetch('/start_stream')
     .then(() => {
@@ -23,6 +25,7 @@ function stopStream() {
     .catch(err => console.error("Eroare oprire stream:", err));
 }
 
+// === TABURI ===
 function toggleTab(tabId) {
   const contents = document.querySelectorAll('.tab-content');
   const buttons = document.querySelectorAll('.tab-button');
@@ -47,10 +50,13 @@ function toggleTab(tabId) {
   document.getElementById(tabId).classList.add('active');
   container.classList.add('active');
 
-  const activeButton = Array.from(buttons).find(btn => btn.textContent.toLowerCase() === tabId.toLowerCase());
+  const activeButton = Array.from(buttons).find(
+    btn => btn.textContent.trim().toLowerCase() === tabId.toLowerCase()
+  );
   if (activeButton) activeButton.classList.add('active');
 }
 
+// === POPUP DETECȚIE „om_la_inec” ===
 function displayMessage() {
   if (!canShowMessage) return;
 
@@ -68,13 +74,12 @@ function displayMessage() {
   daBtn.textContent = "DA";
   daBtn.onclick = () => {
     fetch("/misca")
-      .then(response => response.text())
-      .then(data => {
+      .then(res => res.text())
+      .then(() => {
         showResponse("Initiere protocol de salvare.");
       })
-      .catch(error => {
+      .catch(() => {
         showResponse("Eroare la mișcarea servomotorului.");
-        console.error("Eroare:", error);
       });
     panel.remove();
     canShowMessage = false;
@@ -95,6 +100,7 @@ function displayMessage() {
   document.body.appendChild(panel);
 }
 
+// === AFIȘARE MESAJ INFORMATIV TEMPORAR ===
 function showResponse(msg) {
   const responsePanel = document.createElement("div");
   responsePanel.className = "responseBox";
@@ -103,19 +109,19 @@ function showResponse(msg) {
   setTimeout(() => responsePanel.remove(), 2000);
 }
 
+// === COMANDĂ MANUALĂ SERVOMOTOR ===
 function displayServoMessage() {
   fetch("/misca")
-    .then(response => response.text())
-    .then(data => {
+    .then(res => res.text())
+    .then(() => {
       showResponse("Servomotorul a fost mișcat");
     })
-    .catch(error => {
+    .catch(() => {
       showResponse("Eroare la mișcarea servomotorului.");
-      console.error("Eroare:", error);
     });
 }
 
-// Polling detecție obiect
+// === POLLING DETECȚIE AUTOMATĂ ===
 setInterval(() => {
   if (!streamActive || !canShowMessage) return;
 
