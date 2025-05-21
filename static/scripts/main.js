@@ -1,130 +1,130 @@
 let canShowMessage = true;
-    let streamActive = false;
+let streamActive = false;
 
-    function startStream() {
-      fetch('/start_stream')
-        .then(() => {
-          const stream = document.getElementById("yoloStream");
-          stream.src = "/video_feed";
-          stream.style.display = "block";
-          streamActive = true;
-        })
-        .catch(err => console.error("Eroare pornire stream:", err));
+function startStream() {
+  fetch('/start_stream')
+    .then(() => {
+      const stream = document.getElementById("yoloStream");
+      stream.src = "/video_feed";
+      stream.style.display = "block";
+      streamActive = true;
+    })
+    .catch(err => console.error("Eroare pornire stream:", err));
+}
+
+function stopStream() {
+  fetch('/stop_stream')
+    .then(() => {
+      const stream = document.getElementById("yoloStream");
+      stream.src = "";
+      stream.style.display = "none";
+      streamActive = false;
+    })
+    .catch(err => console.error("Eroare oprire stream:", err));
+}
+
+function toggleTab(tabId) {
+  const contents = document.querySelectorAll('.tab-content');
+  const buttons = document.querySelectorAll('.tab-button');
+  const container = document.getElementById('tabContent');
+
+  let isAlreadyOpen = false;
+
+  contents.forEach(content => {
+    if (content.id === tabId && content.classList.contains('active')) {
+      isAlreadyOpen = true;
     }
+    content.classList.remove('active');
+  });
 
-    function stopStream() {
-      fetch('/stop_stream')
-        .then(() => {
-          const stream = document.getElementById("yoloStream");
-          stream.src = "";
-          stream.style.display = "none";
-          streamActive = false;
-        })
-        .catch(err => console.error("Eroare oprire stream:", err));
-    }
+  buttons.forEach(btn => btn.classList.remove('active'));
 
-    function toggleTab(tabId) {
-      const contents = document.querySelectorAll('.tab-content');
-      const buttons = document.querySelectorAll('.tab-button');
-      const container = document.getElementById('tabContent');
+  if (isAlreadyOpen) {
+    container.classList.remove('active');
+    return;
+  }
 
-      let isAlreadyOpen = false;
+  document.getElementById(tabId).classList.add('active');
+  container.classList.add('active');
 
-      contents.forEach(content => {
-        if (content.id === tabId && content.classList.contains('active')) {
-          isAlreadyOpen = true;
-        }
-        content.classList.remove('active');
+  const activeButton = Array.from(buttons).find(btn => btn.textContent.toLowerCase() === tabId.toLowerCase());
+  if (activeButton) activeButton.classList.add('active');
+}
+
+function displayMessage() {
+  if (!canShowMessage) return;
+
+  const panel = document.createElement("div");
+  panel.className = "msgBox";
+
+  const question = document.createElement("p");
+  question.textContent = "Alarmă falsă?";
+  panel.appendChild(question);
+
+  const btnContainer = document.createElement("div");
+  btnContainer.className = "btnContainer";
+
+  const daBtn = document.createElement("button");
+  daBtn.textContent = "DA";
+  daBtn.onclick = () => {
+    fetch("/misca")
+      .then(response => response.text())
+      .then(data => {
+        showResponse("Initiere protocol de salvare.");
+      })
+      .catch(error => {
+        showResponse("Eroare la mișcarea servomotorului.");
+        console.error("Eroare:", error);
       });
+    panel.remove();
+    canShowMessage = false;
+  };
 
-      buttons.forEach(btn => btn.classList.remove('active'));
+  const nuBtn = document.createElement("button");
+  nuBtn.textContent = "NU";
+  nuBtn.onclick = () => {
+    showResponse("Alarmă ignorată.");
+    panel.remove();
+    canShowMessage = false;
+  };
 
-      if (isAlreadyOpen) {
-        container.classList.remove('active');
-        return;
+  btnContainer.appendChild(daBtn);
+  btnContainer.appendChild(nuBtn);
+  panel.appendChild(btnContainer);
+
+  document.body.appendChild(panel);
+}
+
+function showResponse(msg) {
+  const responsePanel = document.createElement("div");
+  responsePanel.className = "responseBox";
+  responsePanel.textContent = msg;
+  document.body.appendChild(responsePanel);
+  setTimeout(() => responsePanel.remove(), 2000);
+}
+
+function displayServoMessage() {
+  fetch("/misca")
+    .then(response => response.text())
+    .then(data => {
+      showResponse("Servomotorul a fost mișcat");
+    })
+    .catch(error => {
+      showResponse("Eroare la mișcarea servomotorului.");
+      console.error("Eroare:", error);
+    });
+}
+
+// Polling detecție obiect
+setInterval(() => {
+  if (!streamActive || !canShowMessage) return;
+
+  fetch("/detection_status")
+    .then(res => res.json())
+    .then(data => {
+      if (data.detected && canShowMessage) {
+        displayMessage();
       }
-
-      document.getElementById(tabId).classList.add('active');
-      container.classList.add('active');
-
-      const activeButton = Array.from(buttons).find(btn => btn.textContent.toLowerCase() === tabId.toLowerCase());
-      if (activeButton) activeButton.classList.add('active');
-    }
-
-    function displayMessage() {
-      if (!canShowMessage) return;
-
-      const panel = document.createElement("div");
-      panel.className = "msgBox";
-
-      const question = document.createElement("p");
-      question.textContent = "Alarmă falsă?";
-      panel.appendChild(question);
-
-      const btnContainer = document.createElement("div");
-      btnContainer.className = "btnContainer";
-
-      const daBtn = document.createElement("button");
-      daBtn.textContent = "DA";
-      daBtn.onclick = () => {
-        fetch("/misca")
-          .then(response => response.text())
-          .then(data => {
-            showResponse("Servomotorul a fost mișcat la 110°.");
-          })
-          .catch(error => {
-            showResponse("Eroare la mișcarea servomotorului.");
-            console.error("Eroare:", error);
-          });
-        panel.remove();
-        canShowMessage = false;
-      };
-
-      const nuBtn = document.createElement("button");
-      nuBtn.textContent = "NU";
-      nuBtn.onclick = () => {
-        showResponse("Alarmă ignorată.");
-        panel.remove();
-        canShowMessage = false;
-      };
-
-      btnContainer.appendChild(daBtn);
-      btnContainer.appendChild(nuBtn);
-      panel.appendChild(btnContainer);
-
-      document.body.appendChild(panel);
-    }
-
-    function showResponse(msg) {
-      const responsePanel = document.createElement("div");
-      responsePanel.className = "responseBox";
-      responsePanel.textContent = msg;
-      document.body.appendChild(responsePanel);
-      setTimeout(() => responsePanel.remove(), 2000);
-    }
-
-    function displayServoMessage() {
-      fetch("/misca")
-        .then(response => response.text())
-        .then(data => {
-          showResponse("Servomotorul a fost mișcat manual.");
-        })
-        .catch(error => {
-          showResponse("Eroare la mișcarea servomotorului.");
-          console.error("Eroare:", error);
-        });
-    }
-
-    // Poll pentru detectare
-    setInterval(() => {
-      if (!streamActive || !canShowMessage) return;
-
-      fetch("/detection_status")
-        .then(res => res.json())
-        .then(data => {
-          if (data.detected && canShowMessage) {
-            displayMessage();
-          }
-        })
-        .catch(err => console.warn("Eroare verificare detecție:", err));
-    }, 1000);
+    })
+    .catch(err => console.warn("Eroare verificare detecție:", err));
+}, 1000);
