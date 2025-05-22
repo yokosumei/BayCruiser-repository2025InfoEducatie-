@@ -1,4 +1,3 @@
-
 let canShowMessage = true;
 let streamActive = false;
 
@@ -17,6 +16,18 @@ function stopStream() {
       document.getElementById('video').style.display = 'none';
     });
 }
+
+// === VERIFICARE DETECȚIE LA INTERVAL ===
+setInterval(() => {
+  if (!streamActive) return;
+  fetch('/detection_status')
+    .then(res => res.json())
+    .then(data => {
+      if (data.detected) {
+        displayMessage();
+      }
+    });
+}, 2000); // La fiecare 2 secunde
 
 // === POPUP DE DETECȚIE ===
 function displayMessage() {
@@ -41,7 +52,7 @@ function displayMessage() {
   daBtn.onclick = () => {
     fetch("/misca")
       .then(() => {
-        showResponse("Initiere protocol de salvare.");
+        showResponse("Inițiere protocol de salvare.");
       });
     panel.remove();
     canShowMessage = false;
@@ -58,7 +69,6 @@ function displayMessage() {
   btnContainer.appendChild(daBtn);
   btnContainer.appendChild(nuBtn);
   panel.appendChild(btnContainer);
-
   document.body.appendChild(panel);
 }
 
