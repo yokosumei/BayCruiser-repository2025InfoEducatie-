@@ -1,55 +1,30 @@
-// === VARIABILE DE STARE ===
 let canShowMessage = true;
 let streamActive = false;
 
-// === CONTROL STREAM VIDEO ===
- function startStream() {
-    fetch('/start_stream')
-        .then(() => {
-            streamActive = true;
-            document.getElementById('video').style.display = 'block';
-        });
+function startStream() {
+  fetch('/start_stream')
+    .then(() => {
+      streamActive = true;
+      document.getElementById('video').style.display = 'block';
+    });
 }
 
 function stopStream() {
-    fetch('/stop_stream')
-        .then(() => {
-            streamActive = false;
-            document.getElementById('video').style.display = 'none';
-        });
+  fetch('/stop_stream')
+    .then(() => {
+      streamActive = false;
+      document.getElementById('video').style.display = 'none';
+    });
 }
-// === TABURI ===
-     function toggleTab(tabId) {
-  const contents = document.querySelectorAll('.tab-content');
-  const buttons = document.querySelectorAll('.tab-button');
-  const container = document.getElementById('tabContent');
 
-  let isAlreadyOpen = false;
-
-  contents.forEach(content => {
-    if (content.id === tabId && content.classList.contains('active')) {
-      isAlreadyOpen = true;
-    }
-    content.classList.remove('active');
+function toggleTab(tabId) {
+  document.querySelectorAll('.tab-content').forEach(tab => {
+    tab.classList.remove('active');
   });
-
-  buttons.forEach(btn => btn.classList.remove('active'));
-
-  if (isAlreadyOpen) {
-    container.classList.remove('active');
-    return;
-  }
-
   document.getElementById(tabId).classList.add('active');
-  container.classList.add('active');
-
-  const activeButton = Array.from(buttons).find(
-    btn => btn.textContent.trim().toLowerCase() === tabId.toLowerCase()
-  );
-  if (activeButton) activeButton.classList.add('active');
 }
 
-// === POPUP DETECȚIE „om_la_inec” ===
+// === POPUP DE DETECȚIE ===
 function displayMessage() {
   if (!canShowMessage) return;
 
@@ -93,7 +68,6 @@ function displayMessage() {
   document.body.appendChild(panel);
 }
 
-// === AFIȘARE MESAJ INFORMATIV TEMPORAR ===
 function showResponse(msg) {
   const responsePanel = document.createElement("div");
   responsePanel.className = "responseBox";
@@ -102,7 +76,6 @@ function showResponse(msg) {
   setTimeout(() => responsePanel.remove(), 2000);
 }
 
-// === COMANDĂ MANUALĂ SERVOMOTOR ===
 function displayServoMessage() {
   fetch("/misca")
     .then(res => res.text())
@@ -114,7 +87,7 @@ function displayServoMessage() {
     });
 }
 
-// === POLLING DETECȚIE AUTOMATĂ ===
+// === POLLING pentru detecție ===
 setInterval(() => {
   if (!streamActive || !canShowMessage) return;
 
@@ -125,5 +98,5 @@ setInterval(() => {
         displayMessage();
       }
     })
-    .catch(err => console.warn("Eroare verificare detecție:", err));
+    .catch(err => console.warn("Eroare la polling:", err));
 }, 1000);
