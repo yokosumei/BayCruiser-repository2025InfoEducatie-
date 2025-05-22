@@ -2,5 +2,6 @@ flask
 ultralytics
 opencv-python
 picamera2
-gpiozero
+RPi.GPIO
 numpy
+dronekit
