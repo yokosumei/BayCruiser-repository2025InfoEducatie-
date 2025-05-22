@@ -84,9 +84,9 @@ def detection_status():
 
 @app.route("/misca")
 def activate():
-    servo.angle = 110
+    servo.angle = 45
     time.sleep(2)
-    servo.angle = 90
+    servo.angle = 0
     return "Servomotor activat"
 
 if __name__ == "__main__":
