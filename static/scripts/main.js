@@ -1,3 +1,4 @@
+
 let canShowMessage = true;
 let streamActive = false;
 
@@ -15,13 +16,6 @@ function stopStream() {
       streamActive = false;
       document.getElementById('video').style.display = 'none';
     });
-}
-
-function toggleTab(tabId) {
-  document.querySelectorAll('.tab-content').forEach(tab => {
-    tab.classList.remove('active');
-  });
-  document.getElementById(tabId).classList.add('active');
 }
 
 // === POPUP DE DETECȚIE ===
@@ -42,12 +36,8 @@ function displayMessage() {
   daBtn.textContent = "DA";
   daBtn.onclick = () => {
     fetch("/misca")
-      .then(res => res.text())
       .then(() => {
         showResponse("Initiere protocol de salvare.");
-      })
-      .catch(() => {
-        showResponse("Eroare la mișcarea servomotorului.");
       });
     panel.remove();
     canShowMessage = false;
@@ -76,18 +66,7 @@ function showResponse(msg) {
   setTimeout(() => responsePanel.remove(), 2000);
 }
 
-function displayServoMessage() {
-  fetch("/misca")
-    .then(res => res.text())
-    .then(() => {
-      showResponse("Servomotorul a fost mișcat");
-    })
-    .catch(() => {
-      showResponse("Eroare la mișcarea servomotorului.");
-    });
-}
-
-// === POLLING pentru detecție ===
+// === POLLING pentru DETECȚIE ===
 setInterval(() => {
   if (!streamActive || !canShowMessage) return;
 
@@ -97,6 +76,5 @@ setInterval(() => {
       if (data.detected && canShowMessage) {
         displayMessage();
       }
-    })
-    .catch(err => console.warn("Eroare la polling:", err));
+    });
 }, 1000);
