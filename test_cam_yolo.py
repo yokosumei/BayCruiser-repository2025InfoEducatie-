@@ -104,7 +104,7 @@ def detection_status():
 def activate():
     servo1.ChangeDutyCycle(7)
     servo2.ChangeDutyCycle(7)
-     time.sleep(2)
+     time.sleep(1)
      servo1.ChangeDutyCycle(0)
      servo2.ChangeDutyCycle(0)
     return "Servomotor activat"
