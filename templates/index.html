@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width" />
-  <title>kITTY</title>
+  <title>BayWatcher-Board</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
   <style>
     .stream-wrapper {
@@ -38,7 +38,7 @@
 </head>
 <body>
   <header>
-    <h1>Pagina de control</h1>
+    <h1>Pagină de control</h1>
   </header>
 
   <main class="main-layout">
@@ -47,7 +47,7 @@
       <div class="tab-container">
         <button class="tab-button" onclick="toggleTab('info')">Info</button>
         <button class="tab-button" onclick="toggleTab('scop')">Scop</button>
-        <button class="tab-button" onclick="toggleTab('alte butoane')">Butoane+</button>
+        <button class="tab-button" onclick="toggleTab('alte butoane')">Controale dronă</button>
       </div>
       <div class="tab-content-wrapper">
         <div id="info" class="tab-content">
@@ -61,15 +61,16 @@
           </p>
         </div>
         <div id="alte butoane" class="tab-content">
-          <p>probabil aici sunt alte butoane idk</p>
-          <button class="idk buton" onclick="alert('nu stiu ce face')">buton</button>
+          <p>Controale dronă</p>
+          <button onclick="TakeOff()">Decolare</button>
+          <button onclick="Land()">Aterizare</button>
         </div>
       </div>
     </aside>
 
     <!-- Dreapta: doar stream -->
     <article class="custom-article">
-      <h2>Live YOLO Stream</h2>
+      <h2>Livestream detecție</h2>
       <div class="stream-wrapper">
         <img id="video" src="/video_feed" width="640" height="480">
       </div>
@@ -79,12 +80,12 @@
   <!-- Butoanele sub articol -->
   <div class="stream-controls">
     <button onclick="displayServoMessage()">Misca servo</button>
-    <button onclick="startStream()">Start Stream</button>
-    <button onclick="stopStream()">Stop Stream</button>
+    <button onclick="startStream()">START</button>
+    <button onclick="stopStream()">STOP</button>
   </div>
 
   <footer>
-    <p>Pagina creata in scopul concursului IndoEducatie</p>
+    <p>Pagină creată în scopul concursului InfoEducație</p>
   </footer>
 
   <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
