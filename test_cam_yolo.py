@@ -7,18 +7,22 @@ import threading
 import cv2
 import time
 
+app = Flask(__name__)
+
+# Inițializări
 model = YOLO("my_model.pt")
 picam2 = Picamera2()
 picam2.configure(picam2.create_video_configuration(main={"format": "RGB888", "size": (640, 480)}))
 picam2.start()
 
-app = Flask(__name__)
 servo = AngularServo(18, min_pulse_width=0.0006, max_pulse_width=0.0023)
 
 streaming = False
 lock = threading.Lock()
 output_frame = None
-detected_flag = False  # semnal intern pentru a nu repeta alarma
+
+detected_flag = False  # semnal intern: este detectat ACUM în cadru
+popup_sent = False     # semnal pentru frontend: trebuie să afișeze popup
 
 def blank_frame():
     img = np.zeros((480, 640, 3), dtype=np.uint8)
@@ -26,18 +30,25 @@ def blank_frame():
     return buffer.tobytes()
 
 def detect_objects():
-    global output_frame, streaming, detected_flag
+    global output_frame, streaming, detected_flag, popup_sent
+
     while streaming:
         frame = picam2.capture_array()
         results = model(frame, verbose=False)
         annotated = results[0].plot()
 
-        # verifică dacă „om_la_inec” este detectat
-        detected = any((r == "om_la_inec" for r in results[0].names.values() if r in results[0].boxes.cls.tolist()))
-        if detected and not detected_flag:
-            detected_flag = True  # setează că am detectat
-        elif not detected:
-            detected_flag = False  # resetează dacă nu mai e în cadru
+        # Verifică dacă obiectul "om_la_inec" este detectat
+        names = results[0].names
+        class_ids = results[0].boxes.cls.tolist()
+        detected = any(names[int(cls_id)] == "om_la_inec" for cls_id in class_ids)
+
+        if detected:
+            if not detected_flag:
+                detected_flag = True
+                popup_sent = True  # semnalăm frontend-ul că trebuie popup
+        else:
+            detected_flag = False
+            popup_sent = False  # resetăm când dispare din cadru
 
         with lock:
             output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
@@ -80,7 +91,7 @@ def stop_stream():
 
 @app.route("/detection_status")
 def detection_status():
-    return jsonify({"detected": detected_flag})
+    return jsonify({"detected": popup_sent})
 
 @app.route("/misca")
 def activate():
