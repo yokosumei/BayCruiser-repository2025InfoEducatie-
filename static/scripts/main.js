@@ -21,6 +21,10 @@ function stopStream() {
 // === POPUP DE DETECȚIE ===
 function displayMessage() {
   if (!canShowMessage) return;
+  canShowMessage = false;
+  setTimeout(() => {
+    canShowMessage = true;
+  }, 10000);
 
   const panel = document.createElement("div");
   panel.className = "msgBox";
@@ -65,16 +69,3 @@ function showResponse(msg) {
   document.body.appendChild(responsePanel);
   setTimeout(() => responsePanel.remove(), 2000);
 }
-
-// === POLLING pentru DETECȚIE ===
-setInterval(() => {
-  if (!streamActive || !canShowMessage) return;
-
-  fetch("/detection_status")
-    .then(res => res.json())
-    .then(data => {
-      if (data.detected && canShowMessage) {
-        displayMessage();
-      }
-    });
-}, 1000);
