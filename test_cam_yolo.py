@@ -6,6 +6,7 @@ import numpy as np
 import threading
 import cv2
 import time
+import atexit
 
 app = Flask(__name__)
 
@@ -16,11 +17,10 @@ picam2.configure(picam2.create_video_configuration(main={"format": "RGB888", "si
 picam2.start()
 
 GPIO.setmode(GPIO.BOARD)
-
-GPIO.setup(11,GPIO.OUT)
-servo1 = GPIO.PWM(11,50)
-GPIO.setup(12,GPIO.OUT)
-servo2 = GPIO.PWM(12,50) 
+GPIO.setup(11, GPIO.OUT)
+servo1 = GPIO.PWM(11, 50)
+GPIO.setup(12, GPIO.OUT)
+servo2 = GPIO.PWM(12, 50)
 servo1.start(0)
 servo2.start(0)
 
@@ -28,23 +28,38 @@ streaming = False
 lock = threading.Lock()
 output_frame = None
 
-detected_flag = False  # semnal intern: este detectat ACUM în cadru
-popup_sent = False     # semnal pentru frontend: trebuie să afișeze popup
+detected_flag = False
+popup_sent = False
+last_detection_time = 0  # NEW
+
+# Cleanup pentru evitarea erorilor la oprire
+def cleanup():
+    servo1.stop()
+    servo2.stop()
+    GPIO.cleanup()
+
+atexit.register(cleanup)
 
 def blank_frame():
     img = np.zeros((480, 640, 3), dtype=np.uint8)
     _, buffer = cv2.imencode('.jpg', img)
     return buffer.tobytes()
 
+def activate_servos():
+    servo1.ChangeDutyCycle(7)
+    servo2.ChangeDutyCycle(7)
+    time.sleep(1)
+    servo1.ChangeDutyCycle(0)
+    servo2.ChangeDutyCycle(0)
+
 def detect_objects():
-    global output_frame, streaming, detected_flag, popup_sent
+    global output_frame, streaming, detected_flag, popup_sent, last_detection_time
 
     while streaming:
         frame = picam2.capture_array()
         results = model(frame, verbose=False)
         annotated = results[0].plot()
 
-        # Verifică dacă obiectul "om_la_inec" este detectat
         names = results[0].names
         class_ids = results[0].boxes.cls.tolist()
         detected = any(names[int(cls_id)] == "om_la_inec" for cls_id in class_ids)
@@ -52,13 +67,17 @@ def detect_objects():
         if detected:
             if not detected_flag:
                 detected_flag = True
-                popup_sent = True  # semnalăm frontend-ul că trebuie popup
+                popup_sent = True
+                last_detection_time = time.time()
+                activate_servos()  # NEW: activează direct la detecție
         else:
-            detected_flag = False
-            popup_sent = False  # resetăm când dispare din cadru
+            if time.time() - last_detection_time > 5:
+                detected_flag = False
+                popup_sent = False
 
         with lock:
             output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
+
         time.sleep(0.05)
 
 @app.route("/")
@@ -102,11 +121,7 @@ def detection_status():
 
 @app.route("/misca")
 def activate():
-    servo1.ChangeDutyCycle(7)
-    servo2.ChangeDutyCycle(7)
-    time.sleep(1)
-    servo1.ChangeDutyCycle(0)
-    servo2.ChangeDutyCycle(0)
+    activate_servos()
     return "Servomotor activat"
 
 if __name__ == "__main__":
