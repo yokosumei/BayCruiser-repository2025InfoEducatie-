@@ -40,17 +40,17 @@ def cleanup():
 
 atexit.register(cleanup)
 
+def activate_servos():
+    servo1.ChangeDutyCycle(7)
+    servo2.ChangeDutyCycle(7)
+    time.sleep(5)
+    servo1.ChangeDutyCycle(0)
+    servo2.ChangeDutyCycle(0)
+
 def blank_frame():
     img = np.zeros((480, 640, 3), dtype=np.uint8)
     _, buffer = cv2.imencode('.jpg', img)
     return buffer.tobytes()
-
-def activate_servos():
-    servo1.ChangeDutyCycle(7)
-    servo2.ChangeDutyCycle(7)
-    time.sleep(1)
-    servo1.ChangeDutyCycle(0)
-    servo2.ChangeDutyCycle(0)
 
 def detect_objects():
     global output_frame, streaming, detected_flag, popup_sent, last_detection_time
