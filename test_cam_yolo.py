@@ -104,13 +104,10 @@ def detection_status():
 def activate():
     servo1.ChangeDutyCycle(7)
     servo2.ChangeDutyCycle(7)
-    time.sleep(0.05)
+    time.sleep(1)
     servo1.ChangeDutyCycle(0)
     servo2.ChangeDutyCycle(0)
     return "Servomotor activat"
-servo1.stop()
-servo2.stop()
-GPIO.cleanup()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
