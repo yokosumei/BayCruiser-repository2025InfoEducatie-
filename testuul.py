@@ -7,51 +7,56 @@ import threading
 import cv2
 import time
 
+app = Flask(__name__)
+
 model = YOLO("my_model.pt")
 picam2 = Picamera2()
 picam2.configure(picam2.create_video_configuration(main={"format": "RGB888", "size": (640, 480)}))
 picam2.start()
 
+servo = AngularServo(18, min_pulse_width=0.0006, max_pulse_width=0.0023)
+
 streaming = False
 lock = threading.Lock()
 output_frame = None
-detected_once = False
 
-app = Flask(__name__)
-servo = AngularServo(18, min_pulse_width=0.0006, max_pulse_width=0.0023)
-
-last_detection = {"om_la_inec": False}
-
+detected_flag = False
+popup_sent = False
+cooldown_active = False
 
 def blank_frame():
     img = np.zeros((480, 640, 3), dtype=np.uint8)
     _, buffer = cv2.imencode('.jpg', img)
     return buffer.tobytes()
 
-
 def detect_objects():
-    global output_frame, streaming, last_detection
+    global output_frame, streaming, detected_flag, popup_sent, cooldown_active
+
     while streaming:
         frame = picam2.capture_array()
         results = model(frame, verbose=False)
         annotated = results[0].plot()
 
-        # Detecție "om_la_inec"
+        # Detectăm "om_la_inec"
         names = results[0].names
-        detections = results[0].boxes.cls.tolist()
-        detected = any(names[int(cls)] == "om_la_inec" for cls in detections)
+        class_ids = results[0].boxes.cls.tolist()
+        detected = any(names[int(cls_id)] == "om_la_inec" for cls_id in class_ids)
+
+        if detected:
+            if not detected_flag and not cooldown_active:
+                detected_flag = True
+                popup_sent = True  
+        else:
+            detected_flag = False  # resetare
 
         with lock:
             output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
-            last_detection["om_la_inec"] = detected
 
         time.sleep(0.05)
-
 
 @app.route("/")
 def index():
     return render_template("index.html")
-
 
 @app.route("/video_feed")
 def video_feed():
@@ -68,7 +73,6 @@ def video_feed():
             time.sleep(0.05)
     return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
-
 @app.route("/start_stream")
 def start_stream():
     global streaming
@@ -79,33 +83,37 @@ def start_stream():
         thread.start()
     return jsonify({"status": "started"})
 
-
 @app.route("/stop_stream")
 def stop_stream():
     global streaming
     streaming = False
     return jsonify({"status": "stopped"})
 
+@app.route("/detection_status")
+def detection_status():
+    global popup_sent
+    return jsonify({"detected": popup_sent})
 
 @app.route("/misca")
 def activate():
-    servo.angle = 110
+    global detected_flag, popup_sent, cooldown_active
+
+    print(" Servomotor activat.")
+    servo.angle = 45
     time.sleep(2)
-    servo.angle = 90
-    return "Servomotor mișcat!"
+    servo.angle = 0
+    detected_flag = False
+    popup_sent = False
+    cooldown_active = True
 
+    # Cooldown de 10 secunde într-un thread separat
+    threading.Thread(target=cooldown_timer).start()
 
-@app.route("/detection_status")
-def detection_status():
-    global detected_once
-    with lock:
-        if last_detection["om_la_inec"] and not detected_once:
-            detected_once = True
-            return jsonify({"detected": True})
-        elif not last_detection["om_la_inec"]:
-            detected_once = False
-    return jsonify({"detected": False})
+    return "Servomotor activat"
 
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+def cooldown_timer():
+    global cooldown_active
+    print("Cooldown 10s...")
+    time.sleep(10)
+    cooldown_active = False
+    print("Cooldown terminat.")
