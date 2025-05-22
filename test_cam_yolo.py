@@ -1,7 +1,7 @@
 from flask import Flask, render_template, Response, jsonify
 from ultralytics import YOLO
 from picamera2 import Picamera2
-from gpiozero import AngularServo
+import RPi.GPIO as GPIO
 import numpy as np
 import threading
 import cv2
@@ -15,7 +15,14 @@ picam2 = Picamera2()
 picam2.configure(picam2.create_video_configuration(main={"format": "RGB888", "size": (640, 480)}))
 picam2.start()
 
-servo = AngularServo(18, min_pulse_width=0.0006, max_pulse_width=0.0023)
+GPIO.setmode(GPIO.BOARD)
+
+GPIO.setup(11,GPIO.OUT)
+servo1 = GPIO.PWM(11,50)
+GPIO.setup(12,GPIO.OUT)
+servo2 = GPIO.PWM(12,50) 
+servo1.start(0)
+servo2.start(0)
 
 streaming = False
 lock = threading.Lock()
@@ -95,9 +102,11 @@ def detection_status():
 
 @app.route("/misca")
 def activate():
-    servo.angle = 45
-    time.sleep(2)
-    servo.angle = 0
+    servo1.ChangeDutyCycle(7)
+    servo2.ChangeDutyCycle(7)
+     time.sleep(2)
+     servo1.ChangeDutyCycle(0)
+     servo2.ChangeDutyCycle(0)
     return "Servomotor activat"
 
 if __name__ == "__main__":
