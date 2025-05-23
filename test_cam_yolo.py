@@ -41,7 +41,7 @@ atexit.register(cleanup)
 def activate_servos():
     servo1.ChangeDutyCycle(7)
     servo2.ChangeDutyCycle(7)
-    time.sleep(5)
+    time.sleep(0.1)
     servo1.ChangeDutyCycle(0)
     servo2.ChangeDutyCycle(0)
 
