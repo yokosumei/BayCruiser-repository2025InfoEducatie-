@@ -12,8 +12,12 @@ from dronekit import connect, VehicleMode, LocationGlobalRelative
 # === DroneKit setup ===
 connection_string = '/dev/ttyUSB0'
 baud_rate = 57600
-print("Connecting to vehicle...")
+
+print("Connecting to vehicle...",connection_string)
 vehicle = connect(connection_string, baud=baud_rate, wait_ready=True)
+#vehicle = connect('/dev/ttyUSB0', baud=57600, wait_ready=False)
+print("Connected! Version:", vehicle.version)
+
 
 def arm_and_takeoff(target_altitude):
     print("Checking pre-arm conditions...")
