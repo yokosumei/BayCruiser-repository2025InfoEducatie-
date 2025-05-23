@@ -9,6 +9,40 @@ import time
 import atexit
 from dronekit import connect, VehicleMode, LocationGlobalRelative
 
+# === DroneKit setup ===
+connection_string = '/dev/ttyUSB0'
+baud_rate = 57600
+print("Connecting to vehicle...")
+vehicle = connect(connection_string, baud=baud_rate, wait_ready=False)
+
+def arm_and_takeoff(target_altitude):
+    print("Checking pre-arm conditions...")
+    while not vehicle.is_armable:
+        print(" Waiting for vehicle to initialise...")
+        time.sleep(1)
+    print("Arming motors...")
+    vehicle.mode = VehicleMode("GUIDED")
+    vehicle.armed = True
+    while not vehicle.armed:
+        print(" Waiting for arming...")
+        time.sleep(1)
+    print("Taking off!")
+    vehicle.simple_takeoff(target_altitude)
+    while True:
+        alt = vehicle.location.global_relative_frame.alt
+        print(" Altitude: ", alt)
+        if alt >= target_altitude * 0.95:
+            print("Reached target altitude")
+            break
+        time.sleep(1)
+
+def land_drone():
+    vehicle.mode = VehicleMode("LAND")
+    while vehicle.armed:
+        time.sleep(1)
+    print("Landed and disarmed.")
+    vehicle.close()
+
 # === Flask App Setup ===
 app = Flask(__name__)
 model = YOLO("my_model.pt")
@@ -45,36 +79,6 @@ def activate_servos():
     servo1.ChangeDutyCycle(0)    
     servo2.ChangeDutyCycle(0)
 
- def arm_and_takeoff(1):
-    print("Checking pre-arm conditions...")
-    while not vehicle.is_armable:
-        print(" Waiting for vehicle to initialise...")
-        time.sleep(1)
-    print("Arming motors...")
-    vehicle.mode = VehicleMode("GUIDED")
-    vehicle.armed = True
-    while not vehicle.armed:
-        print(" Waiting for arming...")
-        time.sleep(1)
-    print("Taking off!")
-    vehicle.simple_takeoff(target_altitude)
-    while True:
-        alt = vehicle.location.global_relative_frame.alt
-        print(" Altitude: ", alt)
-        if alt >= target_altitude * 0.95:
-            print("Reached target altitude")
-            break
-        time.sleep(1)
-
-def land_drone():
-    vehicle.mode = VehicleMode("LAND")
-    while vehicle.armed:
-        time.sleep(1)
-    print("Landed and disarmed.")
-    vehicle.close()
-
-
-
 def blank_frame():
     img = np.zeros((480, 640, 3), dtype=np.uint8)
     _, buffer = cv2.imencode('.jpg', img)
@@ -99,6 +103,9 @@ def detect_objects():
                 last_detection_time = time.time()
                 activate_servos()
 
+                box = results[0].boxes[i]
+                dx_cm, dy_cm = calculate_offset(box)
+                move_towards(dx_cm, dy_cm)
 
         if time.time() - last_detection_time > 5:
             detected_flag = False
