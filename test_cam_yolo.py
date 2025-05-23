@@ -69,12 +69,6 @@ detected_flag = False
 popup_sent = False
 last_detection_time = 0
 
-FRAME_WIDTH = 640
-FRAME_HEIGHT = 480
-CENTER_X = FRAME_WIDTH // 2
-CENTER_Y = FRAME_HEIGHT // 2
-PIXELS_PER_CM = 10  # calibrabil
-
 def cleanup():
     servo1.stop()
     servo2.stop()
@@ -113,9 +107,6 @@ def detect_objects():
                 last_detection_time = time.time()
                 activate_servos()
 
-                box = results[0].boxes[i]
-                dx_cm, dy_cm = calculate_offset(box)
-                move_towards(dx_cm, dy_cm)
 
         if time.time() - last_detection_time > 5:
             detected_flag = False
