@@ -39,11 +39,12 @@ def cleanup():
 atexit.register(cleanup)
 
 def activate_servos():
-    servo1.ChangeDutyCycle(7)
-    servo2.ChangeDutyCycle(7)
-    time.sleep(0.1)
-    servo1.ChangeDutyCycle(0)
+    servo1.ChangeDutyCycle(9.5)
+    servo2.ChangeDutyCycle(4.5) 
+    time.sleep(0.3)              
+    servo1.ChangeDutyCycle(0)    
     servo2.ChangeDutyCycle(0)
+
 
 def blank_frame():
     img = np.zeros((480, 640, 3), dtype=np.uint8)
