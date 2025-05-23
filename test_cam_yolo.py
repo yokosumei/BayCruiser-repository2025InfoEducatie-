@@ -14,7 +14,7 @@ connection_string = '/dev/ttyUSB0'
 baud_rate = 57600
 
 print("Connecting to vehicle...",connection_string)
-vehicle = connect(connection_string, baud=baud_rate, wait_ready=True)
+vehicle = connect(connection_string, baud=baud_rate, wait_ready=False)
 #vehicle = connect('/dev/ttyUSB0', baud=57600, wait_ready=False)
 print("Connected! Version:", vehicle.version)
 
