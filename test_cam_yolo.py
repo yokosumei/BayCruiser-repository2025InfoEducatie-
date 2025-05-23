@@ -45,7 +45,7 @@ def activate_servos():
     servo1.ChangeDutyCycle(0)    
     servo2.ChangeDutyCycle(0)
 
- def arm_and_takeoff(target_altitude):
+ def arm_and_takeoff(1):
     print("Checking pre-arm conditions...")
     while not vehicle.is_armable:
         print(" Waiting for vehicle to initialise...")
