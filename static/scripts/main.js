@@ -55,29 +55,23 @@ function displayMessage() {
 
   const panel = document.createElement("div");
   panel.className = "msgBox";
-
   const question = document.createElement("p");
   question.textContent = "Alarmă reală?";
   panel.appendChild(question);
-
   const btnContainer = document.createElement("div");
   btnContainer.className = "btnContainer";
-
   const daBtn = document.createElement("button");
   daBtn.textContent = "DA";
   daBtn.onclick = () => {
     fetch("/misca")
       .then(res => res.text())
       .then(() => {
-        alert("Initiere protocol de salvare.");
-      })
+        alert("Initiere protocol de salvare.");})
       .catch(() => {
-        alert("Eroare la mișcarea servomotorului.");
-      });
+        alert("Eroare la mișcarea servomotorului."); });
     panel.remove();
     canShowMessage = false;
   };
-
   const nuBtn = document.createElement("button");
   nuBtn.textContent = "NU";
   nuBtn.onclick = () => {
@@ -92,7 +86,6 @@ function displayMessage() {
 
   document.body.appendChild(panel);
 }
-
 // === AFIȘARE MESAJ INFORMATIV TEMPORAR ===
 function showResponse(msg) {
   const responsePanel = document.createElement("div");
@@ -101,7 +94,6 @@ function showResponse(msg) {
   document.body.appendChild(responsePanel);
   setTimeout(() => responsePanel.remove(), 2000);
 }
-
 // === COMANDĂ MANUALĂ SERVOMOTOR ===
 function displayServoMessage() {
   fetch("/misca")
@@ -113,11 +105,9 @@ function displayServoMessage() {
       showResponse("Eroare la mișcarea servomotorului.");
     });
 }
-
 // === POLLING DETECȚIE AUTOMATĂ ===
 setInterval(() => {
   if (!streamActive || !canShowMessage) return;
-
   fetch("/detection_status")
     .then(res => res.json())
     .then(data => {
@@ -127,14 +117,12 @@ setInterval(() => {
     })
     .catch(err => console.warn("Eroare verificare detecție:", err));
 }, 1000);
-
 function TakeOff() {
   fetch("/takeoff")
     .then(res => res.text())
     .then(() => {
       alert("Drona a decolat.");
-      
-    })
+        })
 }
 function Ateriazare() {
   fetch("/land")
