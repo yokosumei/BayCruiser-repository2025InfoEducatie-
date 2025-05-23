@@ -9,44 +9,6 @@ import time
 import atexit
 from dronekit import connect, VehicleMode, LocationGlobalRelative
 
-# === DroneKit setup ===
-connection_string = '/dev/ttyUSB0'
-baud_rate = 57600
-
-print("Connecting to vehicle...",connection_string)
-vehicle = connect(connection_string, baud=baud_rate, wait_ready=False)
-#vehicle = connect('/dev/ttyUSB0', baud=57600, wait_ready=False)
-print("Connected! Version:", vehicle.version)
-
-
-def arm_and_takeoff(target_altitude):
-    print("Checking pre-arm conditions...")
-    while not vehicle.is_armable:
-        print(" Waiting for vehicle to initialise...")
-        time.sleep(1)
-    print("Arming motors...")
-    vehicle.mode = VehicleMode("GUIDED")
-    vehicle.armed = True
-    while not vehicle.armed:
-        print(" Waiting for arming...")
-        time.sleep(1)
-    print("Taking off!")
-    vehicle.simple_takeoff(target_altitude)
-    while True:
-        alt = vehicle.location.global_relative_frame.alt
-        print(" Altitude: ", alt)
-        if alt >= target_altitude * 0.95:
-            print("Reached target altitude")
-            break
-        time.sleep(1)
-
-def land_drone():
-    vehicle.mode = VehicleMode("LAND")
-    while vehicle.armed:
-        time.sleep(1)
-    print("Landed and disarmed.")
-    vehicle.close()
-
 # === Flask App Setup ===
 app = Flask(__name__)
 model = YOLO("my_model.pt")
