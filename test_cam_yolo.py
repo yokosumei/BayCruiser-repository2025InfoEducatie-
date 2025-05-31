@@ -87,6 +87,7 @@ def activate_servos():
     time.sleep(0.3)
     servo1.ChangeDutyCycle(0)
     servo2.ChangeDutyCycle(0)
+    time.sleep(2)
     servo1.ChangeDutyCycle(7.5)
     servo2.ChangeDutyCycle(7.5)
     time.sleep(0.3)
