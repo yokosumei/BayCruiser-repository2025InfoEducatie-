@@ -49,6 +49,18 @@ function stopStream() {
   if (activeButton) activeButton.classList.add('active');
 }
 
+function toggleView() {
+  const live = document.getElementById("livestream-article");
+  const upload = document.getElementById("upload-article");
+
+  if (live.style.display !== "none") {
+    live.style.display = "none";
+    upload.style.display = "block";
+  } else {
+    upload.style.display = "none";
+    live.style.display = "block";
+  }
+}
 // === POPUP DETECȚIE „om_la_inec” ===
 function displayMessage() {
   if (!canShowMessage) return;
