@@ -7,8 +7,9 @@ import threading
 import cv2
 import time
 import atexit
-from dronekit import connect, VehicleMode, LocationGlobalRelative
+# from dronekit import connect, VehicleMode, LocationGlobalRelative
 
+"""
 # === DroneKit setup ===
 connection_string = '/dev/ttyUSB0'
 baud_rate = 57600
@@ -42,6 +43,7 @@ def land_drone():
         time.sleep(1)
     print("Landed and disarmed.")
     vehicle.close()
+"""
 
 # === Flask App Setup ===
 app = Flask(__name__)
@@ -50,13 +52,19 @@ picam2 = Picamera2()
 picam2.configure(picam2.create_video_configuration(main={"format": "RGB888", "size": (640, 480)}))
 picam2.start()
 
+# GPIO setup for servos
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(11, GPIO.OUT)
 GPIO.setup(12, GPIO.OUT)
 servo1 = GPIO.PWM(11, 50)
 servo2 = GPIO.PWM(12, 50)
-servo1.start(0)
-servo2.start(0)
+
+# Inițializare fără jitter: centru (7.5), apoi oprim semnalul
+servo1.start(7.5)
+servo2.start(7.5)
+time.sleep(0.3)
+servo1.ChangeDutyCycle(0)
+servo2.ChangeDutyCycle(0)
 
 streaming = False
 lock = threading.Lock()
@@ -72,18 +80,18 @@ def cleanup():
 
 atexit.register(cleanup)
 
+# Activează servo-urile spre 90° dreapta
 def activate_servos():
-    servo1.ChangeDutyCycle(9.5)
-    servo2.ChangeDutyCycle(4.5) 
-    time.sleep(0.3)              
-    servo1.ChangeDutyCycle(0)    
+    servo1.ChangeDutyCycle(12.5)
+    servo2.ChangeDutyCycle(12.5)
+    time.sleep(0.3)
+    servo1.ChangeDutyCycle(0)
     servo2.ChangeDutyCycle(0)
 
 def blank_frame():
     img = np.zeros((480, 640, 3), dtype=np.uint8)
     _, buffer = cv2.imencode('.jpg', img)
     return buffer.tobytes()
-
 
 def detect_objects():
     global output_frame, streaming, detected_flag, popup_sent, last_detection_time
@@ -103,9 +111,10 @@ def detect_objects():
                 last_detection_time = time.time()
                 activate_servos()
 
-                box = results[0].boxes[i]
-                dx_cm, dy_cm = calculate_offset(box)
-                move_towards(dx_cm, dy_cm)
+                # Dacă ai `calculate_offset` și `move_towards` definite, le poți reactiva
+                # box = results[0].boxes[i]
+                # dx_cm, dy_cm = calculate_offset(box)
+                # move_towards(dx_cm, dy_cm)
 
         if time.time() - last_detection_time > 5:
             detected_flag = False
@@ -162,13 +171,11 @@ def activate():
 
 @app.route("/takeoff")
 def takeoff():
-    arm_and_takeoff(1)
-    return "Drone Takeoff"
+    return "Drone Takeoff (dezactivat temporar)"
 
 @app.route("/land")
 def land():
-    land_drone()
-    return "Drone Landing"
+    return "Drone Landing (dezactivat temporar)"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
