@@ -64,23 +64,32 @@
           <p>Controale dronă</p>
           <button onclick="TakeOff()">Decolare</button>
           <button onclick="Land()">Aterizare</button>
+          <button onclick="displayServoMessage()">Misca servo</button>
         </div>
       </div>
     </aside>
 
     <!-- Dreapta: doar stream -->
-    <article class="custom-article">
-      <h2>Livestream detecție</h2>
-      <div class="stream-wrapper">
-        <img id="video" src="/video_feed" width="640" height="480">
-      </div>
-    </article>
+<article id="livestream-article" class="custom-article">
+  <h2>Livestream detecție</h2>
+  <div class="stream-wrapper">
+    <img id="video" src="/video_feed" width="640" height="480">
+  </div>
+</article>
+
+<article id="upload-article" class="custom-article" style="display: none;">
+  <h2>Upload video pentru detecție</h2>
+  <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+    <input type="file" name="file" accept="video/*" required>
+    <input type="submit" value="Upload Video">
+  </form>
+</article>
   </main>
 
   <!-- Butoanele sub articol -->
   <div class="stream-controls">
-    <button onclick="displayServoMessage()">Misca servo</button>
     <button onclick="startStream()">START</button>
+    <button onclick="toggleView()" class="button buttons">⭕</button>
     <button onclick="stopStream()">STOP</button>
   </div>
 
