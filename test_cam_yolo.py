@@ -59,10 +59,6 @@ GPIO.setup(12, GPIO.OUT)
 servo1 = GPIO.PWM(11, 50)
 servo2 = GPIO.PWM(12, 50)
 
-# Inițializare fără jitter: centru (7.5), apoi oprim semnalul
-servo1.start(7.5)
-servo2.start(7.5)
-time.sleep(0.3)
 servo1.ChangeDutyCycle(0)
 servo2.ChangeDutyCycle(0)
 
