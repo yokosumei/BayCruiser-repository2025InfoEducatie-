@@ -83,6 +83,14 @@
     <input type="file" name="file" accept="video/*" required>
     <input type="submit" value="Upload Video">
   </form>
+
+  {% if video_uploaded %}
+    <h3>Rezultatul detecției:</h3>
+    <video width="640" height="480" controls autoplay>
+      <source src="{{ url_for('static', filename='uploads/result.mp4') }}" type="video/mp4">
+      Browserul tău nu suportă tag-ul video.
+    </video>
+  {% endif %}
 </article>
   </main>
 
