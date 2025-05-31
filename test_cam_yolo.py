@@ -83,7 +83,7 @@ atexit.register(cleanup)
 # Activează servo-urile spre 90° dreapta
 def activate_servos():
     servo1.ChangeDutyCycle(12.5)
-    servo2.ChangeDutyCycle(4.5)
+    servo2.ChangeDutyCycle(2.5)
     time.sleep(0.3)
     servo1.ChangeDutyCycle(0)
     servo2.ChangeDutyCycle(0)
