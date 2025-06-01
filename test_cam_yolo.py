@@ -1,4 +1,4 @@
-from flask import Flask, render_template, Response, jsonify
+from flask import Flask, render_template, Response, request, redirect, url_for, jsonify
 from ultralytics import YOLO
 from picamera2 import Picamera2
 import RPi.GPIO as GPIO
@@ -7,59 +7,22 @@ import threading
 import cv2
 import time
 import atexit
-# from dronekit import connect, VehicleMode, LocationGlobalRelative
+import os
 
-"""
-# === DroneKit setup ===
-connection_string = '/dev/ttyUSB0'
-baud_rate = 57600
-print("Connecting to vehicle...")
-vehicle = connect(connection_string, baud=baud_rate, wait_ready=False)
-
-def arm_and_takeoff(target_altitude):
-    print("Checking pre-arm conditions...")
-    while not vehicle.is_armable:
-        print(" Waiting for vehicle to initialise...")
-        time.sleep(1)
-    print("Arming motors...")
-    vehicle.mode = VehicleMode("GUIDED")
-    vehicle.armed = True
-    while not vehicle.armed:
-        print(" Waiting for arming...")
-        time.sleep(1)
-    print("Taking off!")
-    vehicle.simple_takeoff(target_altitude)
-    while True:
-        alt = vehicle.location.global_relative_frame.alt
-        print(" Altitude: ", alt)
-        if alt >= target_altitude * 0.95:
-            print("Reached target altitude")
-            break
-        time.sleep(1)
-
-def land_drone():
-    vehicle.mode = VehicleMode("LAND")
-    while vehicle.armed:
-        time.sleep(1)
-    print("Landed and disarmed.")
-    vehicle.close()
-"""
-
-# === Flask App Setup ===
 app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
 model = YOLO("my_model.pt")
 picam2 = Picamera2()
 picam2.configure(picam2.create_video_configuration(main={"format": "RGB888", "size": (640, 480)}))
 picam2.start()
 
-# GPIO setup for servos
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(11, GPIO.OUT)
 GPIO.setup(12, GPIO.OUT)
 servo1 = GPIO.PWM(11, 50)
 servo2 = GPIO.PWM(12, 50)
-
-# Inițializare fără jitter: centru (7.5), apoi oprim semnalul
 servo1.start(7.5)
 servo2.start(7.5)
 time.sleep(0.3)
@@ -80,7 +43,6 @@ def cleanup():
 
 atexit.register(cleanup)
 
-# Activează servo-urile spre 90° dreapta
 def activate_servos():
     servo1.ChangeDutyCycle(12.5)
     servo2.ChangeDutyCycle(2.5)
@@ -117,11 +79,6 @@ def detect_objects():
                 last_detection_time = time.time()
                 activate_servos()
 
-                # Dacă ai `calculate_offset` și `move_towards` definite, le poți reactiva
-                # box = results[0].boxes[i]
-                # dx_cm, dy_cm = calculate_offset(box)
-                # move_towards(dx_cm, dy_cm)
-
         if time.time() - last_detection_time > 5:
             detected_flag = False
             popup_sent = False
@@ -131,9 +88,38 @@ def detect_objects():
 
         time.sleep(0.05)
 
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 def index():
-    return render_template("index.html")
+    if request.method == "POST":
+        if 'file' not in request.files:
+            return render_template("index.html", error="No file")
+        file = request.files['file']
+        if file.filename == '':
+            return render_template("index.html", error="No filename")
+
+        input_path = os.path.join(app.config['UPLOAD_FOLDER'], 'input.mp4')
+        output_path = os.path.join(app.config['UPLOAD_FOLDER'], 'result.mp4')
+        file.save(input_path)
+
+        results = model.predict(
+            source=input_path,
+            save=True,
+            save_txt=False,
+            project=app.config['UPLOAD_FOLDER'],
+            name="processed",
+            exist_ok=True,
+            stream=False
+        )
+
+        processed_dir = os.path.join(app.config['UPLOAD_FOLDER'], "processed")
+        for fname in os.listdir(processed_dir):
+            if fname.endswith(".avi") or fname.endswith(".mp4"):
+                os.rename(os.path.join(processed_dir, fname), output_path)
+                break
+
+        return render_template("index.html", video_uploaded=True)
+
+    return render_template("index.html", video_uploaded=False)
 
 @app.route("/video_feed")
 def video_feed():
