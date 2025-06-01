@@ -101,15 +101,15 @@ def index():
         output_path = os.path.join(app.config['UPLOAD_FOLDER'], 'result.mp4')
         file.save(input_path)
 
-      results = model.predict(
-    source=input_path,
-    save=True,
-    save_txt=False,
-    project=app.config['UPLOAD_FOLDER'],
-    name="processed",
-    exist_ok=True,
-    stream=True  
-)
+        results = model.predict(
+            source=input_path,
+            save=True,
+            save_txt=False,
+            project=app.config['UPLOAD_FOLDER'],
+            name="processed",
+            exist_ok=True,
+            stream=True  
+        )
 
         processed_dir = os.path.join(app.config['UPLOAD_FOLDER'], "processed")
         for fname in os.listdir(processed_dir):
@@ -120,6 +120,7 @@ def index():
         return render_template("index.html", video_uploaded=True)
 
     return render_template("index.html", video_uploaded=False)
+
 
 @app.route("/video_feed")
 def video_feed():
