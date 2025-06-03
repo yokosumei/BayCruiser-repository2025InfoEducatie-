@@ -1,23 +1,16 @@
-h1 {
-    width: 600px;
-    margin: 0 auto;
-    font-size: 60px;
-    text-align: center;
-    padding: 0 20px 20px 20px;
-    border: 5px solid rgb(111, 23, 23);
+/* --- BACKGROUND HEADER CU IMAGINE --- */
+  header {
+    background: url("/static/img/img2.jpg") no-repeat center center;
+    background-size: cover;
+    height: 120px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 10px;
+    position: relative;
+    border-bottom: 4px solid #000;
   }
-  h2 {
-    width: 600px;
-    margin: 0 auto;
-    font-size: 60px;
-    text-align: center;
-    padding: 0 20px 20px 20px;
-    border: 5px solid rgb(111, 23, 23);
-  }
-  img {
-    display: block;
-    margin: 0 auto;
-    max-width: 100%;
+
   }
   .footer{
     position:fixed;
@@ -26,10 +19,7 @@ h1 {
     background-color:#d2c8c8;
     bottom:0;
   }
-  p{
-    font-size: 16px;
-    line-height: 2;
-    letter-spacing: 1px;
+
   }
   .msgBox {
     position: absolute;
@@ -47,102 +37,7 @@ h1 {
     border-radius: 8px;
     max-width: 300px;
   }
-  .btnContainer {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    margin-top: 10px;
-  }
-  
-  .btnContainer button {
-    flex: 1;
-    padding: 8px;
-    border-radius: 6px;
-    border: 1px solid #999;
-    background-color: #ddd;
-    cursor: pointer;
-  }
-  .tab {
-    float: left;
-    border: 1px solid #ccc;
-    background-color: #f1f1f1;
-    width: 200px;
-    height: 100vh;
-  }
-  
-  .tab a {
-    display: block;
-    background-color: inherit;
-    color: black;
-    padding: 22px 16px;
-    width: 100%;
-    border: none;
-    text-align: left;
-    cursor: pointer;
-    text-decoration: none;
-  }
-  
-  .tab a:hover {
-    background-color: #ddd;
-  }
-  * {box-sizing: border-box}
-  /* Style the tab */
-  .tab {
-    float: left;
-    border: 1px solid #ccc;
-    background-color: #f1f1f1;
-    width: 30%;
-    height: 300px;
-  }
-  /*pentru taburi*/
-  .tab button {
-    display: block;
-    background-color: inherit;
-    color: rgb(0, 0, 0);
-    padding: 22px 16px;
-    width: 100%;
-    border: none;
-    outline: none;
-    text-align: left;
-    cursor: pointer;
-    transition: 0.3s;
-  }
-  
-  .tab button:hover {
-    background-color: #ddd;
-  }
-  
-  .tab button.active {
-    background-color: #ccc;
-  }
-  
-  .tabcontent {
-    float: left;
-    padding: 0px 12px;
-    border: 1px solid #ccc;
-    width: 70%;
-    border-left: none;
-    height: 300px;
-  }  
-  .container {
-    display: flex;
-  }
-  
-  .sidebar {
-    width: 200px;
-    background-color: #f1f1f1;
-    height: 100vh;
-  }
-  
-  .tab {
-    display: block;
-    width: 100%;
-    padding: 16px;
-    border: none;
-    background: none;
-    text-align: left;
-    cursor: pointer;
-  }
+
   
 /* Layout pe 2 coloane: aside + articol */
 .main-layout {
@@ -150,16 +45,16 @@ h1 {
   height: calc(100vh - 100px); /* 100px rezervat pentru header + footer */
 }
 /* Coloana stângă (sidebar) */
-#sidebar {
-  width: 15%;
-  min-width: 200px;
-  background-color: #222;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  padding: 15px;
-  box-sizing: border-box;
-}
+  #sidebar {
+    width: 230px;
+    background-color: #1c1c1c;
+    color: white;
+    padding: 20px;
+    font-size: 1rem;
+    height: 100%;
+  }
+
+  * {box-sizing: border-box}
 /* Containerul butoanelor */
 .tab-container {
   display: flex;
@@ -171,7 +66,8 @@ h1 {
   background: none;
   border: none;
   color: white;
-  padding: 12px;
+  padding: 14px;
+  font-size: 1rem;
   text-align: left;
   cursor: pointer;
   transition: background 0.3s;
@@ -226,9 +122,24 @@ footer {
   padding: 10px;
 }
 
-#yoloStream {
-  width: 90vw; /* Mare*/
-  max-height: 70vh;
-  border: 3px solid #000;
-  object-fit: contain;
-}
+  #video {
+    width: 90%;
+    max-height: 70vh;
+    border: 4px solid #003049;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+    background: url("/static/img/img1.jpg") no-repeat center;
+    background-size: cover;
+    object-fit: contain;
+  }
+
+  .stream-wrapper {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+    justify-content: center;
+    padding: 10px;
+  }
+
+</style>
