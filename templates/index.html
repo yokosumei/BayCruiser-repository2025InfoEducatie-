@@ -5,36 +5,7 @@
   <meta name="viewport" content="width=device-width" />
   <title>kITTY</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
-  <style>
-    .stream-wrapper {
-      display: flex;
-      justify-content: center;
-      padding: 10px;
-    }
 
-    #yoloStream {
-      max-width: 90vw;
-      max-height: 60vh;
-      border: 2px solid black;
-      object-fit: contain;
-    }
-
-    .stream-controls {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      justify-content: center;
-      padding: 15px;
-    }
-
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
-      display: block;
-    }
-  </style>
 </head>
 <body>
   <header>
@@ -47,12 +18,11 @@
       <div class="tab-container">
         <button class="tab-button" onclick="toggleTab('info')">Info</button>
         <button class="tab-button" onclick="toggleTab('scop')">Scop</button>
-        <button class="tab-button" onclick="toggleTab('alte butoane')">Controale dronă</button>
+        <button class="tab-button" onclick="toggleTab('Controale drona')">Controale dronă</button>
       </div>
       <div class="tab-content-wrapper">
         <div id="info" class="tab-content">
           <p>Aceasta pagina este conceputa ca o punte dintre drona si salvamar</p>
-          <p>more info idkFEATURES ig</p>
         </div>
         <div id="scop" class="tab-content">
           <p>De multe ori salvamarii au nevoie de ajutor pe mare si de o interventie rapida
@@ -60,45 +30,40 @@
             este capabila sa ajunga la victima in cateva secunde si sa ii ofere un colac de salvare.
           </p>
         </div>
-        <div id="alte butoane" class="tab-content">
-          <p>Controale dronă</p>
-          <button onclick="TakeOff()">Decolare</button>
-          <button onclick="Land()">Aterizare</button>
-          <button onclick="displayServoMessage()">Misca servo</button>
+        <div id="Controale drona" class="tab-content">
+          <button onclick="TakeOff()" class="tab-buttont">Decolare</button>
+             <br>
+          <button onclick="Land()"class="tab-buttont">Aterizare</button>
+               <br>
+          <button onclick="displayServoMessage()"class="tab-buttont">Misca servo</button>
         </div>
-      </div>
-    </aside>
+         </aside>
 
     <!-- Dreapta: doar stream -->
 <article id="livestream-article" class="custom-article">
-  <h2>Livestream detecție</h2>
   <div class="stream-wrapper">
     <img id="video" src="/video_feed" width="640" height="480">
   </div>
 </article>
 
 <article id="upload-article" class="custom-article" style="display: none;">
-  <h2>Upload video pentru detecție</h2>
   <form id="uploadForm" action="/" method="post" enctype="multipart/form-data">
     <input type="file" name="file" accept="video/*" required>
     <input type="submit" value="Upload Video">
   </form>
 
-  {% if video_uploaded %}
-    <h3>Rezultatul detecției:</h3>
     <video width="640" height="480" controls autoplay>
       <source src="{{ url_for('static', filename='uploads/result.mp4') }}" type="video/mp4">
       Browserul tău nu suportă tag-ul video.
     </video>
-  {% endif %}
 </article>
   </main>
 
   <!-- Butoanele sub articol -->
   <div class="stream-controls">
-    <button onclick="startStream()">START</button>
-    <button onclick="toggleView()" class="button buttons">⭕</button>
-    <button onclick="stopStream()">STOP</button>
+    <button onclick="startStream()" class="control">START</button>
+    <button onclick="toggleView()" class="circle ">⭕</button>
+    <button onclick="stopStream()" class="control ">STOP</button>
   </div>
 
   <footer>
