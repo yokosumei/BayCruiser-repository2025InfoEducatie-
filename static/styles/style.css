@@ -1,4 +1,5 @@
 /* --- BACKGROUND HEADER CU IMAGINE --- */
+  
   header {
     background: url("/static/img/img2.jpg") no-repeat center center;
     background-size: cover;
@@ -10,6 +11,46 @@
     position: relative;
     border-bottom: 4px solid #000;
   }
+  .control
+{
+
+}
+  .stream-controls
+{
+   display: flex; 
+   margin-left: 220px;
+
+}
+  .circle
+{
+ background-color: #b82323;
+ border: none;
+ padding: 30px;
+ text-align: center;
+ font-size: 16px;
+ cursor: pointer;
+ clip-path: circle(46%);
+
+  .control
+}
+  .tab-buttont {
+  justify-content: center;
+  border: 2px solid #24b4fb;
+  background-color: #24b4fb;
+  border-radius: 0.9em;
+  cursor: pointer;
+  padding: 0.8em 1.2em 0.8em 1em;
+  transition: all ease-in-out 0.2s;
+  font-size: 16px;
+  display: block;
+  margin: 0 auto;
+ 
+}
+
+.tab-buttont:hover,
+.tab-buttont.active {
+  background-color: #8f2424c5;
+}
 
   }
   .footer{
@@ -19,6 +60,7 @@
     background-color:#d2c8c8;
     bottom:0;
   }
+
 
   }
   .msgBox {
@@ -83,7 +125,7 @@
   background-color: #272424;
   padding: 10px;
   overflow-y: auto;
-  height: 100%;
+  height: 50%;
   box-sizing: border-box;
 }
 /* Fiecare tab (doar unul vizibil) */
@@ -136,10 +178,12 @@ footer {
   .stream-wrapper {
     display: flex;
     justify-content: space-between;
-    gap: 10px;
-    margin-top: 10px;
     justify-content: center;
-    padding: 10px;
   }
-
-</style>
+   .stream-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+    }
