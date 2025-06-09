@@ -67,6 +67,7 @@ def detect_objects():
     cam_x = 640 // 2
     cam_y = 480 // 2
     PIXELS_PER_CM = 10
+    object_present = False  # variabilă pentru a controla detecția continuă
 
     while streaming:
         frame = picam2.capture_array()
@@ -74,18 +75,21 @@ def detect_objects():
         names = results[0].names
         class_ids = results[0].boxes.cls.tolist()
 
-        detected = False
-        annotated = results[0].plot()  # baza pe care desenăm tot
+        current_detection = False
 
         for i, cls_id in enumerate(class_ids):
             if names[int(cls_id)] == "om_la_inec":
-                detected = True
-                detected_flag = True
-                popup_sent = True
-                last_detection_time = time.time()
-                activate_servos()
+                current_detection = True
 
-                # Extrage boxul
+                # dacă înainte nu era detectat, activează popupul și servoul
+                if not object_present:
+                    detected_flag = True
+                    popup_sent = True
+                    last_detection_time = time.time()
+                    activate_servos()
+                    object_present = True
+
+                # desenare și calcule
                 box = results[0].boxes[i]
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
                 obj_x = (x1 + x2) // 2
@@ -95,7 +99,6 @@ def detect_objects():
                 dy_cm = (obj_y - cam_y) / PIXELS_PER_CM
                 dist_cm = (dx_cm**2 + dy_cm**2)**0.5
 
-                # Desenează peste imaginea deja anotată
                 cv2.line(annotated, (cam_x, cam_y), (obj_x, obj_y), (0, 0, 255), 2)
                 cv2.circle(annotated, (cam_x, cam_y), 5, (255, 0, 0), -1)
                 cv2.circle(annotated, (obj_x, obj_y), 5, (0, 255, 0), -1)
@@ -107,23 +110,19 @@ def detect_objects():
                 cv2.putText(annotated, dist_text, (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,0), 2)
                 cv2.putText(annotated, dist_text, (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 1)
 
-                break  # doar primul om detectat
+                break  # doar primul obiect
 
-         if not current_detection:
+        # dacă obiectul a ieșit din cadru
+        if not current_detection:
             detected_flag = False
             popup_sent = False
             object_present = False
 
-        if not detected and time.time() - last_detection_time > 5:
-            detected_flag = False
-            popup_sent = False
-
         with lock:
-            output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
+            output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
 
         time.sleep(0.05)
 
-    
 
 @app.route("/", methods=["GET", "POST"])
 def index():
