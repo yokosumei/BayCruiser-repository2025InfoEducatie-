@@ -5,13 +5,11 @@
   <meta name="viewport" content="width=device-width" />
   <title>kITTY</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
-
 </head>
 <body>
   <header>
     <h1>Pagină de control</h1>
   </header>
-
   <main class="main-layout">
     <!-- Coloana stângă: taburi -->
     <aside id="sidebar">
@@ -32,39 +30,59 @@
         </div>
         <div id="Controale drona" class="tab-content">
           <button onclick="TakeOff()" class="tab-buttont">Decolare</button>
-             <br>
-          <button onclick="Land()"class="tab-buttont">Aterizare</button>
-               <br>
-          <button onclick="displayServoMessage()"class="tab-buttont">Misca servo</button>
+          <br>
+          <button onclick="Land()" class="tab-buttont">Aterizare</button>
+          <br>
+          <button onclick="displayServoMessage()" class="tab-buttont">Misca servo</button>
         </div>
-         </aside>
+      </div>
+    </aside>
+    <section class="center-content">
+      <div class="card">
+        <div class="tools">
+          <div class="circle"><span style="font-size:21px" class="red box">⚪</span></div>
+          <div class="circle"><span style="font-size:21px" class="yellow box">⚪</span></div>
+          <div class="circle"><span style="font-size:21px" class="green box">⚪</span></div>
+          <div class="status" style="font-size:30px" >| Status</div>
+        </div>
+        <div class="content">
+          <article id="livestream-article" class="custom-article">
+            <div class="stream-wrapper">
+              <img id="video" src="/video_feed" width="640" height="480">
+            </div>
+          </article>
 
-    <!-- Dreapta: doar stream -->
-<article id="livestream-article" class="custom-article">
-  <div class="stream-wrapper">
-    <img id="video" src="/video_feed" width="640" height="480">
-  </div>
-</article>
+          <article id="upload-article" class="custom-article" style="display: none; text-align: center;">
+            <form id="uploadForm" action="/" method="post" enctype="multipart/form-data">
+              <input type="file" name="file" accept="video/*" required>
+              <input type="submit" value="Upload Video">
+               <hr style="height:12px;background-color:red">
+            </form>
+            <video width="640" height="480" controls autoplay>
+              <source src="{{ url_for('static', filename='uploads/result.mp4') }}" type="video/mp4">
+              Browserul tău nu suportă tag-ul video.
+            </video>
+          </article>
+        </div>
+      </div>
+    </section>
 
-<article id="upload-article" class="custom-article" style="display: none;">
-  <form id="uploadForm" action="/" method="post" enctype="multipart/form-data">
-    <input type="file" name="file" accept="video/*" required>
-    <input type="submit" value="Upload Video">
-  </form>
-
-    <video width="640" height="480" controls autoplay>
-      <source src="{{ url_for('static', filename='uploads/result.mp4') }}" type="video/mp4">
-      Browserul tău nu suportă tag-ul video.
-    </video>
-</article>
-  </main>
-
-  <!-- Butoanele sub articol -->
-  <div class="stream-controls">
+    <!-- Sidebar dreapta -->
+    <aside id="right-sidebar">
+      <h3>Status dronă</h3>
+      <ul>
+        <li>Baterie: 92%</li>
+        <li>Semnal: Bun</li>
+        <li>Ultima detecție: <span id="last-detection">N/A</span></li>
+      </ul>
+      <button onclick="alert('Test funcție dreapta')">Test Dreapta</button>
+       <div >
     <button onclick="startStream()" class="control">START</button>
-    <button onclick="toggleView()" class="circle ">⭕</button>
-    <button onclick="stopStream()" class="control ">STOP</button>
+    <button onclick="toggleView()" class="circle2">⭕</button>
+    <button onclick="stopStream()" class="control">STOP</button>
   </div>
+    </aside>
+  </main>
 
   <footer>
     <p>Pagină creată în scopul concursului InfoEducație</p>
