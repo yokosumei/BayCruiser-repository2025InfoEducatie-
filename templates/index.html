@@ -97,5 +97,12 @@
       document.getElementById(tabId).classList.add('active');
     }
   </script>
+<div id="popup-alert" class="msgBox" style="display: none;">
+  <p>Alarmă reală?</p>
+  <div class="btnContainer">
+    <button onclick="confirmDetection(true)">DA</button>
+    <button onclick="confirmDetection(false)">NU</button>
+  </div>
+</div>
 </body>
 </html>
