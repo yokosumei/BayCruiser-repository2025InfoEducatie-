@@ -67,14 +67,6 @@
     <button onclick="stopStream()" class="control ">STOP</button>
   </div>
 
-<div id="popup" class="msgBox" style="display: none;">
-  <p>A fost detectat un om la înec. Trimitem drona?</p>
-  <div class="responseBox">
-    <button onclick="confirmDetection(true)">DA</button>
-    <button onclick="confirmDetection(false)">NU</button>
-  </div>
-</div>
-
   <footer>
     <p>Pagină creată în scopul concursului InfoEducație</p>
   </footer>
@@ -88,5 +80,12 @@
       document.getElementById(tabId).classList.add('active');
     }
   </script>
+  <div id="popup" class="msgBox" style="display: none;">
+  <p>A fost detectat un om la înec. Trimitem drona?</p>
+  <div class="responseBox">
+    <button onclick="confirmDetection(true)">DA</button>
+    <button onclick="confirmDetection(false)">NU</button>
+  </div>
+</div>
 </body>
 </html>
