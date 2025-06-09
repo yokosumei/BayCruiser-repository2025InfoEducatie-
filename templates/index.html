@@ -19,7 +19,6 @@
         <button class="tab-button" onclick="toggleTab('info')">Info</button>
         <button class="tab-button" onclick="toggleTab('scop')">Scop</button>
         <button class="tab-button" onclick="toggleTab('Controale drona')">Controale dronă</button>
-        
       </div>
       <div class="tab-content-wrapper">
         <div id="info" class="tab-content">
@@ -37,6 +36,10 @@
           <button onclick="Land()"class="tab-buttont">Aterizare</button>
                <br>
           <button onclick="displayServoMessage()"class="tab-buttont">Misca servo</button>
+          <br>
+          <button onclick="Land()" class="tab-buttont">Aterizare</button>
+          <br>
+          <button onclick="displayServoMessage()" class="tab-buttont">Misca servo</button>
         </div>
          </aside>
 
@@ -52,6 +55,22 @@
     <input type="file" name="file" accept="video/*" required>
     <input type="submit" value="Upload Video">
   </form>
+      </div>
+    </aside>
+    <section class="center-content">
+      <div class="card">
+        <div class="tools">
+          <div class="circle"><span style="font-size:21px" class="red box">⚪</span></div>
+          <div class="circle"><span style="font-size:21px" class="yellow box">⚪</span></div>
+          <div class="circle"><span style="font-size:21px" class="green box">⚪</span></div>
+          <div class="status" style="font-size:30px" >| Status</div>
+        </div>
+        <div class="content">
+          <article id="livestream-article" class="custom-article">
+            <div class="stream-wrapper">
+              <img id="video" src="/video_feed" width="640" height="480">
+            </div>
+          </article>
 
     <video width="640" height="480" controls autoplay>
       <source src="{{ url_for('static', filename='uploads/result.mp4') }}" type="video/mp4">
@@ -59,18 +78,45 @@
     </video>
 </article>
   </main>
+          <article id="upload-article" class="custom-article" style="display: none; text-align: center;">
+            <form id="uploadForm" action="/" method="post" enctype="multipart/form-data">
+              <input type="file" name="file" accept="video/*" required>
+              <input type="submit" value="Upload Video">
+               <hr style="height:12px;background-color:red">
+            </form>
+            <video width="640" height="480" controls autoplay>
+              <source src="{{ url_for('static', filename='uploads/result.mp4') }}" type="video/mp4">
+              Browserul tău nu suportă tag-ul video.
+            </video>
+          </article>
+        </div>
+      </div>
+    </section>
 
   <!-- Butoanele sub articol -->
   <div class="stream-controls">
+    <!-- Sidebar dreapta -->
+    <aside id="right-sidebar">
+      <h3>Status dronă</h3>
+      <ul>
+        <li>Baterie: 92%</li>
+        <li>Semnal: Bun</li>
+        <li>Ultima detecție: <span id="last-detection">N/A</span></li>
+      </ul>
+      <button onclick="alert('Test funcție dreapta')">Test Dreapta</button>
+       <div >
     <button onclick="startStream()" class="control">START</button>
     <button onclick="toggleView()" class="circle ">⭕</button>
     <button onclick="stopStream()" class="control ">STOP</button>
+    <button onclick="toggleView()" class="circle2">⭕</button>
+    <button onclick="stopStream()" class="control">STOP</button>
   </div>
+    </aside>
+  </main>
 
   <footer>
     <p>Pagină creată în scopul concursului InfoEducație</p>
   </footer>
-
   <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
   <script>
     function toggleTab(tabId) {
@@ -80,12 +126,5 @@
       document.getElementById(tabId).classList.add('active');
     }
   </script>
-  <div id="popup" class="msgBox" style="display: none;">
-  <p>A fost detectat un om la înec. Trimitem drona?</p>
-  <div class="responseBox">
-    <button onclick="confirmDetection(true)">DA</button>
-    <button onclick="confirmDetection(false)">NU</button>
-  </div>
-</div>
 </body>
 </html>
