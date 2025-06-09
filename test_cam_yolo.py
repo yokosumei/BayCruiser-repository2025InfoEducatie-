@@ -189,11 +189,6 @@ def stop_stream():
 def detection_status():
     return jsonify({"detected": popup_sent})
     
- @app.route("/confirm_detection", methods=["POST"])
-def confirm_detection():
-    activate_servos()
-    # poți adăuga aici și alte acțiuni viitoare (ex: control dronă, notificări etc.)
-    return jsonify({"status": "ok"})
 
 
 @app.route("/misca")
