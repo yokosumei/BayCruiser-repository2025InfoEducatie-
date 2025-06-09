@@ -100,8 +100,8 @@ def detect_objects():
                 cv2.circle(annotated, (cam_x, cam_y), 5, (255, 0, 0), -1)
                 cv2.circle(annotated, (obj_x, obj_y), 5, (0, 255, 0), -1)
 
-                offset_text = f"Δx: {dx_cm:.1f} cm, Δy: {dy_cm:.1f} cm"
-                dist_text = f"Dist: {dist_cm:.1f} cm"
+                offset_text = f"x:{dx_cm:.1f}cm|y:{dy_cm:.1f}cm"
+                dist_text = f"Dist:{dist_cm:.1f}cm"
                 cv2.putText(annotated, offset_text, (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,0), 2)
                 cv2.putText(annotated, offset_text, (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 1)
                 cv2.putText(annotated, dist_text, (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,0), 2)
