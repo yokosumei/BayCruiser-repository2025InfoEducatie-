@@ -54,34 +54,10 @@ function checkDetectionStatus() {
 }
 
 function showPopup() {
-  let existing = document.getElementById("popup-alert");
-  if (existing) existing.remove();
-
-  const popup = document.createElement("div");
-  popup.id = "popup-alert";
-  popup.className = "msgBox";
-
-  const message = document.createElement("p");
-  message.textContent = "Alarmă reală?";
-  popup.appendChild(message);
-
-  const btnContainer = document.createElement("div");
-  btnContainer.className = "btnContainer";
-
-  const yesBtn = document.createElement("button");
-  yesBtn.textContent = "DA";
-  yesBtn.onclick = () => confirmDetection(true);
-
-  const noBtn = document.createElement("button");
-  noBtn.textContent = "NU";
-  noBtn.onclick = () => confirmDetection(false);
-
-  btnContainer.appendChild(yesBtn);
-  btnContainer.appendChild(noBtn);
-  popup.appendChild(btnContainer);
-
-  document.body.appendChild(popup);
+  const popup = document.getElementById("popup-alert");
+  if (popup) popup.style.display = "flex";
 }
+
 
 setInterval(checkDetectionStatus, 2000);
 
