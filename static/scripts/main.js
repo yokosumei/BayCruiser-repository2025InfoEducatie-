@@ -1,22 +1,69 @@
-// === VARIABILE DE STARE ===
 let canShowMessage = true;
 let streamActive = false;
 
-// === CONTROL STREAM VIDEO ===
- function startStream() {
-    fetch('/start_stream')
-        .then(() => {
-            streamActive = true;
-            document.getElementById('video').style.display = 'block';
-        });
+
+function startStream() {
+  fetch('/start_stream')
+    .then(() => {
+      streamActive = true;
+      document.getElementById('video').style.display = 'block';
+      document.querySelector('.status').textContent = '| Live';
+      document.querySelector('.status').style.color = 'green';
+
+      const circles = document.querySelectorAll('.circle .box');
+      circles[0].textContent = '⚪'; // upload off 
+      circles[1].textContent = '⚪'; // stop off
+      circles[2].textContent = '🟢'; // start on
+    });
 }
 
 function stopStream() {
-    fetch('/stop_stream')
-        .then(() => {
-            streamActive = false;
-            document.getElementById('video').style.display = 'none';
-        });
+  fetch('/stop_stream')
+    .then(() => {
+      streamActive = false;
+      document.getElementById('video').style.display = 'none';
+      document.querySelector('.status').textContent = '| Non-live';
+      document.querySelector('.status').style.color = 'red';
+
+      const circles = document.querySelectorAll('.circle .box');
+      circles[0].textContent = '🔴'; 
+      circles[1].textContent = '⚪'; 
+      circles[2].textContent = '⚪'; 
+    });
+}
+
+function toggleView() {
+  const live = document.getElementById("livestream-article");
+  const upload = document.getElementById("upload-article");
+  const circles = document.querySelectorAll('.circle .box');
+
+  if (live.style.display !== "none") {
+    live.style.display = "none";
+    upload.style.display = "block";
+    document.querySelector('.status').textContent = '| Upload';
+    document.querySelector('.status').style.color = 'yellow';
+
+    circles[0].textContent = '⚪'; // upload on
+    circles[1].textContent = '🟡';
+    circles[2].textContent = '⚪';
+  } else {
+    upload.style.display = "none";
+    live.style.display = "block";
+
+    if (streamActive) {
+      document.querySelector('.status').textContent = '| Live';
+      document.querySelector('.status').style.color = 'green';
+      circles[0].textContent = '⚪';
+      circles[1].textContent = '⚪';
+      circles[2].textContent = '🟢';
+    } else {
+      document.querySelector('.status').textContent = '| Non-live';
+      document.querySelector('.status').style.color = 'red';
+      circles[0].textContent = '🔴';
+      circles[1].textContent = '⚪';
+      circles[2].textContent = '⚪';
+    }
+  }
 }
 // === TABURI ===
      function toggleTab(tabId) {
@@ -49,18 +96,6 @@ function stopStream() {
   if (activeButton) activeButton.classList.add('active');
 }
 
-function toggleView() {
-  const live = document.getElementById("livestream-article");
-  const upload = document.getElementById("upload-article");
-
-  if (live.style.display !== "none") {
-    live.style.display = "none";
-    upload.style.display = "block";
-  } else {
-    upload.style.display = "none";
-    live.style.display = "block";
-  }
-}
 // === POPUP DETECȚIE „om_la_inec” ===
 function displayMessage() {
   if (!canShowMessage) return;
