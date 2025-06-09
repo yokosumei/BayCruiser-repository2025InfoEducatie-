@@ -113,6 +113,7 @@ def detect_objects():
             detected_flag = False
             popup_sent = False
 
+        annotated = results[0].plot()
         with lock:
             output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
 
