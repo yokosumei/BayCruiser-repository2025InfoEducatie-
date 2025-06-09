@@ -74,21 +74,24 @@ background-color: #ff605c;
 
 
   }
-  .msgBox {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%,-50%);
-    width: 200px;
-    background: #000000;
-  }
-  .msgBox, .responseBox {
+    .msgBox, .responseBox {
     border: 1px solid #333;
     background-color: #0f0d0d;
     padding: 15px;
     margin: 10px;
     border-radius: 8px;
     max-width: 300px;
+    display: flex;
+   justify-content: center;
+   align-items: center;
+  }
+ .msgBox {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    width: 200px;
+    background: #000000;
   }
 
      .main-layout {
