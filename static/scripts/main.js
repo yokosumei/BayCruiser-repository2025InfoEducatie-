@@ -178,4 +178,27 @@ function Ateriazare() {
       alert("Drona a aterizat.");
       
     })
+let popupShown = false;
+
+  function checkDetectionStatus() {
+    fetch('/detection_status')
+      .then(response => response.json())
+      .then(data => {
+        if (data.detected && !popupShown) {
+          popupShown = true;
+          showPopup();
+        }
+      });
+  }
+
+  function showPopup() {
+    document.getElementById('popup').style.display = 'block';
+  }
+
+  function confirmDetection(answer) {
+    document.getElementById('popup').style.display = 'none';
+    // TODO: trimite alegerea la server, dacă e nevoie
+  }
+
+  setInterval(checkDetectionStatus, 2000);
 }
