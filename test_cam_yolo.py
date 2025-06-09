@@ -75,6 +75,7 @@ def detect_objects():
         class_ids = results[0].boxes.cls.tolist()
 
         detected = False
+        annotated = results[0].plot()  # baza pe care desenăm tot
 
         for i, cls_id in enumerate(class_ids):
             if names[int(cls_id)] == "om_la_inec":
@@ -94,18 +95,17 @@ def detect_objects():
                 dy_cm = (obj_y - cam_y) / PIXELS_PER_CM
                 dist_cm = (dx_cm**2 + dy_cm**2)**0.5
 
-                # Deseneare
-                cv2.line(frame, (cam_x, cam_y), (obj_x, obj_y), (0, 0, 255), 2)
-                cv2.circle(frame, (cam_x, cam_y), 5, (255, 0, 0), -1)
-                cv2.circle(frame, (obj_x, obj_y), 5, (0, 255, 0), -1)
+                # Desenează peste imaginea deja anotată
+                cv2.line(annotated, (cam_x, cam_y), (obj_x, obj_y), (0, 0, 255), 2)
+                cv2.circle(annotated, (cam_x, cam_y), 5, (255, 0, 0), -1)
+                cv2.circle(annotated, (obj_x, obj_y), 5, (0, 255, 0), -1)
 
-                # afisare rezultate
                 offset_text = f"Δx: {dx_cm:.1f} cm, Δy: {dy_cm:.1f} cm"
                 dist_text = f"Dist: {dist_cm:.1f} cm"
-                cv2.putText(frame, offset_text, (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,0), 2)
-                cv2.putText(frame, offset_text, (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 1)
-                cv2.putText(frame, dist_text, (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,0), 2)
-                cv2.putText(frame, dist_text, (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 1)
+                cv2.putText(annotated, offset_text, (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,0), 2)
+                cv2.putText(annotated, offset_text, (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 1)
+                cv2.putText(annotated, dist_text, (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,0), 2)
+                cv2.putText(annotated, dist_text, (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 1)
 
                 break  # doar primul om detectat
 
@@ -113,12 +113,10 @@ def detect_objects():
             detected_flag = False
             popup_sent = False
 
-        annotated = results[0].plot()
         with lock:
-            output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
+            output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
 
         time.sleep(0.05)
-
 
     
 
