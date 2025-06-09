@@ -89,7 +89,6 @@ def detect_objects():
                     detected_flag = True
                     popup_sent = True
                     last_detection_time = time.time()
-                    activate_servos()
                     object_present = True
 
                 box = results[0].boxes[i]
