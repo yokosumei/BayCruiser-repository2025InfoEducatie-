@@ -74,34 +74,7 @@ background-color: #ff605c;
 
 
   }
-  .msgBox {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 9999;
-    width: 300px;
-    background-color: #000;
-    color: white;
-    padding: 20px;
-    border-radius: 10px;
-    text-align: center;
-  }
-
-  .responseBox button {
-    margin: 10px;
-    padding: 10px 20px;
-    background-color: #114B5F;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-
-  .responseBox button:hover {
-    background-color: #A41313;
-  }
-
+  
      .main-layout {
     display: flex;
     height: calc(100vh - 160px);
@@ -303,3 +276,31 @@ footer {
    padding:6px;
    color: white;
 {
+.msgBox {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+    width: 300px;
+    background-color: #000;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+  }
+
+  .responseBox button {
+    margin: 10px;
+    padding: 10px 20px;
+    background-color: #114B5F;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .responseBox button:hover {
+    background-color: #A41313;
+  }
+
