@@ -1,3 +1,4 @@
+// === JS ===
 let streamActive = false;
 let popupShown = false;
 let detectedPreviously = false;
@@ -7,6 +8,13 @@ function startStream() {
     .then(() => {
       streamActive = true;
       document.getElementById('video').style.display = 'block';
+      document.querySelector('.status').textContent = '| Live';
+      document.querySelector('.status').style.color = 'green';
+
+      const circles = document.querySelectorAll('.circle .box');
+      circles[0].textContent = '⚪'; // upload off 
+      circles[1].textContent = '⚪'; // stop off
+      circles[2].textContent = '🟢'; // start on
     });
 }
 
@@ -15,11 +23,84 @@ function stopStream() {
     .then(() => {
       streamActive = false;
       document.getElementById('video').style.display = 'none';
+      document.querySelector('.status').textContent = '| Non-live';
+      document.querySelector('.status').style.color = 'red';
+
+      const circles = document.querySelectorAll('.circle .box');
+      circles[0].textContent = '🔴'; 
+      circles[1].textContent = '⚪'; 
+      circles[2].textContent = '⚪'; 
     });
 }
 
+function toggleView() {
+  const live = document.getElementById("livestream-article");
+  const upload = document.getElementById("upload-article");
+  const circles = document.querySelectorAll('.circle .box');
+
+  if (live.style.display !== "none") {
+    live.style.display = "none";
+    upload.style.display = "block";
+    document.querySelector('.status').textContent = '| Upload';
+    document.querySelector('.status').style.color = 'yellow';
+
+    circles[0].textContent = '⚪'; // upload on
+    circles[1].textContent = '🟡';
+    circles[2].textContent = '⚪';
+  } else {
+    upload.style.display = "none";
+    live.style.display = "block";
+
+    if (streamActive) {
+      document.querySelector('.status').textContent = '| Live';
+      document.querySelector('.status').style.color = 'green';
+      circles[0].textContent = '⚪';
+      circles[1].textContent = '⚪';
+      circles[2].textContent = '🟢';
+    } else {
+      document.querySelector('.status').textContent = '| Non-live';
+      document.querySelector('.status').style.color = 'red';
+      circles[0].textContent = '🔴';
+      circles[1].textContent = '⚪';
+      circles[2].textContent = '⚪';
+    }
+  }
+}
+
+function toggleTab(tabId) {
+  const contents = document.querySelectorAll('.tab-content');
+  const buttons = document.querySelectorAll('.tab-button');
+  const container = document.getElementById('tabContent');
+
+  let isAlreadyOpen = false;
+
+  contents.forEach(content => {
+    if (content.id === tabId && content.classList.contains('active')) {
+      isAlreadyOpen = true;
+    }
+    content.classList.remove('active');
+  });
+
+  buttons.forEach(btn => btn.classList.remove('active'));
+
+  if (isAlreadyOpen) {
+    container.classList.remove('active');
+    return;
+  }
+
+  document.getElementById(tabId).classList.add('active');
+  container.classList.add('active');
+
+  const activeButton = Array.from(buttons).find(
+    btn => btn.textContent.trim().toLowerCase() === tabId.toLowerCase()
+  );
+  if (activeButton) activeButton.classList.add('active');
+}
+
 function confirmDetection(answer) {
-  document.getElementById('popup-alert').style.display = 'none';
+  const popup = document.getElementById('popup-alert');
+  if (popup) popup.style.display = 'none';
+
   if (answer) {
     fetch("/misca")
       .then(res => res.text())
@@ -28,12 +109,12 @@ function confirmDetection(answer) {
   } else {
     alert("Alarmă ignorată.");
   }
-  // După ce popupul a fost tratat, așteptăm re-detecție după ieșire din cadru
   detectedPreviously = true;
 }
 
 function checkDetectionStatus() {
   if (!streamActive) return;
+
   fetch('/detection_status')
     .then(response => response.json())
     .then(data => {
@@ -43,11 +124,10 @@ function checkDetectionStatus() {
           showPopup();
         }
       } else {
-        // resetăm starea dacă obiectul a ieșit din cadru
         popupShown = false;
         detectedPreviously = false;
-        const existing = document.getElementById("popup-alert");
-        if (existing) existing.remove();
+        const popup = document.getElementById("popup-alert");
+        if (popup) popup.style.display = "none";
       }
     })
     .catch(err => console.warn("Eroare verificare detecție:", err));
@@ -58,8 +138,7 @@ function showPopup() {
   if (popup) popup.style.display = "flex";
 }
 
-
-setInterval(checkDetectionStatus, 2000);
+setInterval(checkDetectionStatus, 1000);
 
 function displayServoMessage() {
   fetch("/misca")
@@ -80,7 +159,7 @@ function TakeOff() {
     });
 }
 
-function Land() {
+function Ateriazare() {
   fetch("/land")
     .then(res => res.text())
     .then(() => {
