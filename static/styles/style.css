@@ -72,49 +72,30 @@ background-color: #ff605c;
     bottom:0;
   }
 
-
-  }
-    #popup-alert {
+.popup-alert {
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background-color: #0f0d0d;
-  color: white;
+  background: #0f0d0d;
+  border: 2px solid #ffbd44;
   padding: 20px;
   border-radius: 10px;
-  border: 2px solid #ffbd44;
-  box-shadow: 0 0 25px black;
-  z-index: 10000;
-  display: none;
-  width: 250px;
-  text-align: center;
-}
-
-#popup-alert p {
-  font-size: 18px;
-  margin-bottom: 15px;
-}
-
-#popup-alert .btnContainer {
-  display: flex;
-  justify-content: space-around;
-}
-
-#popup-alert button {
-  background-color: #114B5F;
   color: white;
-  border: none;
-  padding: 8px 18px;
-  border-radius: 5px;
-  font-size: 15px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 30px rgba(0,0,0,0.5);
 }
 
-#popup-alert button:hover {
-  background-color: #A41313;
+.popup-buttons {
+  margin-top: 10px;
+  display: flex;
+  gap: 15px;
 }
+
 
 
      .main-layout {
