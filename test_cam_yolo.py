@@ -66,16 +66,20 @@ def detect_objects():
 
     cam_x =320
     cam_y =240
-    PIXELS_PER_CM = 10
-    object_present = False  # variabilă pentru a controla detecția continuă
+    PIXELS_PER_CM =10
+    object_present = False  # controlează popupul repetat
 
     while streaming:
         frame = picam2.capture_array()
         results = model(frame, verbose=False)
+
+        # imaginea cu boxuri YOLO
+        annotated = results[0].plot()
+
         names = results[0].names
         class_ids = results[0].boxes.cls.tolist()
 
-        c current_detection = False
+        current_detection = False
 
         for i, cls_id in enumerate(class_ids):
             if names[int(cls_id)] == "om_la_inec":
@@ -88,7 +92,6 @@ def detect_objects():
                     activate_servos()
                     object_present = True
 
-                # desenare și calcule
                 box = results[0].boxes[i]
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
                 obj_x = (x1 + x2) // 2
@@ -102,16 +105,16 @@ def detect_objects():
                 cv2.circle(annotated, (cam_x, cam_y), 5, (255, 0, 0), -1)
                 cv2.circle(annotated, (obj_x, obj_y), 5, (0, 255, 0), -1)
 
-                offset_text = f"x:{dx_cm:.1f}cm|y:{dy_cm:.1f}cm"
-                dist_text = f"Dist:{dist_cm:.1f}cm"
+                offset_text = f"x:{dx_cm:.1f}cm | y:{dy_cm:.1f}cm"
+                dist_text = f"Dist: {dist_cm:.1f}cm"
                 cv2.putText(annotated, offset_text, (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,0), 2)
                 cv2.putText(annotated, offset_text, (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 1)
                 cv2.putText(annotated, dist_text, (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,0), 2)
                 cv2.putText(annotated, dist_text, (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 1)
 
-                break  # doar primul obiect
+                break  # doar primul detectat
 
-        # dacă obiectul a ieșit din cadru
+        # dacă nu mai e în cadru
         if not current_detection:
             detected_flag = False
             popup_sent = False
