@@ -23,7 +23,7 @@ background-color: #ff605c;
 }
   .control
 {
-  
+
   background-color: #114B5F;
   font-size: 16px;
   padding: 16px 30px;
@@ -43,9 +43,23 @@ background-color: #ff605c;
    margin-left: 220px;
 
 }
- 
+  .circle
+{
+ background-color: #b82323;
+ border: none;
+ padding: 30px;
+ text-align: center;
+ font-size: 16px;
+ cursor: pointer;
+ clip-path: circle(46%);
+
+  .control
+}
+
   .tab-buttont {
   justify-content: center;
+  border: 2px solid #24b4fb;
+  background-color: #24b4fb;
   border: 2px solid #E4FDE1;
   background-color: #1c1c1c;
   border-radius: 0.9em;
@@ -55,6 +69,7 @@ background-color: #ff605c;
   font-size: 16px;
   display: block;
   margin: 0 auto;
+
   color: white;
 }
 
@@ -62,7 +77,6 @@ background-color: #ff605c;
 .tab-buttont.active {
   background-color: #8f2424c5;
 }
-
   }
   .footer{
     position:fixed;
@@ -71,10 +85,24 @@ background-color: #ff605c;
     background-color:#d2c8c8;
     bottom:0;
   }
-
-
   }
-  
+  .msgBox {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    width: 200px;
+    background: #000000;
+  }
+  .msgBox, .responseBox {
+    border: 1px solid #333;
+    background-color: #0f0d0d;
+    padding: 15px;
+    margin: 10px;
+    border-radius: 8px;
+    max-width: 300px;
+  }
+
      .main-layout {
     display: flex;
     height: calc(100vh - 160px);
@@ -129,7 +157,7 @@ background-color: #ff605c;
   #right-sidebar button:hover {
     background-color: #A41313;
   }
-  
+
 /* Layout pe 2 coloane: aside + articol */
 .main-layout {
   display: flex;
@@ -144,7 +172,6 @@ background-color: #ff605c;
     font-size: 1rem;
     height: 100%;
   }
-
   * {box-sizing: border-box}
 /* Containerul butoanelor */
 .tab-container {
@@ -171,6 +198,7 @@ background-color: #ff605c;
 .tab-content-wrapper {
   flex-grow: 1;
   margin-top: 15px;
+  background-color: #272424;
   background-color: #456990;
   padding: 10px;
   overflow-y: auto;
@@ -185,8 +213,12 @@ background-color: #ff605c;
 .tab-content.active {
   display: block;
 }
+/* Coloana dreaptă: articolul */
 /* articolul */
 .custom-article {
+  flex-grow: 1;
+  padding: 20px;
+  background-color: #f9f9f9;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -194,7 +226,8 @@ background-color: #ff605c;
 }
 .custom-article img {
   max-width: 100%;
-  
+  margin-top: 10px;
+
 }
 /* Header */
 header {
@@ -211,15 +244,23 @@ footer {
 }
 
   #video {
+    width: 90%;
     width: 98%;
     max-height: 70vh;
     border: 4px solid #003049;
     border-radius: 10px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
     background: url("/static/img/img1.jpg") no-repeat center;
-  
+    background-size: cover;
+    object-fit: contain;
+
   }
 
+  .stream-wrapper {
+    display: flex;
+    justify-content: space-between;
+    justify-content: center;
+  }
    .stream-controls {
       display: flex;
       gap: 10px;
@@ -276,31 +317,3 @@ footer {
    padding:6px;
    color: white;
 {
-.msgBox {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 9999;
-    width: 300px;
-    background-color: #000;
-    color: white;
-    padding: 20px;
-    border-radius: 10px;
-    text-align: center;
-  }
-
-  .responseBox button {
-    margin: 10px;
-    padding: 10px 20px;
-    background-color: #114B5F;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-
-  .responseBox button:hover {
-    background-color: #A41313;
-  }
-
