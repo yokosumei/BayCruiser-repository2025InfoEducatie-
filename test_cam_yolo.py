@@ -64,8 +64,8 @@ def blank_frame():
 def detect_objects():
     global output_frame, streaming, detected_flag, popup_sent, last_detection_time
 
-    cam_x = 640 // 2
-    cam_y = 480 // 2
+    cam_x =320
+    cam_y =240
     PIXELS_PER_CM = 10
     object_present = False  # variabilă pentru a controla detecția continuă
 
@@ -75,13 +75,12 @@ def detect_objects():
         names = results[0].names
         class_ids = results[0].boxes.cls.tolist()
 
-        current_detection = False
+        c current_detection = False
 
         for i, cls_id in enumerate(class_ids):
             if names[int(cls_id)] == "om_la_inec":
                 current_detection = True
 
-                # dacă înainte nu era detectat, activează popupul și servoul
                 if not object_present:
                     detected_flag = True
                     popup_sent = True
@@ -119,7 +118,7 @@ def detect_objects():
             object_present = False
 
         with lock:
-            output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
+            output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
 
         time.sleep(0.05)
 
