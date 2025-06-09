@@ -64,29 +64,62 @@ def blank_frame():
 def detect_objects():
     global output_frame, streaming, detected_flag, popup_sent, last_detection_time
 
+    cam_x = 640 // 2
+    cam_y = 480 // 2
+    PIXELS_PER_CM = 10
+
     while streaming:
         frame = picam2.capture_array()
         results = model(frame, verbose=False)
-        annotated = results[0].plot()
-
         names = results[0].names
         class_ids = results[0].boxes.cls.tolist()
 
+        detected = False
+
         for i, cls_id in enumerate(class_ids):
             if names[int(cls_id)] == "om_la_inec":
+                detected = True
                 detected_flag = True
                 popup_sent = True
                 last_detection_time = time.time()
                 activate_servos()
 
-        if time.time() - last_detection_time > 5:
+                # Extrage boxul
+                box = results[0].boxes[i]
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                obj_x = (x1 + x2) // 2
+                obj_y = (y1 + y2) // 2
+
+                dx_cm = (obj_x - cam_x) / PIXELS_PER_CM
+                dy_cm = (obj_y - cam_y) / PIXELS_PER_CM
+                dist_cm = (dx_cm**2 + dy_cm**2)**0.5
+
+                # Deseneare
+                cv2.line(frame, (cam_x, cam_y), (obj_x, obj_y), (0, 0, 255), 2)
+                cv2.circle(frame, (cam_x, cam_y), 5, (255, 0, 0), -1)
+                cv2.circle(frame, (obj_x, obj_y), 5, (0, 255, 0), -1)
+
+                # afisare rezultate
+                offset_text = f"Δx: {dx_cm:.1f} cm, Δy: {dy_cm:.1f} cm"
+                dist_text = f"Dist: {dist_cm:.1f} cm"
+                cv2.putText(frame, offset_text, (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,0), 2)
+                cv2.putText(frame, offset_text, (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 1)
+                cv2.putText(frame, dist_text, (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,0,0), 2)
+                cv2.putText(frame, dist_text, (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 1)
+
+                break  # doar primul om detectat
+
+        if not detected and time.time() - last_detection_time > 5:
             detected_flag = False
             popup_sent = False
 
         with lock:
-            output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
+            output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
 
         time.sleep(0.05)
+
+
+    
 
 @app.route("/", methods=["GET", "POST"])
 def index():
