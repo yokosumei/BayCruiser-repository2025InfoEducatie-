@@ -109,6 +109,11 @@ def detect_objects():
 
                 break  # doar primul om detectat
 
+         if not current_detection:
+            detected_flag = False
+            popup_sent = False
+            object_present = False
+
         if not detected and time.time() - last_detection_time > 5:
             detected_flag = False
             popup_sent = False
