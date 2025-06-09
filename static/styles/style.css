@@ -1,294 +1,147 @@
-/* --- BACKGROUND HEADER CU IMAGINE --- */
-  
-  header {
-    background: url("/static/img/img2.jpg") no-repeat center center;
-    background-size: cover;
-    height: 120px;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    padding-top: 10px;
-    position: relative;
-    border-bottom: 4px solid #000;
-  }
-   .circle2
-{
-background-color: #ff605c;
- border: none;
- padding: 15px;
- text-align: center;
- font-size: 16px;
- cursor: pointer;
- clip-path: circle(49%);
-}
-  .control
-{
-  
-  background-color: #114B5F;
-  font-size: 16px;
-  padding: 16px 30px;
-  border: none;
-  cursor: pointer;
-  border-radius: 5px;
-  text-align: center;
+// === VARIABILE DE STARE ===
+let streamActive = false;
+
+// === CONTROL STREAM VIDEO ===
+ function startStream() {
+    fetch('/start_stream')
+        .then(() => {
+            streamActive = true;
+            document.getElementById('video').style.display = 'block';
+        });
 }
 
-.control:hover {
-  background-color: #A41313;
-  color: white;
+function stopStream() {
+    fetch('/stop_stream')
+        .then(() => {
+            streamActive = false;
+            document.getElementById('video').style.display = 'none';
+        });
 }
-  .stream-controls
-{
-   display: flex; 
-   margin-left: 220px;
+// === TABURI ===
+     function toggleTab(tabId) {
+  const contents = document.querySelectorAll('.tab-content');
+  const buttons = document.querySelectorAll('.tab-button');
+  const container = document.getElementById('tabContent');
 
-}
- 
-  .tab-buttont {
-  justify-content: center;
-  border: 2px solid #E4FDE1;
-  background-color: #1c1c1c;
-  border-radius: 0.9em;
-  cursor: pointer;
-  padding: 0.8em 1.2em 0.8em 1em;
-  transition: all ease-in-out 0.2s;
-  font-size: 16px;
-  display: block;
-  margin: 0 auto;
-  color: white;
-}
+  let isAlreadyOpen = false;
 
-.tab-buttont:hover,
-.tab-buttont.active {
-  background-color: #8f2424c5;
-}
-
-  }
-  .footer{
-    position:fixed;
-    text-align:right;
-    margin:0;
-    background-color:#d2c8c8;
-    bottom:0;
-  }
-
-
-  }
-  .msgBox {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%,-50%);
-    width: 200px;
-    background: #000000;
-  }
-  .msgBox, .responseBox {
-    border: 1px solid #333;
-    background-color: #0f0d0d;
-    padding: 15px;
-    margin: 10px;
-    border-radius: 8px;
-    max-width: 300px;
-  }
-
-     .main-layout {
-    display: flex;
-    height: calc(100vh - 160px);
-  }
-
-  .center-content {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    padding: 20px;
-    background-color: #f9f9f9;
-    overflow-y: auto;
-  }
-
-  #right-sidebar {
-    width: 230px;
-    background-color: #1c1c1c;
-    color: white;
-    padding: 20px;
-    font-size: 1rem;
-    height: 100%;
-    box-sizing: border-box;
-    border-left: 4px solid #000;
-  }
-
-  #right-sidebar h3 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    font-size: 1.2em;
-  }
-
-  #right-sidebar ul {
-    list-style: none;
-    padding-left: 0;
-  }
-
-  #right-sidebar li {
-    margin-bottom: 8px;
-  }
-
-  #right-sidebar button {
-    margin-top: 20px;
-    padding: 10px;
-    background-color: #114B5F;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-
-  #right-sidebar button:hover {
-    background-color: #A41313;
-  }
-  
-/* Layout pe 2 coloane: aside + articol */
-.main-layout {
-  display: flex;
-  height: calc(100vh - 100px); /* 100px rezervat pentru header + footer */
-}
-/* Coloana stângă (sidebar) */
-  #sidebar {
-    width: 230px;
-    background-color: #1c1c1c;
-    color: white;
-    padding: 20px;
-    font-size: 1rem;
-    height: 100%;
-  }
-
-  * {box-sizing: border-box}
-/* Containerul butoanelor */
-.tab-container {
-  display: flex;
-  flex-direction: column;
-  height: 40%;
-}
-/* Butoanele tab */
-.tab-button {
-  background: none;
-  border: none;
-  color: white;
-  padding: 14px;
-  font-size: 1rem;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-.tab-button:hover,
-.tab-button.active {
-  background-color: #8f2424c5;
-}
-/* Zona în care apare conținutul taburilor */
-.tab-content-wrapper {
-  flex-grow: 1;
-  margin-top: 15px;
-  background-color: #456990;
-  padding: 10px;
-  overflow-y: auto;
-  height: 50%;
-  box-sizing: border-box;
-}
-/* Fiecare tab (doar unul vizibil) */
-.tab-content {
-  display: none;
-  color: white;
-}
-.tab-content.active {
-  display: block;
-}
-/* articolul */
-.custom-article {
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-}
-.custom-article img {
-  max-width: 100%;
-  
-}
-/* Header */
-header {
-  background-color: #222;
-  color: white;
-  padding: 20px;
-  text-align: center;
-}
-/* Footer */
-footer {
-  background-color: #eee;
-  text-align: center;
-  padding: 10px;
-}
-
-  #video {
-    width: 98%;
-    max-height: 70vh;
-    border: 4px solid #003049;
-    border-radius: 10px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
-    background: url("/static/img/img1.jpg") no-repeat center;
-  
-  }
-
-   .stream-controls {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      justify-content: center;
-      padding: 15px;
+  contents.forEach(content => {
+    if (content.id === tabId && content.classList.contains('active')) {
+      isAlreadyOpen = true;
     }
-.card {
- width: 900px;
- height: 700px;
- background-color: #011522;
- border-radius: 8px;
- z-index: 1;
+    content.classList.remove('active');
+  });
+
+  buttons.forEach(btn => btn.classList.remove('active'));
+
+  if (isAlreadyOpen) {
+    container.classList.remove('active');
+    return;
+  }
+
+  document.getElementById(tabId).classList.add('active');
+  container.classList.add('active');
+
+  const activeButton = Array.from(buttons).find(
+    btn => btn.textContent.trim().toLowerCase() === tabId.toLowerCase()
+  );
+  if (activeButton) activeButton.classList.add('active');
 }
 
-.tools {
- display: flex;
- align-items: center;
- padding: 9px;
-}
+function toggleView() {
+  const live = document.getElementById("livestream-article");
+  const upload = document.getElementById("upload-article");
 
-.circle {
- padding: 4px;
+  if (live.style.display !== "none") {
+    live.style.display = "none";
+    upload.style.display = "block";
+  } else {
+    upload.style.display = "none";
+    live.style.display = "block";
+  }
 }
+// === POPUP DETECȚIE „om_la_inec” ===
+let popupShown = false;
+  let streamActive = false;
 
-.box {
- display: inline-block;
- align-items: center;
- width: 30px;
- height: 30px;
- border-radius: 50%;
-}
+  function startStream() {
+    fetch('/start_stream')
+      .then(() => {
+        streamActive = true;
+        document.getElementById('video').style.display = 'block';
+      });
+  }
 
-.red {
- background-color: #ff605c;
-}
+  function stopStream() {
+    fetch('/stop_stream')
+      .then(() => {
+        streamActive = false;
+        document.getElementById('video').style.display = 'none';
+      });
+  }
 
-.yellow {
- background-color: #ffbd44;
-}
+  function confirmDetection(answer) {
+    document.getElementById('popup-alert').style.display = 'none';
+    if (answer) {
+      fetch("/misca")
+        .then(res => res.text())
+        .then(() => alert("Initiere protocol de salvare."))
+        .catch(() => alert("Eroare la mișcarea servomotorului."));
+    } else {
+      alert("Alarmă ignorată.");
+    }
+  }
 
-.green {
- background-color: #00ca4e;
-}
-.content{
+  function checkDetectionStatus() {
+    if (!streamActive || popupShown) return;
+    fetch('/detection_status')
+      .then(response => response.json())
+      .then(data => {
+        if (data.detected && !popupShown) {
+          popupShown = true;
+          document.getElementById('popup-alert').style.display = 'block';
+        }
+      })
+      .catch(err => console.warn("Eroare verificare detecție:", err));
+  }
 
+  setInterval(checkDetectionStatus, 2000);
+// === COMANDĂ MANUALĂ SERVOMOTOR ===
+function displayServoMessage() {
+  fetch("/misca")
+    .then(res => res.text())
+    .then(() => {
+      showResponse("Servomotorul a fost mișcat");
+    })
+    .catch(() => {
+      showResponse("Eroare la mișcarea servomotorului.");
+    });
 }
-.content{
- padding: 5px;
- color: white;
+// === POLLING DETECȚIE AUTOMATĂ ===
+setInterval(() => {
+  if (!streamActive || popupShown) return;
+  fetch("/detection_status")
+    .then(res => res.json())
+    .then(data => {
+      if (data.detected && !popupShown) {
+  popupShown = true;
+  document.getElementById('popup-alert').style.display = 'block';
 }
-.status
-{
-   padding:6px;
-   color: white;
-{
+    })
+    .catch(err => console.warn("Eroare verificare detecție:", err));
+}, 1000);
+function TakeOff() {
+  fetch("/takeoff")
+    .then(res => res.text())
+    .then(() => {
+      alert("Drona a decolat.");
+        })
+}
+function Ateriazare() {
+  fetch("/land")
+    .then(res => res.text())
+    .then(() => {
+      alert("Drona a aterizat.");
+      
+    })
+}
