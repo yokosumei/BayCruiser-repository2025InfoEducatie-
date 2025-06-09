@@ -75,20 +75,31 @@ background-color: #ff605c;
 
   }
   .msgBox {
-    position: absolute;
+    position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%,-50%);
-    width: 200px;
-    background: #000000;
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+    width: 300px;
+    background-color: #000;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
   }
-  .msgBox, .responseBox {
-    border: 1px solid #333;
-    background-color: #0f0d0d;
-    padding: 15px;
+
+  .responseBox button {
     margin: 10px;
-    border-radius: 8px;
-    max-width: 300px;
+    padding: 10px 20px;
+    background-color: #114B5F;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .responseBox button:hover {
+    background-color: #A41313;
   }
 
      .main-layout {
