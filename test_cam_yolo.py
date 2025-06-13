@@ -178,7 +178,7 @@ def video_feed():
                 if request.path.endswith('/annotated'):
                     frame = cv2.imencode('.jpg', annotated_frame)[1].tobytes() if annotated_frame is not None else blank_frame()
                 else:
-                frame = output_frame if output_frame is not None else blank_frame()
+                    frame = output_frame if output_frame is not None else blank_frame()
             yield (b"--frame\r\n"
                    b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
             time.sleep(0.01)
