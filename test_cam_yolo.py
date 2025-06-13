@@ -189,7 +189,7 @@ def video_feed():
                         frame = blank_frame()
                 else:
                     if output_frame is None:
-                    logging.warning("output_frame is None!")
+                        logging.warning("output_frame is None!")
                 frame = output_frame if output_frame is not None else blank_frame()
             yield (b"--frame\r\n"
                    b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
