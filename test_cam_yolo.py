@@ -42,6 +42,8 @@ yolo_output_frame = None
 detected_flag = False
 popup_sent = False
 last_detection_time = 0
+detection_frame_skip = 5  # număr de frame-uri de sărit
+frame_counter = 0
 
 def cleanup():
     servo1.stop()
@@ -79,7 +81,7 @@ def camera_thread():
         time.sleep(0.01)
 
 def detection_thread():
-    global frame_buffer, yolo_output_frame, detected_flag, popup_sent, last_detection_time
+    global frame_buffer, yolo_output_frame, detected_flag, popup_sent, last_detection_time, frame_counter
     cam_x, cam_y = 320, 240
     PIXELS_PER_CM = 10
     object_present = False
@@ -87,6 +89,10 @@ def detection_thread():
     while True:
         if not streaming:
             time.sleep(0.1)
+            continue
+        frame_counter += 1
+        if frame_counter % detection_frame_skip != 0:
+            time.sleep(0.01)
             continue
         with lock:
             frame = frame_buffer.copy() if frame_buffer is not None else None
@@ -139,7 +145,7 @@ def detection_thread():
         with output_lock:
             yolo_output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
 
-        time.sleep(0.05)
+        time.sleep(0.01)
 
 def stream_thread():
     global output_frame
