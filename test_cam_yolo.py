@@ -19,7 +19,7 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 model = YOLO("my_model.pt")
 picam2 = Picamera2()
-picam2.configure(picam2.create_video_configuration(main={"format": "RGB888", "size": (640, 480)}))
+picam2.configure(picam2.create_video_configuration(main={"format": "RGB888", "size": (320, 240)}))
 picam2.start()
 
 GPIO.setmode(GPIO.BOARD)
@@ -135,7 +135,7 @@ def detect_objects():
                 object_present = False
             with lock:
                 annotated_frame = annotated.copy()
-        time.sleep(0.05)
+        time.sleep(0.01)
 
 
 def stream_output():
@@ -148,7 +148,7 @@ def stream_output():
             if frame is not None:
                 with lock:
                     output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
-        time.sleep(0.05)
+        time.sleep(0.01)
 
 
 def flask_routes():
@@ -174,7 +174,7 @@ def video_feed():
                 frame = output_frame if output_frame is not None else blank_frame()
             yield (b"--frame\r\n"
                    b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
-            time.sleep(0.05)
+            time.sleep(0.01)
     return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
 
