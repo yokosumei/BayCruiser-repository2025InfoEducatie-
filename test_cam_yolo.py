@@ -191,6 +191,39 @@ def takeoff():
 def land():
     return "Drone Landing (dezactivat temporar)"
 
+@app.route("/", methods=["GET", "POST"])
+def index():
+    if request.method == "POST":
+        if 'file' not in request.files:
+            return render_template("index.html", error="No file")
+        file = request.files['file']
+        if file.filename == '':
+            return render_template("index.html", error="No filename")
+
+        input_path = os.path.join(app.config['UPLOAD_FOLDER'], 'input.mp4')
+        output_path = os.path.join(app.config['UPLOAD_FOLDER'], 'result.mp4')
+        file.save(input_path)
+
+        results = model.predict(
+            source=input_path,
+            save=True,
+            save_txt=False,
+            project=app.config['UPLOAD_FOLDER'],
+            name="processed",
+            exist_ok=True,
+            stream=True  
+        )
+
+        processed_dir = os.path.join(app.config['UPLOAD_FOLDER'], "processed")
+        for fname in os.listdir(processed_dir):
+            if fname.endswith(".avi") or fname.endswith(".mp4"):
+                os.rename(os.path.join(processed_dir, fname), output_path)
+                break
+
+        return render_template("index.html", video_uploaded=True)
+
+    return render_template("index.html", video_uploaded=False)
+
 if __name__ == "__main__":
     threading.Thread(target=camera_thread, name="CameraThread", daemon=True).start()
     threading.Thread(target=detection_thread, name="DetectionThread", daemon=True).start()
