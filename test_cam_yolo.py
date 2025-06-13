@@ -38,6 +38,7 @@ lock = threading.Lock()
 output_lock = threading.Lock()
 frame_buffer = None
 output_frame = None
+yolo_output_frame = None
 detected_flag = False
 popup_sent = False
 last_detection_time = 0
@@ -78,7 +79,7 @@ def camera_thread():
         time.sleep(0.01)
 
 def detection_thread():
-    global frame_buffer, detected_flag, popup_sent, last_detection_time
+    global frame_buffer, yolo_output_frame, detected_flag, popup_sent, last_detection_time
     cam_x, cam_y = 320, 240
     PIXELS_PER_CM = 10
     object_present = False
@@ -135,6 +136,9 @@ def detection_thread():
             popup_sent = False
             object_present = False
 
+        with output_lock:
+            yolo_output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
+
         time.sleep(0.05)
 
 def stream_thread():
@@ -169,6 +173,22 @@ def video_feed():
                 continue
             with output_lock:
                 frame = output_frame if output_frame is not None else blank_frame()
+            yield (b"--frame\r\n"
+                   b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
+            time.sleep(0.05)
+    return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
+
+@app.route("/yolo_feed")
+def yolo_feed():
+    def generate():
+        global yolo_output_frame
+        logging.info("Client conectat la /yolo_feed")
+        while True:
+            if not streaming:
+                time.sleep(0.1)
+                continue
+            with output_lock:
+                frame = yolo_output_frame if yolo_output_frame is not None else blank_frame()
             yield (b"--frame\r\n"
                    b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
             time.sleep(0.05)
