@@ -74,7 +74,7 @@ def blank_frame():
 
 
 def capture_camera():
-    global frame_buffer, streaming
+    global frame_buffer, raw_frame, streaming
     logging.debug("Started camera capture thread")
     while True:
         if streaming:
@@ -164,7 +164,9 @@ def index():
 
 
 @app.route("/video_feed")
+@app.route("/video_feed/annotated")
 def video_feed():
+    # Servește fie raw_frame, fie annotated_frame în funcție de URL
     def generate():
         global output_frame
         logging.debug("Client connected to /video_feed")
@@ -173,6 +175,9 @@ def video_feed():
                 time.sleep(0.1)
                 continue
             with lock:
+                if request.path.endswith('/annotated'):
+                frame = cv2.imencode('.jpg', annotated_frame)[1].tobytes() if annotated_frame is not None else blank_frame()
+            else:
                 frame = output_frame if output_frame is not None else blank_frame()
             yield (b"--frame\r\n"
                    b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
