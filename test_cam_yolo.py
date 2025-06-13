@@ -35,6 +35,7 @@ servo2.ChangeDutyCycle(0)
 
 streaming = False
 lock = threading.Lock()
+output_lock = threading.Lock()
 frame_buffer = None
 output_frame = None
 detected_flag = False
@@ -77,7 +78,7 @@ def camera_thread():
         time.sleep(0.01)
 
 def detection_thread():
-    global frame_buffer, output_frame, detected_flag, popup_sent, last_detection_time
+    global frame_buffer, detected_flag, popup_sent, last_detection_time
     cam_x, cam_y = 320, 240
     PIXELS_PER_CM = 10
     object_present = False
@@ -134,14 +135,28 @@ def detection_thread():
             popup_sent = False
             object_present = False
 
-        with lock:
-            output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
         time.sleep(0.05)
 
 def stream_thread():
+    global output_frame
     logging.info("Firul 3 (livrare frame) a pornit.")
     while True:
-        time.sleep(1)
+        if not streaming:
+            time.sleep(0.1)
+            continue
+        with lock:
+            frame = frame_buffer.copy() if frame_buffer is not None else None
+        if frame is None:
+            time.sleep(0.05)
+            continue
+        jpeg = cv2.imencode('.jpg', frame)[1].tobytes()
+        with output_lock:
+            output_frame = jpeg
+        time.sleep(0.05)
+
+@app.route("/")
+def index():
+    return render_template("index.html")
 
 @app.route("/video_feed")
 def video_feed():
@@ -152,7 +167,7 @@ def video_feed():
             if not streaming:
                 time.sleep(0.1)
                 continue
-            with lock:
+            with output_lock:
                 frame = output_frame if output_frame is not None else blank_frame()
             yield (b"--frame\r\n"
                    b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
@@ -190,39 +205,6 @@ def takeoff():
 @app.route("/land")
 def land():
     return "Drone Landing (dezactivat temporar)"
-
-@app.route("/", methods=["GET", "POST"])
-def index():
-    if request.method == "POST":
-        if 'file' not in request.files:
-            return render_template("index.html", error="No file")
-        file = request.files['file']
-        if file.filename == '':
-            return render_template("index.html", error="No filename")
-
-        input_path = os.path.join(app.config['UPLOAD_FOLDER'], 'input.mp4')
-        output_path = os.path.join(app.config['UPLOAD_FOLDER'], 'result.mp4')
-        file.save(input_path)
-
-        results = model.predict(
-            source=input_path,
-            save=True,
-            save_txt=False,
-            project=app.config['UPLOAD_FOLDER'],
-            name="processed",
-            exist_ok=True,
-            stream=True  
-        )
-
-        processed_dir = os.path.join(app.config['UPLOAD_FOLDER'], "processed")
-        for fname in os.listdir(processed_dir):
-            if fname.endswith(".avi") or fname.endswith(".mp4"):
-                os.rename(os.path.join(processed_dir, fname), output_path)
-                break
-
-        return render_template("index.html", video_uploaded=True)
-
-    return render_template("index.html", video_uploaded=False)
 
 if __name__ == "__main__":
     threading.Thread(target=camera_thread, name="CameraThread", daemon=True).start()
