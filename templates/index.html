@@ -49,11 +49,6 @@
           <article id="livestream-article" class="custom-article">
             <div class="stream-wrapper">
               <img id="video" src="/video_feed" width="640" height="480">
-<div style="margin-top: 10px; text-align: center;">
-  <button onclick="setStream('raw')">Stream RAW</button>
-  <button onclick="setStream('annotated')">Stream YOLO</button>
-</div>
-
             </div>
           </article>
 
@@ -95,21 +90,12 @@
 
   <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
   <script>
-   function setStream(type) {
-    const video = document.getElementById("video");
-    if (type === "raw") {
-      video.src = "/video_feed";
-    } else if (type === "annotated") {
-      video.src = "/video_feed/annotated";
+    function toggleTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.getElementById(tabId).classList.add('active');
     }
-  }
-
-  function toggleTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(tab => {
-      tab.classList.remove('active');
-    });
-    document.getElementById(tabId).classList.add('active');
-  }
   </script>
 <div id="popup-alert" style="display: none;" class="popup-alert">
   <p>Alarmă reală?</p>
@@ -119,5 +105,4 @@
   </div>
 </div>
 </body>
-
 </html>
