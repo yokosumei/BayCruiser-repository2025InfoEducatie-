@@ -176,8 +176,8 @@ def video_feed():
                 continue
             with lock:
                 if request.path.endswith('/annotated'):
-                frame = cv2.imencode('.jpg', annotated_frame)[1].tobytes() if annotated_frame is not None else blank_frame()
-            else:
+                    frame = cv2.imencode('.jpg', annotated_frame)[1].tobytes() if annotated_frame is not None else blank_frame()
+                else:
                 frame = output_frame if output_frame is not None else blank_frame()
             yield (b"--frame\r\n"
                    b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
@@ -233,4 +233,3 @@ if __name__ == "__main__":
     threading.Thread(target=flask_routes, daemon=True, name="FlaskThread").start()
     while True:
         time.sleep(1)
-
