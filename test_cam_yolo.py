@@ -37,6 +37,7 @@ streaming = False
 lock = threading.Lock()
 output_frame = None
 frame_buffer = None
+annotated_frame = None
 detected_flag = False
 popup_sent = False
 last_detection_time = 0
@@ -84,7 +85,7 @@ def capture_camera():
 
 
 def detect_objects():
-    global output_frame, frame_buffer, detected_flag, popup_sent, last_detection_time
+    global annotated_frame, frame_buffer, detected_flag, popup_sent, last_detection_time
     logging.debug("Started detection thread")
     cam_x = 320
     cam_y = 240
@@ -95,7 +96,7 @@ def detect_objects():
             with lock:
                 frame = frame_buffer.copy() if frame_buffer is not None else None
             if frame is None:
-                time.sleep(0.001)
+                time.sleep(0.01)
                 continue
             results = model(frame, verbose=False)
             annotated = results[0].plot()
@@ -133,8 +134,21 @@ def detect_objects():
                 popup_sent = False
                 object_present = False
             with lock:
-                output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
-        time.sleep(0.005)
+                annotated_frame = annotated.copy()
+        time.sleep(0.05)
+
+
+def stream_output():
+    global output_frame, annotated_frame
+    logging.debug("Started stream output thread")
+    while True:
+        if streaming:
+            with lock:
+                frame = annotated_frame.copy() if annotated_frame is not None else None
+            if frame is not None:
+                with lock:
+                    output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
+        time.sleep(0.05)
 
 
 def flask_routes():
@@ -208,6 +222,7 @@ def land():
 if __name__ == "__main__":
     threading.Thread(target=capture_camera, daemon=True, name="CameraThread").start()
     threading.Thread(target=detect_objects, daemon=True, name="DetectionThread").start()
+    threading.Thread(target=stream_output, daemon=True, name="StreamThread").start()
     threading.Thread(target=flask_routes, daemon=True, name="FlaskThread").start()
     while True:
         time.sleep(1)
