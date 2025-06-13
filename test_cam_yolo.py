@@ -36,6 +36,7 @@ servo2.ChangeDutyCycle(0)
 streaming = False
 lock = threading.Lock()
 output_frame = None
+raw_frame = None
 frame_buffer = None
 annotated_frame = None
 detected_flag = False
@@ -80,6 +81,7 @@ def capture_camera():
             frame = picam2.capture_array()
             with lock:
                 frame_buffer = frame.copy()
+                raw_frame = frame.copy()
             logging.debug("Frame captured")
         time.sleep(0.03)
 
@@ -144,7 +146,7 @@ def stream_output():
     while True:
         if streaming:
             with lock:
-                frame = annotated_frame.copy() if annotated_frame is not None else None
+                frame = raw_frame.copy() if raw_frame is not None else None
             if frame is not None:
                 with lock:
                     output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
