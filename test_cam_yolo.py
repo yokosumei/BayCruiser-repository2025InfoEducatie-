@@ -141,15 +141,23 @@ def detect_objects():
 
 
 def stream_output():
-    global output_frame, annotated_frame
+    global output_frame, raw_frame
     logging.debug("Started stream output thread")
     while True:
         if streaming:
             with lock:
-                frame = raw_frame.copy() if raw_frame is not None else None
+                try:
+                    frame = raw_frame.copy() if raw_frame is not None else None
+                except Exception as e:
+                    logging.error(f"stream_output: raw_frame error: {e}")
+                    frame = None
+
             if frame is not None:
-                with lock:
-                    output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
+                try:
+                    with lock:
+                        output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
+                except Exception as e:
+                    logging.error(f"stream_output: imencode error: {e}")
         time.sleep(0.01)
 
 
@@ -174,9 +182,15 @@ def video_feed():
                 continue
             with lock:
                 if request.path.endswith('/annotated'):
-                    frame = cv2.imencode('.jpg', annotated_frame)[1].tobytes() if annotated_frame is not None else blank_frame()
+                    if annotated_frame is not None:
+                        frame = cv2.imencode('.jpg', annotated_frame)[1].tobytes()
+                    else:
+                        logging.warning("Annotated frame is None!")
+                        frame = blank_frame()
                 else:
-                    frame = output_frame if output_frame is not None else blank_frame()
+                    if output_frame is None:
+                    logging.warning("output_frame is None!")
+                frame = output_frame if output_frame is not None else blank_frame()
             yield (b"--frame\r\n"
                    b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
             time.sleep(0.01)
