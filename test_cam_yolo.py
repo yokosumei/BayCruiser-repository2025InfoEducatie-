@@ -233,3 +233,4 @@ if __name__ == "__main__":
     threading.Thread(target=flask_routes, daemon=True, name="FlaskThread").start()
     while True:
         time.sleep(1)
+
