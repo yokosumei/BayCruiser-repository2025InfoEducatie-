@@ -153,9 +153,7 @@ def stream_output():
         time.sleep(0.01)
 
 
-def flask_routes():
-    logging.debug("Starting Flask app")
-    app.run(host="0.0.0.0", port=5000)
+
 
 
 @app.route("/")
@@ -230,6 +228,7 @@ if __name__ == "__main__":
     threading.Thread(target=capture_camera, daemon=True, name="CameraThread").start()
     threading.Thread(target=detect_objects, daemon=True, name="DetectionThread").start()
     threading.Thread(target=stream_output, daemon=True, name="StreamThread").start()
-    threading.Thread(target=flask_routes, daemon=True, name="FlaskThread").start()
+    logging.debug("Starting Flask app (MAIN THREAD)")
+    app.run(host="0.0.0.0", port=5000)
     while True:
         time.sleep(1)
