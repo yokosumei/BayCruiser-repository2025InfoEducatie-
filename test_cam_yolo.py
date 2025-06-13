@@ -42,7 +42,7 @@ yolo_output_frame = None
 detected_flag = False
 popup_sent = False
 last_detection_time = 0
-detection_frame_skip = 5  # număr de frame-uri de sărit
+detection_frame_skip = 10  # număr de frame-uri de sărit
 frame_counter = 0
 
 def cleanup():
