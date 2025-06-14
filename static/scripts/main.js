@@ -128,14 +128,21 @@ function checkDetectionStatus() {
         detectedPreviously = false;
         const popup = document.getElementById("popup-alert");
         if (popup) popup.style.display = "none";
+         const img = document.getElementById("popup-frame");
+        if (img) img.src = "";
+
       }
     })
     .catch(err => console.warn("Eroare verificare detecție:", err));
 }
-
 function showPopup() {
   const popup = document.getElementById("popup-alert");
   if (popup) popup.style.display = "flex";
+
+  const img = document.getElementById("popup-frame");
+  if (img) {
+    img.src = "/yolo_feed_snapshot?" + new Date().getTime(); // evităm cache
+  }
 }
 
 setInterval(checkDetectionStatus, 1000);
