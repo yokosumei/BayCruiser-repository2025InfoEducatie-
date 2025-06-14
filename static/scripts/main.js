@@ -66,6 +66,21 @@ function toggleView() {
     }
   }
 }
+function setStreamView(mode) {
+  const raw = document.getElementById("rawStream");
+  const yolo = document.getElementById("yoloStream");
+
+  if (mode === "raw") {
+    raw.style.display = "inline-block";
+    yolo.style.display = "none";
+  } else if (mode === "yolo") {
+    raw.style.display = "none";
+    yolo.style.display = "inline-block";
+  } else if (mode === "split") {
+    raw.style.display = "inline-block";
+    yolo.style.display = "inline-block";
+  }
+}
 
 function toggleTab(tabId) {
   const contents = document.querySelectorAll('.tab-content');
