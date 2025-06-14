@@ -1,4 +1,4 @@
-from flask import Flask, render_template, Response, request, jsonify
+from flask import Flask, render_template, send_file, Response, request, jsonify
 from ultralytics import YOLO
 from picamera2 import Picamera2
 import RPi.GPIO as GPIO
@@ -199,6 +199,14 @@ def yolo_feed():
                    b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
             time.sleep(0.05)
     return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
+
+@app.route("/yolo_feed_snapshot")
+def yolo_feed_snapshot():
+    global yolo_output_frame
+    with output_lock:
+        frame = yolo_output_frame if yolo_output_frame is not None else blank_frame()
+    return Response(frame, mimetype='image/jpeg')
+
 
 @app.route("/start_stream")
 def start_stream():
