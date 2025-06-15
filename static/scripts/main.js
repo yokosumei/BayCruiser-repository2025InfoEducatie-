@@ -4,28 +4,27 @@ let popupShown = false;
 let detectedPreviously = false;
 
 function updateStatusIndicators() {
-  const boxes = document.querySelectorAll('.circle .box');
+  const boxes = document.querySelectorAll('.box');
   const status = document.querySelector('.status');
 
   if (streamActive) {
     status.textContent = '| Live';
     status.style.color = 'green';
     if (boxes.length >= 3) {
-      boxes[0].textContent = '⚪'; // upload
-      boxes[1].textContent = '⚪'; // stop
-      boxes[2].textContent = '🟢'; // start
+      boxes[0].textContent = '⚪'; // Upload
+      boxes[1].textContent = '⚪'; // Stop
+      boxes[2].textContent = '🟢'; // Start
     }
   } else {
     status.textContent = '| Non-live';
     status.style.color = 'red';
     if (boxes.length >= 3) {
-      boxes[0].textContent = '🔴'; // upload
-      boxes[1].textContent = '⚪'; // stop
-      boxes[2].textContent = '⚪'; // start
+      boxes[0].textContent = '🔴';
+      boxes[1].textContent = '⚪';
+      boxes[2].textContent = '⚪';
     }
   }
 }
-
 
 function startStream() {
   fetch('/start_stream')
@@ -33,9 +32,11 @@ function startStream() {
       streamActive = true;
       streaming = true;
       document.getElementById('video').style.display = 'block';
+      setStreamView('raw');
       updateStatusIndicators();
     });
 }
+
 
 function stopStream() {
   fetch('/stop_stream')
@@ -81,12 +82,12 @@ function setStreamView(mode) {
 
   if (mode === "raw") {
     raw.style.display = "inline-block";
-    yolo.style.display = "none";
     raw.classList.add("single");
+    yolo.style.display = "none";
   } else if (mode === "yolo") {
-    raw.style.display = "none";
     yolo.style.display = "inline-block";
     yolo.classList.add("single");
+    raw.style.display = "none";
   } else if (mode === "split") {
     raw.style.display = "inline-block";
     yolo.style.display = "inline-block";
@@ -94,6 +95,7 @@ function setStreamView(mode) {
     yolo.classList.add("split");
   }
 }
+
 
 function toggleTab(tabId) {
   const contents = document.querySelectorAll('.tab-content');
@@ -124,7 +126,6 @@ function toggleTab(tabId) {
   );
   if (activeButton) activeButton.classList.add('active');
 }
-
 function confirmDetection(answer) {
   const popup = document.getElementById('popup-alert');
   if (popup) popup.style.display = 'none';
@@ -132,13 +133,19 @@ function confirmDetection(answer) {
   if (answer) {
     fetch("/misca")
       .then(res => res.text())
-      .then(() => alert("Initiere protocol de salvare."))
-      .catch(() => alert("Eroare la mișcarea servomotorului."));
+      .then(() => {
+        alert("Inițiere protocol de salvare.");
+        setStreamView('split');
+      })
+      .catch(() => {
+        alert("Eroare la mișcarea servomotorului.");
+      });
   } else {
     alert("Alarmă ignorată.");
   }
   detectedPreviously = true;
 }
+
 
 function checkDetectionStatus() {
   if (!streamActive) return;
