@@ -30,21 +30,20 @@
 #rawStream,
 #yoloStream {
   display: none;
-  height: auto;
-  max-height: 100%;
   object-fit: contain;
+  height: auto;
 }
 
 #rawStream.single,
 #yoloStream.single {
   width: 100%;
+  max-width: 100%;
 }
 
 #rawStream.split,
 #yoloStream.split {
   width: 50%;
 }
-
 
 .popup-alert {
   position: fixed;
