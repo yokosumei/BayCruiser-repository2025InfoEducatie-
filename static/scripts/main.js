@@ -4,23 +4,28 @@ let popupShown = false;
 let detectedPreviously = false;
 
 function updateStatusIndicators() {
-  const circles = document.querySelectorAll('.circle .box');
+  const boxes = document.querySelectorAll('.circle .box');
   const status = document.querySelector('.status');
 
   if (streamActive) {
     status.textContent = '| Live';
     status.style.color = 'green';
-    circles[0].textContent = '⚪';
-    circles[1].textContent = '⚪';
-    circles[2].textContent = '🟢';
+    if (boxes.length >= 3) {
+      boxes[0].textContent = '⚪'; // upload
+      boxes[1].textContent = '⚪'; // stop
+      boxes[2].textContent = '🟢'; // start
+    }
   } else {
     status.textContent = '| Non-live';
     status.style.color = 'red';
-    circles[0].textContent = '🔴';
-    circles[1].textContent = '⚪';
-    circles[2].textContent = '⚪';
+    if (boxes.length >= 3) {
+      boxes[0].textContent = '🔴'; // upload
+      boxes[1].textContent = '⚪'; // stop
+      boxes[2].textContent = '⚪'; // start
+    }
   }
 }
+
 
 function startStream() {
   fetch('/start_stream')
@@ -45,39 +50,48 @@ function stopStream() {
 function toggleView() {
   const live = document.getElementById("livestream-article");
   const upload = document.getElementById("upload-article");
+  const boxes = document.querySelectorAll('.circle .box');
+  const status = document.querySelector('.status');
 
   if (live.style.display !== "none") {
     live.style.display = "none";
     upload.style.display = "block";
-
-    const status = document.querySelector('.status');
     status.textContent = '| Upload';
     status.style.color = 'yellow';
 
-    const circles = document.querySelectorAll('.circle .box');
-    circles[0].textContent = '⚪';
-    circles[1].textContent = '🟡';
-    circles[2].textContent = '⚪';
+    if (boxes.length >= 3) {
+      boxes[0].textContent = '⚪'; // upload ON
+      boxes[1].textContent = '🟡';
+      boxes[2].textContent = '⚪';
+    }
   } else {
     upload.style.display = "none";
     live.style.display = "block";
-    updateStatusIndicators();
+    setTimeout(updateStatusIndicators, 10);
   }
 }
+
 
 function setStreamView(mode) {
   const raw = document.getElementById("rawStream");
   const yolo = document.getElementById("yoloStream");
 
+  raw.classList.remove("single", "split");
+  yolo.classList.remove("single", "split");
+
   if (mode === "raw") {
     raw.style.display = "inline-block";
     yolo.style.display = "none";
+    raw.classList.add("single");
   } else if (mode === "yolo") {
     raw.style.display = "none";
     yolo.style.display = "inline-block";
+    yolo.classList.add("single");
   } else if (mode === "split") {
     raw.style.display = "inline-block";
     yolo.style.display = "inline-block";
+    raw.classList.add("split");
+    yolo.classList.add("split");
   }
 }
 
