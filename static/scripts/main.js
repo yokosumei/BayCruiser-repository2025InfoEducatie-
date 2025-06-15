@@ -1,5 +1,5 @@
 // === JS ===
-let streamActive = false;
+let streaming = false;
 let popupShown = false;
 let detectedPreviously = false;
 
@@ -21,7 +21,7 @@ function startStream() {
 function stopStream() {
   fetch('/stop_stream')
     .then(() => {
-      streamActive = false;
+      streaming = false;
       document.getElementById('video').style.display = 'none';
       document.querySelector('.status').textContent = '| Non-live';
       document.querySelector('.status').style.color = 'red';
@@ -51,7 +51,7 @@ function toggleView() {
     upload.style.display = "none";
     live.style.display = "block";
 
-    if (streamActive) {
+    if (streaming) {
       document.querySelector('.status').textContent = '| Live';
       document.querySelector('.status').style.color = 'green';
       circles[0].textContent = '⚪';
