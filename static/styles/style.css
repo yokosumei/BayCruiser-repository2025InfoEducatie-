@@ -11,6 +11,24 @@
     position: relative;
     border-bottom: 4px solid #000;
   }
+#livestream-article {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 10px; /* opțional, distanță între cele două streamuri */
+  width: 100%;
+  height: 100%;
+}
+
+#rawStream,
+#yoloStream {
+  width: 50%;
+  height: 100%;
+  object-fit: contain;
+  display: none; /* ascunse implicit, afișate prin JS */
+}
+
 .popup-alert {
   position: fixed;
   top: 50%;
@@ -79,23 +97,6 @@ background-color: #ff605c;
 .tab-buttont:hover,
 .tab-buttont.active {
   background-color: #8f2424c5;
-}
-#livestream-article {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  gap: 10px; /* opțional, distanță între cele două streamuri */
-  width: 100%;
-  height: 100%;
-}
-
-#rawStream,
-#yoloStream {
-  width: 50%;
-  height: 100%;
-  object-fit: contain;
-  display: none; /* ascunse implicit, afișate prin JS */
 }
 
 
