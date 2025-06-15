@@ -13,21 +13,38 @@
   }
 #livestream-article {
   display: flex;
-  flex-direction: row;
   justify-content: center;
   align-items: center;
-  gap: 10px; /* opțional, distanță între cele două streamuri */
+  height: 100%;
+}
+
+.stream-wrapper {
+  display: flex;
   width: 100%;
   height: 100%;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
 }
 
 #rawStream,
 #yoloStream {
-  width: 100%;
-  height: 100%;
+  display: none;
+  height: auto;
+  max-height: 100%;
   object-fit: contain;
-  display: none; /* ascunse implicit, afișate prin JS */
 }
+
+#rawStream.single,
+#yoloStream.single {
+  width: 100%;
+}
+
+#rawStream.split,
+#yoloStream.split {
+  width: 50%;
+}
+
 
 .popup-alert {
   position: fixed;
