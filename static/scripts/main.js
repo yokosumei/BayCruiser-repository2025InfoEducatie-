@@ -1,8 +1,26 @@
-// === JS ===
 let streaming = false;
 let streamActive = false;
 let popupShown = false;
 let detectedPreviously = false;
+
+function updateStatusIndicators() {
+  const circles = document.querySelectorAll('.circle .box');
+  const status = document.querySelector('.status');
+
+  if (streamActive) {
+    status.textContent = '| Live';
+    status.style.color = 'green';
+    circles[0].textContent = '⚪';
+    circles[1].textContent = '⚪';
+    circles[2].textContent = '🟢';
+  } else {
+    status.textContent = '| Non-live';
+    status.style.color = 'red';
+    circles[0].textContent = '🔴';
+    circles[1].textContent = '⚪';
+    circles[2].textContent = '⚪';
+  }
+}
 
 function startStream() {
   fetch('/start_stream')
@@ -10,13 +28,7 @@ function startStream() {
       streamActive = true;
       streaming = true;
       document.getElementById('video').style.display = 'block';
-      document.querySelector('.status').textContent = '| Live';
-      document.querySelector('.status').style.color = 'green';
-
-      const circles = document.querySelectorAll('.circle .box');
-      circles[0].textContent = '⚪'; // upload off 
-      circles[1].textContent = '⚪'; // stop off
-      circles[2].textContent = '🟢'; // start on
+      updateStatusIndicators();
     });
 }
 
@@ -26,49 +38,33 @@ function stopStream() {
       streamActive = false;
       streaming = false;
       document.getElementById('video').style.display = 'none';
-      document.querySelector('.status').textContent = '| Non-live';
-      document.querySelector('.status').style.color = 'red';
-
-      const circles = document.querySelectorAll('.circle .box');
-      circles[0].textContent = '🔴'; 
-      circles[1].textContent = '⚪'; 
-      circles[2].textContent = '⚪'; 
+      updateStatusIndicators();
     });
 }
 
 function toggleView() {
   const live = document.getElementById("livestream-article");
   const upload = document.getElementById("upload-article");
-  const circles = document.querySelectorAll('.circle .box');
 
   if (live.style.display !== "none") {
     live.style.display = "none";
     upload.style.display = "block";
-    document.querySelector('.status').textContent = '| Upload';
-    document.querySelector('.status').style.color = 'yellow';
 
-    circles[0].textContent = '⚪'; // upload on
+    const status = document.querySelector('.status');
+    status.textContent = '| Upload';
+    status.style.color = 'yellow';
+
+    const circles = document.querySelectorAll('.circle .box');
+    circles[0].textContent = '⚪';
     circles[1].textContent = '🟡';
     circles[2].textContent = '⚪';
   } else {
     upload.style.display = "none";
     live.style.display = "block";
-
-    if (streaming) {
-      document.querySelector('.status').textContent = '| Live';
-      document.querySelector('.status').style.color = 'green';
-      circles[0].textContent = '⚪';
-      circles[1].textContent = '⚪';
-      circles[2].textContent = '🟢';
-    } else {
-      document.querySelector('.status').textContent = '| Non-live';
-      document.querySelector('.status').style.color = 'red';
-      circles[0].textContent = '🔴';
-      circles[1].textContent = '⚪';
-      circles[2].textContent = '⚪';
-    }
+    updateStatusIndicators();
   }
 }
+
 function setStreamView(mode) {
   const raw = document.getElementById("rawStream");
   const yolo = document.getElementById("yoloStream");
@@ -144,15 +140,18 @@ function checkDetectionStatus() {
       } else {
         popupShown = false;
         detectedPreviously = false;
+
         const popup = document.getElementById("popup-alert");
         if (popup) popup.style.display = "none";
-         const img = document.getElementById("popup-frame");
-        if (img) img.src = "";
 
+        const img = document.getElementById("popup-frame");
+        if (img) img.src = "";
       }
     })
     .catch(err => console.warn("Eroare verificare detecție:", err));
 }
+setInterval(checkDetectionStatus, 1000);
+
 function showPopup() {
   const popup = document.getElementById("popup-alert");
   if (popup) popup.style.display = "flex";
@@ -163,31 +162,21 @@ function showPopup() {
   }
 }
 
-setInterval(checkDetectionStatus, 1000);
-
 function displayServoMessage() {
   fetch("/misca")
     .then(res => res.text())
-    .then(() => {
-      alert("Servomotorul a fost mișcat");
-    })
-    .catch(() => {
-      alert("Eroare la mișcarea servomotorului.");
-    });
+    .then(() => alert("Servomotorul a fost mișcat"))
+    .catch(() => alert("Eroare la mișcarea servomotorului."));
 }
 
 function TakeOff() {
   fetch("/takeoff")
     .then(res => res.text())
-    .then(() => {
-      alert("Drona a decolat.");
-    });
+    .then(() => alert("Drona a decolat."));
 }
 
 function Ateriazare() {
   fetch("/land")
     .then(res => res.text())
-    .then(() => {
-      alert("Drona a aterizat.");
-    });
+    .then(() => alert("Drona a aterizat."));
 }
