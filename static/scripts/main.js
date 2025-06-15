@@ -1,5 +1,6 @@
 // === JS ===
 let streaming = false;
+let streamActive = false;
 let popupShown = false;
 let detectedPreviously = false;
 
@@ -7,6 +8,7 @@ function startStream() {
   fetch('/start_stream')
     .then(() => {
       streamActive = true;
+      streaming = true;
       document.getElementById('video').style.display = 'block';
       document.querySelector('.status').textContent = '| Live';
       document.querySelector('.status').style.color = 'green';
@@ -21,6 +23,7 @@ function startStream() {
 function stopStream() {
   fetch('/stop_stream')
     .then(() => {
+      streamActive = false;
       streaming = false;
       document.getElementById('video').style.display = 'none';
       document.querySelector('.status').textContent = '| Non-live';
