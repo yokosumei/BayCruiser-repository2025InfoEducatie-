@@ -12,14 +12,13 @@ header {
   color: white;
   text-align: center;
 }
-
-
 #livestream-article {
+  flex-grow: 1;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100%;
 }
+
 .stream-wrapper {
   display: flex;
   width: 100%;
