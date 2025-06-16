@@ -31,8 +31,7 @@ function startStream() {
     .then(() => {
       streamActive = true;
       streaming = true;
-      document.getElementById('video_feed').style.display = 'block';
-      document.getElementById('yolo_feed').style.display = 'block';
+      document.getElementById('rawStream').style.display = 'block';
       setStreamView('raw');
       updateStatusIndicators();
     });
@@ -44,8 +43,7 @@ function stopStream() {
     .then(() => {
       streamActive = false;
       streaming = false;
-         document.getElementById('video_feed').style.display = 'none';
-      document.getElementById('yolo_feed').style.display = 'none';
+         document.getElementById('rawStream').style.display = 'none';
       updateStatusIndicators();
     });
 }
