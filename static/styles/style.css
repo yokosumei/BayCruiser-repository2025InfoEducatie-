@@ -17,6 +17,8 @@ header {
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 20px;
+  height: 100%;
 }
 
 .stream-wrapper {
@@ -26,7 +28,7 @@ header {
   align-items: center;
   gap: 20px;
   width: 100%;
-  height: 100%;
+  height: 95vh;
   padding: 10px;
   box-sizing: border-box;
 }
@@ -154,12 +156,10 @@ background-color: #ff605c;
   gap: 15px;
 }
 
-
-
-     .main-layout {
-    display: flex;
-    height: calc(100vh - 160px);
-  }
+.main-layout {
+  display: flex;
+  height: calc(100vh - 180px); /* 180px = header */
+}
 
   .center-content {
     flex-grow: 1;
@@ -277,14 +277,6 @@ background-color: #ff605c;
   max-width: 100%;
   
 }
-/* Header */
-header {
-  background-color: #222;
-  color: white;
-  padding: 20px;
-  text-align: center;
-}
-/* Footer */
 footer {
   background-color: #eee;
   text-align: center;
