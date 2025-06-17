@@ -59,6 +59,19 @@ header {
   height: 100%;
 }
 
+#livestream-article {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+#video {
+  display: none;
+}
 
 .popup-alert {
   position: fixed;
