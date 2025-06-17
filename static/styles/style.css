@@ -24,7 +24,7 @@ body {
 
 .main-layout {
   display: flex;
-  min-height: calc(100vh - 180px);
+  min-height: calc(100vh - 120px);
 }
 
 #livestream-article {
@@ -42,9 +42,8 @@ body {
   align-items: center;
   margin: 0 auto;
   gap: 20px;
-  width: fit-content;
-  max-height: 50vh;
-  height: 50vh;
+  width: 800px;
+  height: 450px;
   padding: 0;
   overflow: hidden;
   background-color: #111;
@@ -54,10 +53,9 @@ body {
 #rawStream,
 #yoloStream {
   display: none;
+  width: 100%;
   height: 100%;
-  max-height: 100%;
-  width: auto;
-  object-fit: contain;
+  object-fit: cover;
   border: 3px solid #000;
   border-radius: 10px;
   background-color: transparent;
@@ -66,13 +64,15 @@ body {
 #rawStream.split,
 #yoloStream.split {
   display: inline-block;
-  max-width: 49%;
+  width: 49%;
+  height: 100%;
 }
 
 #rawStream.single,
 #yoloStream.single {
   display: inline-block;
-  max-width: 98%;
+  width: 100%;
+  height: 100%;
 }
 
 .center-content {
@@ -88,7 +88,7 @@ body {
 
 .footer {
   height: 40px;
-  background-color: F5F5DC;
+  background-color: #1c1c1c;
   text-align: center;
   line-height: 40px;
   position: fixed;
