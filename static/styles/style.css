@@ -2,7 +2,7 @@ header {
   background: url("/static/img/head.jpg") no-repeat center center;
   background-color: black;
   background-size: cover;
-  height: 180px;
+  height: 120px;
   display: flex;
   align-items: flex-start;
   justify-content: center;
