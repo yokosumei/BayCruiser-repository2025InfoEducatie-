@@ -3,6 +3,80 @@ let streamActive = false;
 let popupShown = false;
 let detectedPreviously = false;
 
+document.addEventListener("DOMContentLoaded", () => {
+  function setupJoystick(containerId) {
+    const container = document.getElementById(containerId);
+    const knob = container.querySelector('.knob');
+    const maxDist = container.offsetWidth / 2;
+
+    function moveKnob(dx, dy) {
+      knob.style.transform = `translate(${dx}px, ${dy}px)`;
+    }
+
+    function resetKnob() {
+      moveKnob(0, 0);
+    }
+
+    function getRelativeCoords(clientX, clientY) {
+      const rect = container.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const x = clientX - centerX;
+      const y = clientY - centerY;
+      const dist = Math.min(Math.hypot(x, y), maxDist);
+      const angle = Math.atan2(y, x);
+      return {
+        dx: Math.cos(angle) * dist,
+        dy: Math.sin(angle) * dist
+      };
+    }
+
+    let dragging = false;
+
+    function updatePosition(e) {
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const { dx, dy } = getRelativeCoords(clientX, clientY);
+      moveKnob(dx, dy);
+    }
+
+    container.addEventListener('mousedown', e => {
+      dragging = true;
+      updatePosition(e);
+    });
+
+    container.addEventListener('mousemove', e => {
+      if (dragging) updatePosition(e);
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (dragging) {
+        dragging = false;
+        resetKnob();
+      }
+    });
+
+    container.addEventListener('touchstart', e => {
+      dragging = true;
+      updatePosition(e);
+    });
+
+    container.addEventListener('touchmove', e => {
+      if (dragging) updatePosition(e);
+    });
+
+    container.addEventListener('touchend', () => {
+      dragging = false;
+      resetKnob();
+    });
+
+    resetKnob();
+  }
+
+  setupJoystick("joystick-horizontal");
+  setupJoystick("joystick-vertical");
+});
+
 function updateStatusIndicators() {
   const boxes = document.querySelectorAll('.box');
   const status = document.querySelector('.status');
