@@ -1,6 +1,6 @@
-/* --- BACKGROUND HEADER CU IMAGINE --- */
 header {
   background: url("/static/img/img2.jpg") no-repeat center center;
+   background-color: black; 
   background-size: cover;
   height: 180px;
   display: flex;
@@ -20,7 +20,6 @@ header {
   padding: 20px;
   height: 100%;
 }
-
 .stream-wrapper {
   display: flex;
   flex-direction: row;
@@ -28,27 +27,30 @@ header {
   align-items: center;
   gap: 20px;
   width: 100%;
-  height: 100%;
-
+  height: 80vh; /* REDUS DIN 95vh */
+  padding: 10px;
+  box-sizing: border-box;
 }
 
-
-#rawStream.single,
-#yoloStream.single {
-  display: block;
-  width: auto;
+#rawStream,
+#yoloStream {
   height: 100%;
-  max-height: 100%;
+  object-fit: contain;
+  border: 3px solid #000;
+  border-radius: 10px;
+  background-color: black;
 }
 
 #rawStream.split,
 #yoloStream.split {
-  display: block;
-  width: auto;
+  flex: 1;
   max-width: 50%;
-  height: 90%;
-  flex: 1; 
-  object-fit: contain;
+}
+
+#rawStream.single,
+#yoloStream.single {
+  flex: 1;
+  max-width: 100%;
 }
 
 .popup-alert {
