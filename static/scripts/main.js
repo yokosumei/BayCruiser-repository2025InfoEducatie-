@@ -35,9 +35,6 @@ function startStream() {
       updateStatusIndicators();
     });
 }
-
-
-
 function stopStream() {
   fetch('/stop_stream')
     .then(() => {
@@ -71,8 +68,6 @@ function toggleView() {
     setTimeout(updateStatusIndicators, 10);
   }
 }
-
-
 function setStreamView(mode) {
   const raw = document.getElementById("rawStream");
   const yolo = document.getElementById("yoloStream");
@@ -101,7 +96,6 @@ function setStreamView(mode) {
     yolo.classList.add("split");
   }
 }
-
 function toggleTab(tabId) {
   const contents = document.querySelectorAll('.tab-content');
   const buttons = document.querySelectorAll('.tab-button');
