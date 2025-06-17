@@ -30,29 +30,30 @@ header {
   height: 80%; 
   padding: 10px;
   box-sizing: border-box;
-  overflow: hidden;  
+  overflow: hidden;
 }
 
 #rawStream,
 #yoloStream {
-  height: 100%;
-  width: auto;
+  display: none;              
+  max-height: 100%;
   max-width: 48%;
+  height: 100%;
   object-fit: contain;
   border: 3px solid #000;
   border-radius: 10px;
-  background-color: #000;
+  background-color: transparent;
 }
 
 #rawStream.split,
 #yoloStream.split {
-  flex: 1;
-  max-width: 50%;
+  display: inline-block;
+  max-width: 48%;
 }
 
 #rawStream.single,
 #yoloStream.single {
-  flex: 1;
+  display: inline-block;
   max-width: 100%;
 }
 
