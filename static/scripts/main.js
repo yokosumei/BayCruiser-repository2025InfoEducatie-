@@ -31,11 +31,11 @@ function startStream() {
     .then(() => {
       streamActive = true;
       streaming = true;
-      document.getElementById('rawStream').style.display = 'block';
-      setStreamView('raw');
+      setStreamView('raw'); 
       updateStatusIndicators();
     });
 }
+
 
 
 function stopStream() {
@@ -43,10 +43,12 @@ function stopStream() {
     .then(() => {
       streamActive = false;
       streaming = false;
-         document.getElementById('rawStream').style.display = 'none';
+      document.getElementById('rawStream').style.display = 'none';
+      document.getElementById('yoloStream').style.display = 'none';
       updateStatusIndicators();
     });
 }
+
 
 function toggleView() {
   const live = document.getElementById("livestream-article");
