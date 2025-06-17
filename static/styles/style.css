@@ -173,13 +173,6 @@ background-color: #ff605c;
 
 
   }
-  .footer{
-    position:fixed;
-    text-align:right;
-    margin:0;
-    background-color:#d2c8c8;
-    bottom:0;
-  }
 
 .popup-alert {
   position: fixed;
