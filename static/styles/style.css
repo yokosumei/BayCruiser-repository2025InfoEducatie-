@@ -44,8 +44,8 @@ body {
   margin: 0 auto;
   gap: 20px;
   width: fit-content;
-  max-height: 60vh;
-  height: 60vh;
+  max-height: 50vh;
+  height: 50vh;
   padding: 0;
   overflow: hidden;
   background-color: #111;
@@ -89,7 +89,7 @@ body {
 
 .footer {
   height: 40px;
-  background-color: #d2c8c8;
+  background-color: #1c1c1c;
   text-align: center;
   line-height: 40px;
   position: fixed;
@@ -97,7 +97,9 @@ body {
   width: 100%;
   color: white;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 15px;
 }
+
 
 .popup-alert {
   position: fixed;
