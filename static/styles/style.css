@@ -11,6 +11,7 @@ header {
   border-bottom: 4px solid #000;
   color: white;
   text-align: center;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 body {
@@ -19,6 +20,7 @@ body {
   overflow-x: hidden;
   overflow-y: auto;
   background-color: #1c1c1c;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .main-layout {
@@ -39,12 +41,12 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  margin: 0 auto;
   gap: 20px;
-  width: 100%;
+  width: fit-content;
   max-height: 60vh;
   height: 60vh;
   padding: 0;
-  margin: 0;
   overflow: hidden;
   background-color: #111;
   border-radius: 10px;
@@ -93,6 +95,8 @@ body {
   position: fixed;
   bottom: 0;
   width: 100%;
+  color: white;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .popup-alert {
