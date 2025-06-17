@@ -1,3 +1,27 @@
+.joystick {
+  width: 200px;
+  height: 200px;
+  background: #e0e0e0;
+  margin: 10px auto;
+  border-radius: 50%;
+  position: relative;
+  touch-action: none;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+}
+
+.knob {
+  width: 50px;
+  height: 50px;
+  background: #ff4d4d;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: transform 0.1s ease-out;
+  pointer-events: none;
+}
+
 header {
   background: url("/static/img/head.jpg") no-repeat center center;
   background-color: black;
@@ -272,7 +296,7 @@ background-color: #ff605c;
 .tab-container {
   display: flex;
   flex-direction: column;
-  height: 40%;
+  height: 20%;
 }
 /* Butoanele tab */
 .tab-button {
@@ -296,7 +320,7 @@ background-color: #ff605c;
   background-color: #456990;
   padding: 10px;
   overflow-y: auto;
-  height: 50%;
+  height: 48%;
   box-sizing: border-box;
 }
 /* Fiecare tab (doar unul vizibil) */
