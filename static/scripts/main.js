@@ -48,8 +48,6 @@ function stopStream() {
       updateStatusIndicators();
     });
 }
-
-
 function toggleView() {
   const live = document.getElementById("livestream-article");
   const upload = document.getElementById("upload-article");
@@ -79,6 +77,12 @@ function setStreamView(mode) {
   const raw = document.getElementById("rawStream");
   const yolo = document.getElementById("yoloStream");
 
+  if (!streaming) {
+    raw.style.display = "none";
+    yolo.style.display = "none";
+    return;
+  }
+
   raw.classList.remove("single", "split");
   yolo.classList.remove("single", "split");
 
@@ -97,7 +101,6 @@ function setStreamView(mode) {
     yolo.classList.add("split");
   }
 }
-
 
 function toggleTab(tabId) {
   const contents = document.querySelectorAll('.tab-content');
