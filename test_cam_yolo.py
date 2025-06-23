@@ -130,31 +130,35 @@ class DroneKitGPSProvider(BaseGPSProvider):
 gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider()
 
 def camera_thread():
-    global frame_buffer
-    logging.info("Firul principal (camera) a pornit.")  
+    global frame_buffer, output_frame, detection_frame
+    logging.info("[CAMERA] Firul principal a pornit.")
     while True:
-        frame = picam2.capture_array()
-        gps = gps_provider.get_location()
-        gps_snapshot = {
-            "lat": gps.lat,
-            "lon": gps.lon,
-            "alt": gps.alt,
-            "timestamp": time.time()
-        }
-
-        # Adăugare text GPS pe live stream
-        if gps.lat is not None and gps.lon is not None:
-            cv2.putText(frame,
-                        f"Lat: {gps.lat:.6f} Lon: {gps.lon:.6f} Alt: {gps.alt:.1f}",
-                        (10, 20),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-
-        with lock:
-            frame_buffer = {
-                "image": frame.copy(),
-                "gps": gps_snapshot
+        try:
+            frame = picam2.capture_array()
+            gps = gps_provider.get_location()
+            gps_snapshot = {
+                "lat": gps.lat,
+                "lon": gps.lon,
+                "alt": gps.alt,
+                "timestamp": time.time()
             }
+
+            if gps.lat is not None and gps.lon is not None:
+                cv2.putText(frame,
+                            f"Lat: {gps.lat:.6f} Lon: {gps.lon:.6f} Alt: {gps.alt:.1f}",
+                            (10, 20),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+
+            with lock:
+                output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
+                frame_buffer = {
+                    "image": frame.copy(),
+                    "gps": gps_snapshot
+                }
+        except Exception as e:
+            logging.exception("[CAMERA] Eroare în bucla principală")
         time.sleep(0.01)
+
 
 
 def detection_thread():
@@ -238,22 +242,7 @@ def detection_thread():
             yolo_output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
         time.sleep(0.01)
 
-def stream_thread():
-    global output_frame
-    logging.info("Firul 3 (livrare frame) a pornit.") 
-    while True:
-        if not streaming:
-            time.sleep(0.1)
-            continue
-        with lock:
-            data = frame_buffer.copy() if frame_buffer else None
-        if data is None:
-            time.sleep(0.05)
-            continue
-        jpeg = cv2.imencode('.jpg', data["image"])[1].tobytes()
-        with output_lock:
-            output_frame = jpeg
-        time.sleep(0.05)
+
 
 @app.route("/")
 def index():
@@ -386,6 +375,5 @@ def return_to_event():
 if __name__ == "__main__":
     threading.Thread(target=camera_thread, name="CameraThread", daemon=True).start()
     threading.Thread(target=detection_thread, name="DetectionThread", daemon=True).start()
-    threading.Thread(target=stream_thread, name="StreamThread", daemon=True).start()
     logging.info("Pornire server Flask")
     app.run(host="0.0.0.0", port=5000)
