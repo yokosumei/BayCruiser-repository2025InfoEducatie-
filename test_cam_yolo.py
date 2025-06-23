@@ -180,7 +180,7 @@ def detection_thread():
 
         frame_counter += 1
         if frame_counter % detection_frame_skip != 0:
-            time.sleep(0.1)
+            time.sleep(0.01)
             continue
 
         with lock:
@@ -192,10 +192,7 @@ def detection_thread():
 
         frame = data["image"]
         gps_info = data["gps"]
-        
-        resized = cv2.resize(frame, (320, 240))  # doar pentru detecție
-        results = model(resized, verbose=False)
-
+        results = model(frame, verbose=False)
         annotated = results[0].plot()
 
         # Adaugă text GPS și timestamp pe YOLO stream
@@ -385,6 +382,6 @@ def return_to_event():
 
 if __name__ == "__main__":
     threading.Thread(target=camera_thread, name="CameraThread", daemon=True).start()
-    threading.Thread(target=detection_thread, name="DetectionThread", daemon=True).start()
+    #threading.Thread(target=detection_thread, name="DetectionThread", daemon=True).start()
     logging.info("Pornire server Flask")
     app.run(host="0.0.0.0", port=5000, threaded=True)
