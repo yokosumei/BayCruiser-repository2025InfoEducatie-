@@ -39,6 +39,7 @@ servo2.ChangeDutyCycle(0)
 USE_SIMULATOR = True
 popup_sent=False
 output_lock = threading.Lock()
+lock = threading.Lock()
 
 class GPSValue:
     def __init__(self, lat, lon, alt):
