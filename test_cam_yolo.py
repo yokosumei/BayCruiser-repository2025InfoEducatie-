@@ -131,7 +131,7 @@ gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider()
 
 def camera_thread():
     global frame_buffer
-    logging.info("Firul principal (camera) a pornit.")												  
+	 logging.info("Firul principal (camera) a pornit.")												  
     while True:
         frame = picam2.capture_array()
         gps = gps_provider.get_location()
@@ -236,7 +236,6 @@ def detection_thread():
 
         with output_lock:
             yolo_output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
-
         time.sleep(0.01)
 
 def stream_thread():
@@ -263,7 +262,6 @@ def index():
 @app.route("/video_feed")
 def video_feed():
     def generate():
-						   
         logging.info("[FLASK] Client conectat la /video_feed")
         while True:
             try:
@@ -288,7 +286,6 @@ def video_feed():
 @app.route("/yolo_feed")
 def yolo_feed():
     def generate():
-								
         logging.info("[FLASK] Client conectat la /yolo_feed")
         while True:
             try:
@@ -315,7 +312,6 @@ def yolo_feed_snapshot():
     with output_lock:
         frame = yolo_output_frame if yolo_output_frame is not None else blank_frame()
     return Response(frame, mimetype='image/jpeg')					 
-
 
 @app.route("/start_stream")
 def start_stream():
