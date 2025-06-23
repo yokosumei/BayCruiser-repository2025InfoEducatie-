@@ -9,8 +9,6 @@ import time
 import atexit
 import os
 import logging
-from collections import deque
-from dronekit import connect, LocationGlobalRelative
 
 # === CONFIGURARE LOGGING ===
 logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] (%(threadName)s) %(message)s')
@@ -37,7 +35,7 @@ servo2.ChangeDutyCycle(0)
 
 streaming = False
 lock = threading.Lock()
-
+				
 output_lock = threading.Lock()
 frame_buffer = None
 output_frame = None
@@ -52,13 +50,13 @@ def cleanup():
     servo1.stop()
     servo2.stop()
     GPIO.cleanup()
-  
+					  
 
 atexit.register(cleanup)
-   
-   
-
-
+						   
+								   
+					
+			
 
 def activate_servos():
     logging.debug("Activare servomotoare")
@@ -78,120 +76,39 @@ def blank_frame():
     img = np.zeros((480, 640, 3), dtype=np.uint8)
     _, buffer = cv2.imencode('.jpg', img)
     return buffer.tobytes()
-
-
-# === GPS SIMULATOR SAU REAL ===
-USE_SIMULATOR = True
-popup_sent=False
-
-class GPSValue:
-    def __init__(self, lat, lon, alt):
-        self.lat = lat
-        self.lon = lon
-        self.alt = alt
-
-class BaseGPSProvider:
-    def get_location(self):
-        raise NotImplementedError()
-    def close(self):
-        pass
-
-class MockGPSProvider:
-    def __init__(self):
-        self.coordinates = deque([
-            (44.4391 + i * 0.0001, 26.0961 + i * 0.0001, 80.0) for i in range(20)
-        ])
-
-    def get_location(self):
-        try:
-            lat, lon, alt = self.coordinates[0]
-            self.coordinates.rotate(-1)
-            logging.debug(f"[MOCK GPS] Coordonată returnată: lat={lat}, lon={lon}, alt={alt}")
-            return GPSValue(lat, lon, alt)
-        except Exception as e:
-            logging.exception("[MOCK GPS] Eroare la generarea coordonatei")
-            return GPSValue(None, None, None)
-
-class DroneKitGPSProvider(BaseGPSProvider):
-    def __init__(self):
-        self.vehicle = connect('/dev/ttyUSB0', wait_ready=True, baud=57600)
-        self.location = GPSValue(None, None, None)
-        self.vehicle.add_attribute_listener('location.global_frame', self.gps_callback)
-
-    def gps_callback(self, self_ref, attr_name, value):
-        self.location = GPSValue(value.lat, value.lon, value.alt)
-
-    def get_location(self):
-        return self.location
-
-    def close(self):
-        self.vehicle.close()
-
-gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider()
-
+																								
 def camera_thread():
     global frame_buffer
-    logging.info("Firul principal (camera) a pornit.")  
+    logging.info("Firul principal (camera) a pornit.")
     while True:
         frame = picam2.capture_array()
-        gps = gps_provider.get_location()
-        gps_snapshot = {
-            "lat": gps.lat,
-            "lon": gps.lon,
-            "alt": gps.alt,
-            "timestamp": time.time()
-        }
-
-        # Adăugare text GPS pe live stream
-        if gps.lat is not None and gps.lon is not None:
-            cv2.putText(frame,
-                        f"Lat: {gps.lat:.6f} Lon: {gps.lon:.6f} Alt: {gps.alt:.1f}",
-                        (10, 20),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-
         with lock:
-            frame_buffer = {
-                "image": frame.copy(),
-                "gps": gps_snapshot
-            }
+            frame_buffer = frame.copy()
         time.sleep(0.01)
 
-
 def detection_thread():
-    global frame_buffer, yolo_output_frame, detected_flag, popup_sent, last_detection_time, frame_counter, event_location
+    global frame_buffer, yolo_output_frame, detected_flag, popup_sent, last_detection_time, frame_counter
     cam_x, cam_y = 320, 240
     PIXELS_PER_CM = 10
     object_present = False
     logging.info("Firul 2 (detectie) a pornit.")
-
     while True:
         if not streaming:
             time.sleep(0.1)
             continue
-
         frame_counter += 1
         if frame_counter % detection_frame_skip != 0:
             time.sleep(0.01)
             continue
-
         with lock:
-            data = frame_buffer.copy() if frame_buffer else None
-        if data is None:
-            logging.warning("Nu există frame pentru detecție.") 
+            frame = frame_buffer.copy() if frame_buffer is not None else None
+        if frame is None:
+            logging.warning("Nu există frame pentru detecție.")
             time.sleep(0.05)
             continue
 
-        frame = data["image"]
-        gps_info = data["gps"]
         results = model(frame, verbose=False)
         annotated = results[0].plot()
-
-        # Adaugă text GPS și timestamp pe YOLO stream
-        if gps_info["lat"] is not None and gps_info["lon"] is not None:
-            gps_text = f"Lat: {gps_info['lat']:.6f} Lon: {gps_info['lon']:.6f} Alt: {gps_info['alt']:.1f}"
-            timestamp_text = f"Timp: {time.strftime('%H:%M:%S', time.localtime(gps_info['timestamp']))}"
-            cv2.putText(annotated, gps_text, (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
-            cv2.putText(annotated, timestamp_text, (10, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
 
         names = results[0].names
         class_ids = results[0].boxes.cls.tolist()
@@ -206,9 +123,6 @@ def detection_thread():
                     popup_sent = True
                     last_detection_time = time.time()
                     object_present = True
-
-                if gps_info["lat"] is not None:
-                    event_location = LocationGlobalRelative(gps_info["lat"], gps_info["lon"], gps_info["alt"] or 10)
 
                 box = results[0].boxes[i]
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
@@ -225,8 +139,8 @@ def detection_thread():
 
                 offset_text = f"x:{dx_cm:.1f}cm | y:{dy_cm:.1f}cm"
                 dist_text = f"Dist: {dist_cm:.1f}cm"
-                cv2.putText(annotated, offset_text, (20, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 2)
-                cv2.putText(annotated, dist_text, (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 2)
+                cv2.putText(annotated, offset_text, (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 2)
+                cv2.putText(annotated, dist_text, (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 2)
                 break
 
         if not current_detection:
@@ -236,21 +150,22 @@ def detection_thread():
 
         with output_lock:
             yolo_output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
+
         time.sleep(0.01)
 
 def stream_thread():
     global output_frame
-    logging.info("Firul 3 (livrare frame) a pornit.") 
+    logging.info("Firul 3 (livrare frame) a pornit.")
     while True:
         if not streaming:
             time.sleep(0.1)
             continue
         with lock:
-            data = frame_buffer.copy() if frame_buffer else None
-        if data is None:
+            frame = frame_buffer.copy() if frame_buffer is not None else None
+        if frame is None:
             time.sleep(0.05)
             continue
-        jpeg = cv2.imencode('.jpg', data["image"])[1].tobytes()
+        jpeg = cv2.imencode('.jpg', frame)[1].tobytes()
         with output_lock:
             output_frame = jpeg
         time.sleep(0.05)
@@ -262,98 +177,66 @@ def index():
 @app.route("/video_feed")
 def video_feed():
     def generate():
-        logging.info("[FLASK] Client conectat la /video_feed")
+        global output_frame
+        logging.info("Client conectat la /video_feed")
         while True:
-            try:
-                if not streaming:
-                    logging.debug("[FLASK] Streaming oprit — se așteaptă pornirea streamului.")
-                    time.sleep(0.1)
-                    continue
-                with output_lock:
-                    frame = output_frame if output_frame else blank_frame()
-                yield (b"--frame\r\n"
-                       b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
-                logging.debug("[FLASK] Frame trimis către client /video_feed")
-            except Exception as e:
-                logging.exception("[FLASK] Eroare în fluxul video_feed")
-                break
-    try:
-        return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
-    except Exception as e:
-        logging.exception("[FLASK] Eroare la inițializarea fluxului video_feed")
-        return "Eroare la inițializarea fluxului video_feed", 500
+            if not streaming:
+                time.sleep(0.1)
+                continue
+            with output_lock:
+                frame = output_frame if output_frame is not None else blank_frame()
+            yield (b"--frame\r\n"
+                   b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
+            time.sleep(0.05)
+    return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
 @app.route("/yolo_feed")
 def yolo_feed():
     def generate():
-        logging.info("[FLASK] Client conectat la /yolo_feed")
+        global yolo_output_frame
+        logging.info("Client conectat la /yolo_feed")
         while True:
-            try:
-                if not streaming:
-                    logging.debug("[FLASK] Streaming oprit — se așteaptă pornirea streamului YOLO.")
-                    time.sleep(0.1)
-                    continue
-                with output_lock:
-                    frame = yolo_output_frame if yolo_output_frame else blank_frame()
-                yield (b"--frame\r\n"
-                       b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
-                logging.debug("[FLASK] Frame trimis către client /yolo_feed")
-            except Exception as e:
-                logging.exception("[FLASK] Eroare în fluxul yolo_feed")
-                break
-    try:
-        return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
-    except Exception as e:
-        logging.exception("[FLASK] Eroare la inițializarea fluxului yolo_feed")
-        return "Eroare la inițializarea fluxului yolo_feed", 500
+            if not streaming:
+                time.sleep(0.1)
+                continue
+            with output_lock:
+                frame = yolo_output_frame if yolo_output_frame is not None else blank_frame()
+            yield (b"--frame\r\n"
+                   b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
+            time.sleep(0.05)
+    return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
+
 @app.route("/yolo_feed_snapshot")
 def yolo_feed_snapshot():
     global yolo_output_frame
     with output_lock:
         frame = yolo_output_frame if yolo_output_frame is not None else blank_frame()
-    return Response(frame, mimetype='image/jpeg') 
+    return Response(frame, mimetype='image/jpeg')
+
 
 @app.route("/start_stream")
 def start_stream():
     global streaming
-    try:
-        logging.info("[FLASK] /start_stream apelat")
+    if not streaming:
+        logging.info("Stream pornit de utilizator")
         streaming = True
-        return jsonify({"status": "started"})
-    except Exception as e:
-        logging.exception("[FLASK] Eroare la pornirea streamului")
-        return jsonify({"status": "error", "message": str(e)})
+    return jsonify({"status": "started"})
 
 @app.route("/stop_stream")
 def stop_stream():
     global streaming
-    try:
-        logging.info("[FLASK] /stop_stream apelat")
-        streaming = False
-        return jsonify({"status": "stopped"})
-    except Exception as e:
-        logging.exception("[FLASK] Eroare la oprirea streamului")
-        return jsonify({"status": "error", "message": str(e)})
+    logging.info("Stream oprit de utilizator")
+    streaming = False
+    return jsonify({"status": "stopped"})
 
 @app.route("/detection_status")
 def detection_status():
-    try:
-        logging.debug("[FLASK] /detection_status apelat")
-        return jsonify({"detected": popup_sent})
-    except Exception as e:
-        logging.exception("[FLASK] Eroare la /detection_status")
-        return jsonify({"status": "error", "message": str(e)})
+    return jsonify({"detected": popup_sent})
 
 @app.route("/misca")
 def activate():
-    try:
-        logging.info("[FLASK] /misca apelat — se activează servomotorul")
-        activate_servos()
-        return "Servomotor activat"
-    except Exception as e:
-        logging.exception("[FLASK] Eroare la activarea servomotorului")
-        return "Eroare la activare servo", 500
-
+    activate_servos()
+    return "Servomotor activat"
 
 @app.route("/takeoff")
 def takeoff():
@@ -362,26 +245,6 @@ def takeoff():
 @app.route("/land")
 def land():
     return "Drone Landing (dezactivat temporar)"
-
-@app.route("/return_to_event")
-def return_to_event():
-    global event_location
-    logging.info("[FLASK] /return_to_event apelat")
-    if not event_location:
-        logging.warning("[FLASK] Nu există coordonate salvate pentru revenirea dronei.")
-        return jsonify({"status": "no event location"})
-    try:
-        logging.info(f"[FLASK] Se trimite drona înapoi la: {event_location}")
-        gps_provider.vehicle.simple_goto(event_location)
-        return jsonify({
-            "status": "returning",
-            "lat": event_location.lat,
-            "lon": event_location.lon,
-            "alt": event_location.alt
-        })
-    except Exception as e:
-        logging.exception("[FLASK] Eroare la trimiterea dronei către locație")
-        return jsonify({"status": "error", "message": str(e)})
 
 if __name__ == "__main__":
     threading.Thread(target=camera_thread, name="CameraThread", daemon=True).start()
