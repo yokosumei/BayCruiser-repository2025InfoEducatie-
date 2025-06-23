@@ -133,38 +133,6 @@ class DroneKitGPSProvider(BaseGPSProvider):
 
 gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider()
 
-def camera_thread():
-    global frame_buffer, output_frame_buffer
-    logging.info("[CAMERA] Firul principal a pornit.")
-    while True:
-        try:
-            frame = picam2.capture_array()
-            gps = gps_provider.get_location()
-            gps_snapshot = {
-                "lat": gps.lat,
-                "lon": gps.lon,
-                "alt": gps.alt,
-                "timestamp": time.time()
-            }
-
-            if gps.lat is not None and gps.lon is not None:
-                cv2.putText(frame,
-                            f"Lat: {gps.lat:.6f} Lon: {gps.lon:.6f} Alt: {gps.alt:.1f}",
-                            (10, 20),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-
-            with lock:
-                encoded = cv2.imencode('.jpg', frame)[1].tobytes()
-                output_frame_buffer.append(encoded)
-                frame_buffer = {
-                    "image": frame.copy(),
-                    "gps": gps_snapshot
-                }
-                logging.debug(f"[STREAM] Frame capturat la {gps_snapshot['timestamp']:.3f} transmis la {time.time():.3f}")
-        except Exception as e:
-            logging.exception("[CAMERA] Eroare în bucla principală")
-
-
 def detection_thread():
     global frame_buffer, yolo_output_frame_buffer
     cam_x, cam_y = 320, 240
@@ -197,7 +165,6 @@ def detection_thread():
 
         results = model(resized, verbose=False)
         annotated = frame.copy()  # folosim imaginea originală pentru desen
-        annotated = results[0].plot()
 
         if gps_info["lat"] is not None and gps_info["lon"] is not None:
             gps_text = f"Lat: {gps_info['lat']:.6f} Lon: {gps_info['lon']:.6f} Alt: {gps_info['alt']:.1f}"
@@ -205,7 +172,7 @@ def detection_thread():
             cv2.putText(annotated, gps_text, (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
             cv2.putText(annotated, timestamp_text, (10, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
 
-                names = results[0].names
+        names = results[0].names
         class_ids = results[0].boxes.cls.tolist()
         current_detection = False
 
@@ -231,21 +198,12 @@ def detection_thread():
                 cv2.putText(annotated, offset_text, (20, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 2)
                 cv2.putText(annotated, dist_text, (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 2)
                 break
-
-        if gps_info["lat"] is not None and gps_info["lon"] is not None:
-            gps_text = f"Lat: {gps_info['lat']:.6f} Lon: {gps_info['lon']:.6f} Alt: {gps_info['alt']:.1f}"
-            timestamp_text = f"Timp: {time.strftime('%H:%M:%S', time.localtime(gps_info['timestamp']))}"
-            cv2.putText(annotated, gps_text, (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
-            cv2.putText(annotated, timestamp_text, (10, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
-
-        try:
             encoded = cv2.imencode('.jpg', annotated)[1].tobytes()
             with output_lock:
                 yolo_output_frame_buffer.append(encoded)
             logging.debug(f"[YOLO] Frame detectat la {gps_info['timestamp']:.3f} transmis la {time.time():.3f}")
         except Exception as e:
             logging.exception("[YOLO] Eroare la codificarea frame-ului YOLO")
-
 
 @app.route("/")
 def index():
