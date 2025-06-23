@@ -202,8 +202,7 @@ def detection_thread():
             with output_lock:
                 yolo_output_frame_buffer.append(encoded)
             logging.debug(f"[YOLO] Frame detectat la {gps_info['timestamp']:.3f} transmis la {time.time():.3f}")
-        except Exception as e:
-            logging.exception("[YOLO] Eroare la codificarea frame-ului YOLO")
+        
 
 @app.route("/")
 def index():
