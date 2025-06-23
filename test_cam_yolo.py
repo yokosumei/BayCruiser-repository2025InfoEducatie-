@@ -182,13 +182,14 @@ def detection_thread():
 
         frame_counter += 1
         if frame_counter % detection_frame_skip != 0:
+            logging.warning("[DETECTIE] Frame rejectat")
             continue
 
         with frame_lock:
             data = frame_buffer.copy() if frame_buffer else None
         if data is None:
             logging.warning("[DETECTIE] Nu există frame pentru detecție.")
-            time.sleep(0.01)
+           # time.sleep(0.01)
             continue
 
         frame = data["image"]
