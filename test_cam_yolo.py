@@ -37,6 +37,7 @@ servo2.ChangeDutyCycle(0)
 
 # === GPS SIMULATOR SAU REAL ===
 USE_SIMULATOR = True
+popup_sent=False
 
 class GPSValue:
     def __init__(self, lat, lon, alt):
