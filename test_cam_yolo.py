@@ -165,12 +165,13 @@ def camera_thread():
             logging.exception("[CAMERA] Eroare în bucla principală")
 
 
-
 def detection_thread():
     global frame_buffer, yolo_output_frame_buffer
     cam_x, cam_y = 320, 240
     PIXELS_PER_CM = 10
     object_present = False
+    frame_counter = 0
+    detection_frame_skip = 2
     logging.info("[DETECTIE] Firul de detecție a pornit.")
 
     while True:
@@ -178,17 +179,58 @@ def detection_thread():
             time.sleep(0.1)
             continue
 
+        frame_counter += 1
+        if frame_counter % detection_frame_skip != 0:
+            continue
+
         with lock:
             data = frame_buffer.copy() if frame_buffer else None
         if data is None:
             logging.warning("[DETECTIE] Nu există frame pentru detecție.")
-            time.sleep(0.05)
+            time.sleep(0.01)
             continue
 
         frame = data["image"]
         gps_info = data["gps"]
-        results = model(frame, verbose=False)
+
+        resized = cv2.resize(frame, (320, 240))  # Micșorare doar pentru detecție
+
+        results = model(resized, verbose=False)
+        annotated = frame.copy()  # folosim imaginea originală pentru desen
         annotated = results[0].plot()
+
+        if gps_info["lat"] is not None and gps_info["lon"] is not None:
+            gps_text = f"Lat: {gps_info['lat']:.6f} Lon: {gps_info['lon']:.6f} Alt: {gps_info['alt']:.1f}"
+            timestamp_text = f"Timp: {time.strftime('%H:%M:%S', time.localtime(gps_info['timestamp']))}"
+            cv2.putText(annotated, gps_text, (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+            cv2.putText(annotated, timestamp_text, (10, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+
+                names = results[0].names
+        class_ids = results[0].boxes.cls.tolist()
+        current_detection = False
+
+        for i, cls_id in enumerate(class_ids):
+            if names[int(cls_id)] == "om_la_inec":
+                current_detection = True
+
+                box = results[0].boxes[i]
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                obj_x = (x1 + x2) // 2
+                obj_y = (y1 + y2) // 2
+
+                dx_cm = (obj_x - cam_x) / PIXELS_PER_CM
+                dy_cm = (obj_y - cam_y) / PIXELS_PER_CM
+                dist_cm = (dx_cm**2 + dy_cm**2)**0.5
+
+                cv2.line(annotated, (cam_x, cam_y), (obj_x, obj_y), (0, 0, 255), 2)
+                cv2.circle(annotated, (cam_x, cam_y), 5, (255, 0, 0), -1)
+                cv2.circle(annotated, (obj_x, obj_y), 5, (0, 255, 0), -1)
+
+                offset_text = f"x:{dx_cm:.1f}cm | y:{dy_cm:.1f}cm"
+                dist_text = f"Dist: {dist_cm:.1f}cm"
+                cv2.putText(annotated, offset_text, (20, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 2)
+                cv2.putText(annotated, dist_text, (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 2)
+                break
 
         if gps_info["lat"] is not None and gps_info["lon"] is not None:
             gps_text = f"Lat: {gps_info['lat']:.6f} Lon: {gps_info['lon']:.6f} Alt: {gps_info['alt']:.1f}"
@@ -203,8 +245,6 @@ def detection_thread():
             logging.debug(f"[YOLO] Frame detectat la {gps_info['timestamp']:.3f} transmis la {time.time():.3f}")
         except Exception as e:
             logging.exception("[YOLO] Eroare la codificarea frame-ului YOLO")
-
-        time.sleep(0.01)
 
 
 @app.route("/")
