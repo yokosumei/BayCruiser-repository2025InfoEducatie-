@@ -161,7 +161,7 @@ def camera_thread():
                 }
         except Exception as e:
             logging.exception("[CAMERA] Eroare în bucla principală")
-      //  time.sleep(0.01)
+      # time.sleep(0.01)
 
 
 
