@@ -11,6 +11,10 @@ import os
 import logging
 from collections import deque
 from dronekit import connect, LocationGlobalRelative
+from collections import deque
+
+# buffer FIFO pentru output frame
+output_frame_buffer = deque(maxlen=1)
 
 # === CONFIGURARE LOGGING ===
 logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] (%(threadName)s) %(message)s')
@@ -40,7 +44,6 @@ lock = threading.Lock()
 
 output_lock = threading.Lock()
 frame_buffer = None
-output_frame = None
 yolo_output_frame = None
 detected_flag = False
 popup_sent = False
@@ -130,7 +133,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
 gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider()
 
 def camera_thread():
-    global frame_buffer, output_frame, detection_frame
+    global frame_buffer, output_frame_buffer
     logging.info("[CAMERA] Firul principal a pornit.")
     while True:
         try:
@@ -150,14 +153,15 @@ def camera_thread():
                             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
             with lock:
-                output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
+                encoded = cv2.imencode('.jpg', frame)[1].tobytes()
+                output_frame_buffer.append(encoded)
                 frame_buffer = {
                     "image": frame.copy(),
                     "gps": gps_snapshot
                 }
         except Exception as e:
             logging.exception("[CAMERA] Eroare în bucla principală")
-        time.sleep(0.01)
+      //  time.sleep(0.01)
 
 
 
@@ -259,7 +263,7 @@ def video_feed():
                     time.sleep(0.1)
                     continue
                 with output_lock:
-                    frame = output_frame if output_frame else blank_frame()
+                    frame = output_frame_buffer[-1] if output_frame_buffer else blank_frame()
                 yield (b"--frame\r\n"
                        b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
                 logging.debug("[FLASK] Frame trimis către client /video_feed")
@@ -376,4 +380,4 @@ if __name__ == "__main__":
     threading.Thread(target=camera_thread, name="CameraThread", daemon=True).start()
     threading.Thread(target=detection_thread, name="DetectionThread", daemon=True).start()
     logging.info("Pornire server Flask")
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5000, threaded=True)
