@@ -35,11 +35,54 @@ time.sleep(0.3)
 servo1.ChangeDutyCycle(0)
 servo2.ChangeDutyCycle(0)
 
+streaming = False
+lock = threading.Lock()
+				
+output_lock = threading.Lock()
+frame_buffer = None
+output_frame = None
+yolo_output_frame = None
+detected_flag = False
+popup_sent = False
+last_detection_time = 0
+detection_frame_skip = 2  # număr de frame-uri de sărit
+frame_counter = 0
+
+def cleanup():
+    servo1.stop()
+    servo2.stop()
+    GPIO.cleanup()
+					  
+
+atexit.register(cleanup)
+						   
+								   
+					
+			
+
+def activate_servos():
+    logging.debug("Activare servomotoare")
+    servo1.ChangeDutyCycle(12.5)
+    servo2.ChangeDutyCycle(2.5)
+    time.sleep(0.3)
+    servo1.ChangeDutyCycle(0)
+    servo2.ChangeDutyCycle(0)
+    time.sleep(2)
+    servo1.ChangeDutyCycle(7.5)
+    servo2.ChangeDutyCycle(7.5)
+    time.sleep(0.3)
+    servo1.ChangeDutyCycle(0)
+    servo2.ChangeDutyCycle(0)
+
+def blank_frame():
+    img = np.zeros((480, 640, 3), dtype=np.uint8)
+    _, buffer = cv2.imencode('.jpg', img)
+    return buffer.tobytes()
+																								
+					
 # === GPS SIMULATOR SAU REAL ===
 USE_SIMULATOR = True
 popup_sent=False
-output_lock = threading.Lock()
-lock = threading.Lock()
 
 class GPSValue:
     def __init__(self, lat, lon, alt):
@@ -88,6 +131,7 @@ gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider()
 
 def camera_thread():
     global frame_buffer
+	 logging.info("Firul principal (camera) a pornit.")												  
     while True:
         frame = picam2.capture_array()
         gps = gps_provider.get_location()
@@ -118,7 +162,8 @@ def detection_thread():
     cam_x, cam_y = 320, 240
     PIXELS_PER_CM = 10
     object_present = False
-
+    logging.info("Firul 2 (detectie) a pornit.")
+	
     while True:
         if not streaming:
             time.sleep(0.1)
@@ -132,6 +177,7 @@ def detection_thread():
         with lock:
             data = frame_buffer.copy() if frame_buffer else None
         if data is None:
+			 logging.warning("Nu există frame pentru detecție.")													 
             time.sleep(0.05)
             continue
 
@@ -190,10 +236,12 @@ def detection_thread():
 
         with output_lock:
             yolo_output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
+
         time.sleep(0.01)
 
 def stream_thread():
     global output_frame
+	    logging.info("Firul 3 (livrare frame) a pornit.")												 
     while True:
         if not streaming:
             time.sleep(0.1)
@@ -215,6 +263,7 @@ def index():
 @app.route("/video_feed")
 def video_feed():
     def generate():
+						   
         logging.info("[FLASK] Client conectat la /video_feed")
         while True:
             try:
@@ -239,6 +288,7 @@ def video_feed():
 @app.route("/yolo_feed")
 def yolo_feed():
     def generate():
+								
         logging.info("[FLASK] Client conectat la /yolo_feed")
         while True:
             try:
@@ -259,6 +309,13 @@ def yolo_feed():
     except Exception as e:
         logging.exception("[FLASK] Eroare la inițializarea fluxului yolo_feed")
         return "Eroare la inițializarea fluxului yolo_feed", 500
+@app.route("/yolo_feed_snapshot")
+def yolo_feed_snapshot():
+    global yolo_output_frame
+    with output_lock:
+        frame = yolo_output_frame if yolo_output_frame is not None else blank_frame()
+    return Response(frame, mimetype='image/jpeg')					 
+
 
 @app.route("/start_stream")
 def start_stream():
@@ -300,6 +357,15 @@ def activate():
     except Exception as e:
         logging.exception("[FLASK] Eroare la activarea servomotorului")
         return "Eroare la activare servo", 500
+		
+		
+@app.route("/takeoff")
+def takeoff():
+    return "Drone Takeoff (dezactivat temporar)"
+
+@app.route("/land")
+def land():
+    return "Drone Landing (dezactivat temporar)"
 
 @app.route("/return_to_event")
 def return_to_event():
@@ -325,4 +391,5 @@ if __name__ == "__main__":
     threading.Thread(target=camera_thread, name="CameraThread", daemon=True).start()
     threading.Thread(target=detection_thread, name="DetectionThread", daemon=True).start()
     threading.Thread(target=stream_thread, name="StreamThread", daemon=True).start()
+	 logging.info("Pornire server Flask")									
     app.run(host="0.0.0.0", port=5000)
