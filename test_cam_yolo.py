@@ -132,7 +132,7 @@ gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider()
 def camera_thread():
     global frame_buffer
     logging.info("Firul principal (camera) a pornit.")  
-     while True:
+    while True:
         frame = picam2.capture_array()
         gps = gps_provider.get_location()
         gps_snapshot = {
