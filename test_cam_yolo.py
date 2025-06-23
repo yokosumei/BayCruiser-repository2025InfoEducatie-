@@ -171,7 +171,7 @@ def detection_thread():
     PIXELS_PER_CM = 10
     object_present = False
     frame_counter = 0
-    detection_frame_skip = 4
+    detection_frame_skip = 2
     logging.info("[DETECTIE] Firul de detecție a pornit.")
 
     while True:
@@ -182,7 +182,7 @@ def detection_thread():
         frame_counter += 1
         if frame_counter % detection_frame_skip != 0:
             logging.warning("[DETECTIE] Frame rejectat...............................................")
-            logging.warning(frame_counter)
+             logging.warning(frame_counter)
             frame_counter=0;
             continue
 
