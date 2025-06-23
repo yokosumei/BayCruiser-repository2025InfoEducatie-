@@ -35,7 +35,6 @@ servo2.ChangeDutyCycle(0)
 
 streaming = False
 lock = threading.Lock()
-				
 output_lock = threading.Lock()
 frame_buffer = None
 output_frame = None
@@ -50,13 +49,8 @@ def cleanup():
     servo1.stop()
     servo2.stop()
     GPIO.cleanup()
-					  
 
 atexit.register(cleanup)
-						   
-								   
-					
-			
 
 def activate_servos():
     logging.debug("Activare servomotoare")
@@ -76,7 +70,7 @@ def blank_frame():
     img = np.zeros((480, 640, 3), dtype=np.uint8)
     _, buffer = cv2.imencode('.jpg', img)
     return buffer.tobytes()
-																								
+
 def camera_thread():
     global frame_buffer
     logging.info("Firul principal (camera) a pornit.")
