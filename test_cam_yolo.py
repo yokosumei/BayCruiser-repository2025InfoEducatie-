@@ -382,6 +382,6 @@ def return_to_event():
 
 if __name__ == "__main__":
     threading.Thread(target=camera_thread, name="CameraThread", daemon=True).start()
-    #threading.Thread(target=detection_thread, name="DetectionThread", daemon=True).start()
+    threading.Thread(target=detection_thread, name="DetectionThread", daemon=True).start()
     logging.info("Pornire server Flask")
     app.run(host="0.0.0.0", port=5000, threaded=True)
