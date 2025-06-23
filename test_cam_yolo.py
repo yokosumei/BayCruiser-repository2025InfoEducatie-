@@ -41,7 +41,8 @@ servo1.ChangeDutyCycle(0)
 servo2.ChangeDutyCycle(0)
 
 streaming = False
-lock = threading.Lock()
+stream_lock = threading.Lock()
+frame_lock = threading.Lock()
 
 output_lock = threading.Lock()
 frame_buffer = None
@@ -153,25 +154,26 @@ def camera_thread():
                             (10, 20),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
-            with lock:
-                encoded = cv2.imencode('.jpg', frame)[1].tobytes()
+            encoded = cv2.imencode('.jpg', frame)[1].tobytes()
+            with stream_lock:
                 output_frame_buffer.append(encoded)
+            with frame_lock:
                 frame_buffer = {
                     "image": frame.copy(),
                     "gps": gps_snapshot
                 }
-                logging.debug(f"[STREAM] Frame capturat la {gps_snapshot['timestamp']:.3f} transmis la {time.time():.3f}")
+            logging.debug(f"[STREAM] Frame capturat la {gps_snapshot['timestamp']:.3f} transmis la {time.time():.3f}")
         except Exception as e:
             logging.exception("[CAMERA] Eroare în bucla principală")
 
-
-
 def detection_thread():
-    global frame_buffer, yolo_output_frame, detected_flag, popup_sent, last_detection_time, frame_counter, event_location
+    global frame_buffer, yolo_output_frame_buffer
     cam_x, cam_y = 320, 240
     PIXELS_PER_CM = 10
     object_present = False
-    logging.info("Firul 2 (detectie) a pornit.")
+    frame_counter = 0
+    detection_frame_skip = 2
+    logging.info("[DETECTIE] Firul de detecție a pornit.")
 
     while True:
         if not streaming:
@@ -180,22 +182,23 @@ def detection_thread():
 
         frame_counter += 1
         if frame_counter % detection_frame_skip != 0:
-            time.sleep(0.01)
             continue
 
-        with lock:
+        with frame_lock:
             data = frame_buffer.copy() if frame_buffer else None
         if data is None:
-            logging.warning("Nu există frame pentru detecție.") 
-            time.sleep(0.05)
+            logging.warning("[DETECTIE] Nu există frame pentru detecție.")
+            time.sleep(0.01)
             continue
 
         frame = data["image"]
         gps_info = data["gps"]
-        results = model(frame, verbose=False)
-        annotated = results[0].plot()
 
-        # Adaugă text GPS și timestamp pe YOLO stream
+        resized = cv2.resize(frame, (320, 240))  # Micșorare doar pentru detecție
+
+        results = model(resized, verbose=False)
+        annotated = frame.copy()  # folosim imaginea originală pentru desen
+
         if gps_info["lat"] is not None and gps_info["lon"] is not None:
             gps_text = f"Lat: {gps_info['lat']:.6f} Lon: {gps_info['lon']:.6f} Alt: {gps_info['alt']:.1f}"
             timestamp_text = f"Timp: {time.strftime('%H:%M:%S', time.localtime(gps_info['timestamp']))}"
@@ -209,15 +212,6 @@ def detection_thread():
         for i, cls_id in enumerate(class_ids):
             if names[int(cls_id)] == "om_la_inec":
                 current_detection = True
-
-                if not object_present:
-                    detected_flag = True
-                    popup_sent = True
-                    last_detection_time = time.time()
-                    object_present = True
-
-                if gps_info["lat"] is not None:
-                    event_location = LocationGlobalRelative(gps_info["lat"], gps_info["lon"], gps_info["alt"] or 10)
 
                 box = results[0].boxes[i]
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
@@ -237,14 +231,13 @@ def detection_thread():
                 cv2.putText(annotated, offset_text, (20, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 2)
                 cv2.putText(annotated, dist_text, (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,255), 2)
                 break
-
-        if not current_detection:
-            detected_flag = False
-            popup_sent = False
-            object_present = False
-
-        with output_lock:
-            yolo_output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
+        try:
+            encoded = cv2.imencode('.jpg', annotated)[1].tobytes()
+            with output_lock:
+                yolo_output_frame_buffer.append(encoded)
+            logging.debug(f"[YOLO] Frame detectat la {gps_info['timestamp']:.3f} transmis la {time.time():.3f}")
+        except Exception as e:
+            logging.exception("[YOLO] Eroare la codificarea frame-ului YOLO")
 
 
 
