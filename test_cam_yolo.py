@@ -177,7 +177,7 @@ def detection_thread():
         with lock:
             data = frame_buffer.copy() if frame_buffer else None
         if data is None:
- logging.warning("Nu există frame pentru detecție.") 
+            logging.warning("Nu există frame pentru detecție.") 
             time.sleep(0.05)
             continue
 
