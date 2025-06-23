@@ -180,7 +180,7 @@ def detection_thread():
 
         frame_counter += 1
         if frame_counter % detection_frame_skip != 0:
-             time.sleep(0.1)
+            time.sleep(0.1)
             continue
 
         with lock:
