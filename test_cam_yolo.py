@@ -272,6 +272,33 @@ def activate():
     return_to_saved_location()
     return "Servomotor activat"
 
+@app.route("/drone_status")
+def drone_status():
+    try:
+        status = {
+            "battery": {
+                "voltage": vehicle.battery.voltage,
+                "current": vehicle.battery.current,
+                "level": vehicle.battery.level
+            },
+            "armed": vehicle.armed,
+            "mode": vehicle.mode.name,
+            "location": {
+                "lat": vehicle.location.global_relative_frame.lat,
+                "lon": vehicle.location.global_relative_frame.lon,
+                "alt": vehicle.location.global_relative_frame.alt
+            },
+            "event_location": {
+                "lat": event_location.lat if event_location else None,
+                "lon": event_location.lon if event_location else None,
+                "alt": event_location.alt if event_location else None
+            }
+        }
+        return jsonify(status)
+    except Exception as e:
+        logging.exception("Eroare la extragerea statusului dronei")
+        return jsonify({"error": str(e)})
+
 if __name__ == "__main__":
     threading.Thread(target=camera_thread, name="CameraThread", daemon=True).start()
     threading.Thread(target=detection_thread, name="DetectionThread", daemon=True).start()
