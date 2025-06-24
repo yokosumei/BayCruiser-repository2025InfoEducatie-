@@ -77,11 +77,15 @@
     <!-- Sidebar dreapta -->
     <aside id="right-sidebar">
       <h3>Status dronă</h3>
-      <ul>
-        <li>Baterie: 92%</li>
-        <li>Semnal: Bun</li>
-        <li>Ultima detecție: <span id="last-detection">N/A</span></li>
-      </ul>
+          <ul id="drone-status">
+            <li>Baterie: <span id="battery">?</span></li>
+            <li>Armată: <span id="armed">?</span></li>
+            <li>Mod: <span id="mode">?</span></li>
+            <li>Poziție actuală: <span id="current-coords">?</span></li>
+            <li>Coordonate salvate: <span id="event-coords">?</span></li>
+            <li>Ultima detecție: <span id="last-detection">N/A</span></li>
+         </ul>
+
       <button onclick="alert('Test funcție dreapta')">Test Dreapta</button>
        <div >
     <button onclick="startStream()" class="control">START</button>
