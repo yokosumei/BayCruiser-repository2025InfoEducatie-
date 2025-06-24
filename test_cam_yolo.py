@@ -1,4 +1,4 @@
-from flask import Flask, render_template, send_file, Response, request, jsonify
+from flask import Flask, render_template, Response, request, jsonify
 from ultralytics import YOLO
 from picamera2 import Picamera2
 import RPi.GPIO as GPIO
@@ -34,15 +34,17 @@ servo1.ChangeDutyCycle(0)
 servo2.ChangeDutyCycle(0)
 
 streaming = False
-lock = threading.Lock()
+frame_lock = threading.Lock()
 output_lock = threading.Lock()
+
 frame_buffer = None
 output_frame = None
 yolo_output_frame = None
+
 detected_flag = False
 popup_sent = False
 last_detection_time = 0
-detection_frame_skip = 2  # număr de frame-uri de sărit
+detection_frame_skip = 2
 frame_counter = 0
 
 def cleanup():
@@ -76,7 +78,7 @@ def camera_thread():
     logging.info("Firul principal (camera) a pornit.")
     while True:
         frame = picam2.capture_array()
-        with lock:
+        with frame_lock:
             frame_buffer = frame.copy()
         time.sleep(0.01)
 
@@ -90,14 +92,16 @@ def detection_thread():
         if not streaming:
             time.sleep(0.1)
             continue
+
         frame_counter += 1
         if frame_counter % detection_frame_skip != 0:
             time.sleep(0.01)
             continue
-        with lock:
+
+        with frame_lock:
             frame = frame_buffer.copy() if frame_buffer is not None else None
+
         if frame is None:
-            logging.warning("Nu există frame pentru detecție.")
             time.sleep(0.05)
             continue
 
@@ -144,17 +148,16 @@ def detection_thread():
 
         with output_lock:
             yolo_output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
-
         time.sleep(0.01)
 
 def stream_thread():
     global output_frame
-    logging.info("Firul 3 (livrare frame) a pornit.")
+    logging.info("Firul 3 (livrare raw) a pornit.")
     while True:
         if not streaming:
             time.sleep(0.1)
             continue
-        with lock:
+        with frame_lock:
             frame = frame_buffer.copy() if frame_buffer is not None else None
         if frame is None:
             time.sleep(0.05)
@@ -172,15 +175,13 @@ def index():
 def video_feed():
     def generate():
         global output_frame
-        logging.info("Client conectat la /video_feed")
         while True:
             if not streaming:
                 time.sleep(0.1)
                 continue
             with output_lock:
                 frame = output_frame if output_frame is not None else blank_frame()
-            yield (b"--frame\r\n"
-                   b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
+            yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
             time.sleep(0.05)
     return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
@@ -188,38 +189,25 @@ def video_feed():
 def yolo_feed():
     def generate():
         global yolo_output_frame
-        logging.info("Client conectat la /yolo_feed")
         while True:
             if not streaming:
                 time.sleep(0.1)
                 continue
             with output_lock:
                 frame = yolo_output_frame if yolo_output_frame is not None else blank_frame()
-            yield (b"--frame\r\n"
-                   b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
+            yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
             time.sleep(0.05)
     return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
-
-@app.route("/yolo_feed_snapshot")
-def yolo_feed_snapshot():
-    global yolo_output_frame
-    with output_lock:
-        frame = yolo_output_frame if yolo_output_frame is not None else blank_frame()
-    return Response(frame, mimetype='image/jpeg')
-
 
 @app.route("/start_stream")
 def start_stream():
     global streaming
-    if not streaming:
-        logging.info("Stream pornit de utilizator")
-        streaming = True
+    streaming = True
     return jsonify({"status": "started"})
 
 @app.route("/stop_stream")
 def stop_stream():
     global streaming
-    logging.info("Stream oprit de utilizator")
     streaming = False
     return jsonify({"status": "stopped"})
 
@@ -231,14 +219,6 @@ def detection_status():
 def activate():
     activate_servos()
     return "Servomotor activat"
-
-@app.route("/takeoff")
-def takeoff():
-    return "Drone Takeoff (dezactivat temporar)"
-
-@app.route("/land")
-def land():
-    return "Drone Landing (dezactivat temporar)"
 
 if __name__ == "__main__":
     threading.Thread(target=camera_thread, name="CameraThread", daemon=True).start()
