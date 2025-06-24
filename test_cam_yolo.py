@@ -40,7 +40,7 @@ time.sleep(0.3)
 servo1.ChangeDutyCycle(0)
 servo2.ChangeDutyCycle(0)
 
-streaming = False
+streaming = True
 stream_lock = threading.Lock()
 frame_lock = threading.Lock()
 
