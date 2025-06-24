@@ -200,3 +200,21 @@ function Ateriazare() {
     .then(res => res.text())
     .then(() => alert("Drona a aterizat."));
 }
+
+function updateDroneStatus() {
+  fetch("/drone_status")
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("battery").innerText = data.battery.level + "%";
+      document.getElementById("armed").innerText = data.armed ? "DA" : "NU";
+      document.getElementById("mode").innerText = data.mode;
+      document.getElementById("current-coords").innerText =
+        `Lat: ${data.location.lat.toFixed(5)}, Lon: ${data.location.lon.toFixed(5)}`;
+      document.getElementById("event-coords").innerText =
+        data.event_location.lat ?
+        `Lat: ${data.event_location.lat.toFixed(5)}, Lon: ${data.event_location.lon.toFixed(5)}` :
+        "N/A";
+    });
+}
+
+setInterval(updateDroneStatus, 1000);
