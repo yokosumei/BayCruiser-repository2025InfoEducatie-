@@ -10,7 +10,6 @@ import atexit
 import os
 import logging
 from collections import deque
-# from dronekit import connect, LocationGlobalRelative  # Comentat temporar pentru rulare fără dronă
 
 logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] (%(threadName)s) %(message)s')
 
@@ -67,21 +66,12 @@ class MockGPSProvider:
 
 gps_provider = MockGPSProvider()
 
-# vehicle = connect('/dev/ttyUSB0', wait_ready=True, baud=57600)  # Comentat temporar
-# event_location = None
-
 def cleanup():
     servo1.stop()
     servo2.stop()
     GPIO.cleanup()
 
 atexit.register(cleanup)
-
-# def save_event_location(gps_info):
-#     global event_location
-#     if gps_info['lat'] is not None and gps_info['lon'] is not None:
-#         event_location = LocationGlobalRelative(gps_info['lat'], gps_info['lon'], gps_info['alt'])
-#         logging.info(f"Coordonate salvate pentru revenire: lat={event_location.lat}, lon={event_location.lon}, alt={event_location.alt}")
 
 def activate_servos():
     logging.debug("Activare servomotoare")
@@ -96,14 +86,6 @@ def activate_servos():
     time.sleep(0.3)
     servo1.ChangeDutyCycle(0)
     servo2.ChangeDutyCycle(0)
-
-# def return_to_saved_location():
-#     global event_location
-#     if event_location:
-#         logging.info("Trimitere dronă la coordonatele salvate")
-#         vehicle.simple_goto(event_location)
-#     else:
-#         logging.warning("Nu există coordonate salvate pentru revenire")
 
 def blank_frame():
     img = np.zeros((480, 640, 3), dtype=np.uint8)
@@ -173,7 +155,6 @@ def detection_thread():
                     popup_sent = True
                     last_detection_time = time.time()
                     object_present = True
-                    save_event_location(gps_info)
                 obj_x = (x1 + x2) // 2
                 obj_y = (y1 + y2) // 2
                 dx_cm = (obj_x - cam_x) / PIXELS_PER_CM
@@ -269,35 +250,7 @@ def detection_status():
 @app.route("/misca")
 def activate():
     activate_servos()
-    return_to_saved_location()
     return "Servomotor activat"
-    
-# @app.route("/drone_status")
-# def drone_status():
-#     try:
-#         status = {
-#             "battery": {
-#                 "voltage": vehicle.battery.voltage,
-#                 "current": vehicle.battery.current,
-#                 "level": vehicle.battery.level
-#             },
-#             "armed": vehicle.armed,
-#             "mode": vehicle.mode.name,
-#             "location": {
-#                 "lat": vehicle.location.global_relative_frame.lat,
-#                 "lon": vehicle.location.global_relative_frame.lon,
-#                 "alt": vehicle.location.global_relative_frame.alt
-#             },
-#             "event_location": {
-#                 "lat": event_location.lat if event_location else None,
-#                 "lon": event_location.lon if event_location else None,
-#                 "alt": event_location.alt if event_location else None
-#             }
-#         }
-#         return jsonify(status)
-#     except Exception as e:
-#         logging.exception("Eroare la extragerea statusului dronei")
-#         return jsonify({"error": str(e)})
 
 if __name__ == "__main__":
     threading.Thread(target=camera_thread, name="CameraThread", daemon=True).start()
