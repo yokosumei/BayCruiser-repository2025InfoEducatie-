@@ -175,4 +175,86 @@ def detection_thread():
             yolo_output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
         time.sleep(0.01)
 
-# restul codului rămâne neschimbat...
+def stream_thread():
+    global output_frame
+    logging.info("Firul 3 (livrare raw) a pornit.")
+    while True:
+        if not streaming:
+            time.sleep(0.1)
+            continue
+        with frame_lock:
+            data = frame_buffer.copy() if frame_buffer else None
+        if data is None:
+            time.sleep(0.05)
+            continue
+        jpeg = cv2.imencode('.jpg', data["image"])[1].tobytes()
+        with output_lock:
+            output_frame = jpeg
+        time.sleep(0.05)
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/video_feed")
+def video_feed():
+    def generate():
+        global output_frame
+        while True:
+            if not streaming:
+                time.sleep(0.1)
+                continue
+            with output_lock:
+                frame = output_frame if output_frame is not None else blank_frame()
+            yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
+            time.sleep(0.05)
+    return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
+
+@app.route("/yolo_feed")
+def yolo_feed():
+    def generate():
+        global yolo_output_frame
+        while True:
+            if not streaming:
+                time.sleep(0.1)
+                continue
+            with output_lock:
+                frame = yolo_output_frame if yolo_output_frame is not None else blank_frame()
+            yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
+            time.sleep(0.05)
+    return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
+
+@app.route("/yolo_feed_snapshot")
+def yolo_feed_snapshot():
+    global yolo_output_frame
+    with output_lock:
+        frame = yolo_output_frame if yolo_output_frame is not None else blank_frame()
+    return Response(frame, mimetype='image/jpeg')
+
+@app.route("/start_stream")
+def start_stream():
+    global streaming
+    streaming = True
+    return jsonify({"status": "started"})
+
+@app.route("/stop_stream")
+def stop_stream():
+    global streaming
+    streaming = False
+    return jsonify({"status": "stopped"})
+
+@app.route("/detection_status")
+def detection_status():
+    return jsonify({"detected": popup_sent})
+
+@app.route("/misca")
+def activate():
+    activate_servos()
+    return "Servomotor activat"
+
+if __name__ == "__main__":
+    threading.Thread(target=camera_thread, name="CameraThread", daemon=True).start()
+    threading.Thread(target=detection_thread, name="DetectionThread", daemon=True).start()
+    threading.Thread(target=stream_thread, name="StreamThread", daemon=True).start()
+    logging.info("Pornire server Flask")
+    app.run(host="0.0.0.0", port=5000)
