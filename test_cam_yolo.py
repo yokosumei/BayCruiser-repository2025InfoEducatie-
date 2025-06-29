@@ -123,6 +123,11 @@ class DroneKitGPSProvider(BaseGPSProvider):
         print("[DroneKit] Așteptăm ca drona să fie armabilă...")
         while not self.vehicle.is_armable:
             print("  -> Drona nu e armabilă încă...")
+            print("Mode:", self.vehicle.mode.name)
+            print("EKF OK:", self.vehicle.ekf_ok)
+            print("GPS fix type:", self.vehicle.gps_0.fix_type)
+            print("Satellites visible:", self.vehicle.gps_0.satellites_visible)
+            print("System status:", self.vehicle.system_status.state)
             time.sleep(1)
         print("[DroneKit] Drona este gata.")
 
