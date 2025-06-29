@@ -138,7 +138,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
         print("Vehicle disarmed.")
         vehicle.close()
         
-    def arm_and_takeoff(target_altitude):
+    def arm_and_takeoff(self,target_altitude):
         print("Checking pre-arm conditions...")
         while not vehicle.is_armable:
             print(" Waiting for vehicle to initialise...")
@@ -157,8 +157,8 @@ class DroneKitGPSProvider(BaseGPSProvider):
             if alt >= target_altitude * 0.95:
                 print("Reached target altitude")
                 break
-        time.sleep(1)    
-    def land_drone():
+            time.sleep(1)    
+    def land_drone(self):
         vehicle.mode = VehicleMode("LAND")
         while vehicle.armed:
             time.sleep(1)
