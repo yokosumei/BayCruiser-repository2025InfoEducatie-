@@ -10,6 +10,7 @@ import atexit
 import os
 import logging
 from collections import deque
+from dronekit import connect, LocationGlobalRelative
 
 logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] (%(threadName)s) %(message)s')
 
