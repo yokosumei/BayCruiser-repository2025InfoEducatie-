@@ -10,7 +10,7 @@ import atexit
 import os
 import logging
 from collections import deque
-from dronekit import connect, LocationGlobalRelative
+from dronekit import connect, VehicleMode, LocationGlobalRelative
 
 logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] (%(threadName)s) %(message)s')
 
@@ -75,6 +75,13 @@ def blank_frame():
     img = np.zeros((480, 640, 3), dtype=np.uint8)
     _, buffer = cv2.imencode('.jpg', img)
     return buffer.tobytes()
+    
+# === DroneKit setup ===
+connection_string = '/dev/ttyUSB0'
+baud_rate = 57600
+print("Connecting to vehicle...")
+global vehicle
+vehicle = connect(connection_string, baud=baud_rate, wait_ready=False)   
 
 # === GPS SIMULATOR ===
 USE_SIMULATOR = False
@@ -105,65 +112,15 @@ class MockGPSProvider:
         except Exception as e:
             logging.exception("[MOCK GPS] Eroare la generarea coordonatei")
             return GPSValue(None, None, None)
+            
+           
+            
 
 class DroneKitGPSProvider(BaseGPSProvider):
-    print("Checking pre-arm conditions...")
     def __init__(self):
-        self.vehicle = connect('/dev/ttyUSB0', baud=57600, wait_ready=False)
-    
-
-    connection_string = '/dev/ttyUSB0'
-    baud_rate = 57600
-    print("Connecting to vehicle...")
-    vehicle = connect(connection_string, baud=baud_rate, wait_ready=False)
-    
-    print("Checking pre-arm conditions...")
-    while not vehicle.is_armable:
-        print(" Waiting for vehicle to initialise...")
-        time.sleep(1)
-    print("Arming motors...")
-    vehicle.mode = VehicleMode("GUIDED")
-    vehicle.armed = True
-    while not vehicle.armed:
-        print(" Waiting for arming...")
-        time.sleep(1)
-    print("Taking off!")
-    vehicle.simple_takeoff(target_altitude)
-    while True:
-        alt = vehicle.location.global_relative_frame.alt
-        print(" Altitude: ", alt)
-        if alt >= target_altitude * 0.95:
-            print("Reached target altitude")
-            break
-        time.sleep(1)
-        
-        
-        
-        print("Checking pre-arm conditions...")
-        while not self.vehicle.is_armable:
-            print(" Waiting for vehicle to initialise...")
-            time.sleep(1)
-        print("Arming motors...")
-        self.vehicle.mode = VehicleMode("GUIDED")
-        self.vehicle.armed = True
-        while not vehicle.armed:
-            print(" Waiting for arming...")
-        time.sleep(1)
-        print("Taking off!")
-        self.vehicle.simple_takeoff(target_altitude)
-        while True:
-            alt = self.vehicle.location.global_relative_frame.alt
-            lat=  self.vehicle.location.global_relative_frame.lat
-            print(" Altitude: ", lat)
-            print(" Altitude: ", alt)
-            if alt >= target_altitude * 0.95:
-                print("Reached target altitude")
-                break
-            time.sleep(1)
-    
-        
+        global vehicle  # asigurăm accesul la variabila globală
         self.location = GPSValue(None, None, None)
-        self.vehicle.add_attribute_listener('location.global_frame', self.gps_callback)
+        vehicle.add_attribute_listener('location.global_frame', self.gps_callback)
 
     def gps_callback(self, self_ref, attr_name, value):
         try:
@@ -171,17 +128,17 @@ class DroneKitGPSProvider(BaseGPSProvider):
             logging.debug(f"[DroneKitGPSProvider] Coordonată returnată: lat={value.lat}, lon={value.lon}, alt={value.alt}")
         except Exception as e:
             logging.exception("[DroneKitGPSProvider] Eroare la generarea coordonatei")
-            return GPSValue(None, None, None)    
+            return GPSValue(None, None, None)
 
     def get_location(self):
         return self.location
 
     def close(self):
-        self.vehicle.close()
-
+        global vehicle
+        vehicle.close()
+        
+        
 gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider()
-
-
 
 
 
