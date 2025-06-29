@@ -54,6 +54,12 @@ class GPSValue:
         self.lat = lat
         self.lon = lon
         self.alt = alt
+        
+class BaseGPSProvider:
+    def get_location(self):
+        raise NotImplementedError()
+    def close(self):
+        pass        
 
 class MockGPSProvider:
     def __init__(self):
