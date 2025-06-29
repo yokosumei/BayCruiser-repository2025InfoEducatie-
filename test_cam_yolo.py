@@ -119,7 +119,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
         self.vehicle.add_attribute_listener('location.global_frame', self.gps_callback)
         logging.info("[DroneKitGPSProvider] Conexiune completă.")
 
- def wait_until_ready(self, timeout=30):
+    def wait_until_ready(self, timeout=30):
         if self.bypass:
             print("[DroneKit] Bypass activ → simulăm dronă armabilă.")
             return True
@@ -148,7 +148,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
     def get_location(self):
         return self.location
 
-def arm_and_takeoff(self, target_altitude):
+    def arm_and_takeoff(self, target_altitude):
         if not self.wait_until_ready():
             return "[DroneKit] Nu e armabilă. Ieșire."
 
