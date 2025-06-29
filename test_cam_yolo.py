@@ -142,6 +142,7 @@ gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider()
 
 
 
+
 def camera_thread():
     global frame_buffer
     logging.info("Firul principal (camera) a pornit.")
@@ -158,6 +159,7 @@ def camera_thread():
             cv2.putText(frame, f"Lat: {gps.lat:.6f} Lon: {gps.lon:.6f} Alt: {gps.alt:.1f}", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2)
         with frame_lock:
             frame_buffer = {"image": frame.copy(), "gps": gps_snapshot}
+            logging.debug(f"[STREAM] Frame capturat la {gps_snapshot['timestamp']:.3f} transmis la {time.time():.3f}")
         time.sleep(0.01)
 
 def detection_thread():
