@@ -139,6 +139,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
         vehicle.close()
         
     def arm_and_takeoff(self,target_altitude):
+        global vehicle  # asigurăm accesul la variabila globală
         print("Checking pre-arm conditions...")
         while not vehicle.is_armable:
             print(" Waiting for vehicle to initialise...")
@@ -161,6 +162,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
         return "Drone Takeoff"
         
     def land_drone(self):
+        global vehicle  # asigurăm accesul la variabila globală
         vehicle.mode = VehicleMode("LAND")
         while vehicle.armed:
             time.sleep(1)
@@ -191,7 +193,7 @@ def camera_thread():
             cv2.putText(frame, f"Lat: {gps.lat:.6f} Lon: {gps.lon:.6f} Alt: {gps.alt:.1f}", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2)
         with frame_lock:
             frame_buffer = {"image": frame.copy(), "gps": gps_snapshot}
-            logging.debug(f"[STREAM] Frame capturat la {gps_snapshot['timestamp']:.3f} transmis la {time.time():.3f}")
+            #logging.debug(f"[STREAM] Frame capturat la {gps_snapshot['timestamp']:.3f} transmis la {time.time():.3f}")
         time.sleep(0.01)
 
 def detection_thread():
