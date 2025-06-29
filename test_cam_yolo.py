@@ -122,7 +122,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
 
     def wait_until_ready(self, timeout=30):
         if self.bypass:
-            print("  -> EKF OK:", self.vehicle.ekf_ok)
+            print(" ByPASS=TRUE -> EKF OK:", self.vehicle.ekf_ok)
             print("  -> GPS fix:", self.vehicle.gps_0.fix_type)
             print("  -> Sateliți:", self.vehicle.gps_0.satellites_visible)
             print("  -> Sistem:", self.vehicle.system_status.state)
@@ -132,7 +132,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
         print("[DroneKit] Așteptăm ca drona să fie armabilă...")
         start = time.time()
         while not self.vehicle.is_armable:
-            print("  -> EKF OK:", self.vehicle.ekf_ok)
+            print("BYPASS=FALSE  -> EKF OK:", self.vehicle.ekf_ok)
             print("  -> GPS fix:", self.vehicle.gps_0.fix_type)
             print("  -> Sateliți:", self.vehicle.gps_0.satellites_visible)
             print("  -> Sistem:", self.vehicle.system_status.state)
@@ -211,7 +211,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
         
         
         
-gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider(bypass=False)
+gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider(bypass=True)
 
 
 
