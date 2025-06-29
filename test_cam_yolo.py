@@ -84,7 +84,7 @@ global vehicle
 vehicle = connect(connection_string, baud=baud_rate, wait_ready=False)   
 
 # === GPS SIMULATOR ===
-USE_SIMULATOR = False
+USE_SIMULATOR = True
 class GPSValue:
     def __init__(self, lat, lon, alt):
         self.lat = lat
