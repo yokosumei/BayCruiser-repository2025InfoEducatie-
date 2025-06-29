@@ -125,7 +125,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
     def gps_callback(self, self_ref, attr_name, value):
         try:
             self.location = GPSValue(value.lat, value.lon, value.alt)
-            logging.trace(f"[DroneKitGPSProvider] Coordonată returnată: lat={value.lat}, lon={value.lon}, alt={value.alt}")
+            logging.debug(f"[DroneKitGPSProvider] Coordonată returnată: lat={value.lat}, lon={value.lon}, alt={value.alt}")
         except Exception as e:
             logging.exception("[DroneKitGPSProvider] Eroare la generarea coordonatei")
             return GPSValue(None, None, None)
@@ -355,8 +355,8 @@ def droneStatus():
                 "lon": vehicle.location.global_frame.lon
             },
             "event_location": {
-                "lat": event_location["lat"],
-                "lon": event_location["lon"]
+                "lat": 11.11,
+                "lon": 22.22
             }
         })
     except Exception as e:
