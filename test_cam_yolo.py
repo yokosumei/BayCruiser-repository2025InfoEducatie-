@@ -122,6 +122,10 @@ class DroneKitGPSProvider(BaseGPSProvider):
 
     def wait_until_ready(self, timeout=30):
         if self.bypass:
+            print("  -> EKF OK:", self.vehicle.ekf_ok)
+            print("  -> GPS fix:", self.vehicle.gps_0.fix_type)
+            print("  -> Sateliți:", self.vehicle.gps_0.satellites_visible)
+            print("  -> Sistem:", self.vehicle.system_status.state)
             print("[DroneKit] Bypass activ → simulăm dronă armabilă.")
             return True
 
@@ -159,6 +163,13 @@ class DroneKitGPSProvider(BaseGPSProvider):
 
         while not self.vehicle.armed:
             print("  -> Așteptăm armarea...")
+            print("Mode:", self.vehicle.mode.name)
+            print("Is armable:", self.vehicle.is_armable)
+            print("EKF OK:", self.vehicle.ekf_ok)
+            print("System status:", self.vehicle.system_status.state)
+            print("GPS fix:", self.vehicle.gps_0.fix_type)
+            print("Satellites:", self.vehicle.gps_0.satellites_visible)
+            print("Armable reasons:", self.vehicle.commands)
             time.sleep(1)
 
         if self.bypass:
