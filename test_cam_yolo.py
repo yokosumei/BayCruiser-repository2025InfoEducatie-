@@ -125,7 +125,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
     def gps_callback(self, self_ref, attr_name, value):
         try:
             self.location = GPSValue(value.lat, value.lon, value.alt)
-            logging.debug(f"[DroneKitGPSProvider] Coordonată returnată: lat={value.lat}, lon={value.lon}, alt={value.alt}")
+            logging.trace(f"[DroneKitGPSProvider] Coordonată returnată: lat={value.lat}, lon={value.lon}, alt={value.alt}")
         except Exception as e:
             logging.exception("[DroneKitGPSProvider] Eroare la generarea coordonatei")
             return GPSValue(None, None, None)
@@ -157,11 +157,14 @@ class DroneKitGPSProvider(BaseGPSProvider):
             if alt >= target_altitude * 0.95:
                 print("Reached target altitude")
                 break
-            time.sleep(1)    
+            time.sleep(1)
+        return "Drone Takeoff"
+        
     def land_drone(self):
         vehicle.mode = VehicleMode("LAND")
         while vehicle.armed:
             time.sleep(1)
+        return "Drone Landing"    
       
   
         
@@ -332,15 +335,58 @@ def detection_status():
 def activate():
     activate_servos()
     return "Servomotor activat"
+    
 @app.route("/takeoff")
 def takeoff():
-    gps_provider.arm_and_takeoff(1)
-    return "Drone Takeoff"    
+    return gps_provider.arm_and_takeoff(1)
+  
+
+@app.route("/drone_status")
+def droneStatus():
+    try:
+        return jsonify({
+            "battery": {
+                "level": vehicle.battery.level  # ex: 83
+            },
+            "armed": vehicle.armed,  # True / False
+            "mode": vehicle.mode.name,  # "GUIDED", "LOITER", etc.
+            "location": {
+                "lat": vehicle.location.global_frame.lat,
+                "lon": vehicle.location.global_frame.lon
+            },
+            "event_location": {
+                "lat": event_location["lat"],
+                "lon": event_location["lon"]
+            }
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route("/land")
 def land():
-    gps_provider.land_drone()
-    return "Drone Landing"
+    return gps_provider.land_drone()
+
+    
+@app.route("/return_to_event")
+def return_to_event():
+    global event_location
+    logging.info("[FLASK] /return_to_event apelat")
+    if not event_location:
+        logging.warning("[FLASK] Nu există coordonate salvate pentru revenirea dronei.")
+        return jsonify({"status": "no event location"})
+    try:
+        logging.info(f"[FLASK] Se trimite drona înapoi la: {event_location}")
+        gps_provider.vehicle.simple_goto(event_location)
+        return jsonify({
+            "status": "returning",
+            "lat": event_location.lat,
+            "lon": event_location.lon,
+            "alt": event_location.alt
+        })
+    except Exception as e:
+        logging.exception("[FLASK] Eroare la trimiterea dronei către locație")
+        return jsonify({"status": "error", "message": str(e)})    
 
 if __name__ == "__main__":
     threading.Thread(target=camera_thread, name="CameraThread", daemon=True).start()
