@@ -137,7 +137,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
             break
         time.sleep(1)
         
-        ////////////
+        
         
         print("Checking pre-arm conditions...")
         while not self.vehicle.is_armable:
