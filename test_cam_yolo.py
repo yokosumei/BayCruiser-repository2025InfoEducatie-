@@ -211,7 +211,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
         
         
         
-gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider(bypass=True)
+gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider(bypass=False)
 
 
 
