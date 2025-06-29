@@ -135,7 +135,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
 
     def close(self):
         global vehicle
-         print("Vehicle disarmed.")
+        print("Vehicle disarmed.")
         vehicle.close()
         
     def arm_and_takeoff(target_altitude):
