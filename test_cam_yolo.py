@@ -115,16 +115,16 @@ class DroneKitGPSProvider(BaseGPSProvider):
     def __init__(self, connection_string='/dev/ttyUSB0', baud_rate=57600):
         print("[DroneKitGPSProvider] Conectare la dronă...")
         self.vehicle = connect(connection_string, baud=baud_rate, wait_ready=False)
+        self.location = GPSValue(None, None, None)
+        self.vehicle.add_attribute_listener('location.global_frame', self.gps_callback)
+        logging.info("[DroneKitGPSProvider] Conexiune completă.")
 
-        print("[DroneKitGPSProvider] Așteptăm inițializarea dronei...")
+    def wait_until_ready(self):
+        print("[DroneKit] Așteptăm ca drona să fie armabilă...")
         while not self.vehicle.is_armable:
             print("  -> Drona nu e armabilă încă...")
             time.sleep(1)
-        print("[DroneKitGPSProvider] Drona este gata.")
-
-        self.location = GPSValue(None, None, None)
-        self.vehicle.add_attribute_listener('location.global_frame', self.gps_callback)
-        logging.info("[DroneKitGPSProvider] Inițializat complet.")
+        print("[DroneKit] Drona este gata.")
 
     def gps_callback(self, self_ref, attr_name, value):
         try:
@@ -137,7 +137,9 @@ class DroneKitGPSProvider(BaseGPSProvider):
         return self.location
 
     def arm_and_takeoff(self, target_altitude):
-        print("[DroneKit] Arming...")
+        self.wait_until_ready()
+
+        print("[DroneKit] Armare...")
         self.vehicle.mode = VehicleMode("GUIDED")
         self.vehicle.armed = True
 
@@ -170,6 +172,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
     def close(self):
         print("[DroneKit] Închidere conexiune cu drona...")
         self.vehicle.close()
+
       
   
         
