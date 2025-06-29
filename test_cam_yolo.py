@@ -59,12 +59,33 @@ class MockGPSProvider:
         self.coordinates = deque([
             (44.4391 + i * 0.0001, 26.0961 + i * 0.0001, 80.0) for i in range(20)
         ])
-    def get_location(self):
-        lat, lon, alt = self.coordinates[0]
-        self.coordinates.rotate(-1)
-        return GPSValue(lat, lon, alt)
 
-gps_provider = MockGPSProvider()
+    def get_location(self):
+        try:
+            lat, lon, alt = self.coordinates[0]
+            self.coordinates.rotate(-1)
+            logging.debug(f"[MOCK GPS] Coordonată returnată: lat={lat}, lon={lon}, alt={alt}")
+            return GPSValue(lat, lon, alt)
+        except Exception as e:
+            logging.exception("[MOCK GPS] Eroare la generarea coordonatei")
+            return GPSValue(None, None, None)
+
+class DroneKitGPSProvider(BaseGPSProvider):
+    def __init__(self):
+        self.vehicle = connect('/dev/ttyUSB0', wait_ready=True, baud=57600)
+        self.location = GPSValue(None, None, None)
+        self.vehicle.add_attribute_listener('location.global_frame', self.gps_callback)
+
+    def gps_callback(self, self_ref, attr_name, value):
+        self.location = GPSValue(value.lat, value.lon, value.alt)
+
+    def get_location(self):
+        return self.location
+
+    def close(self):
+        self.vehicle.close()
+
+gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider()
 
 def cleanup():
     servo1.stop()
