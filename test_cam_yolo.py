@@ -47,7 +47,7 @@ detection_frame_skip = 2
 frame_counter = 0
 
 # === GPS SIMULATOR ===
-USE_SIMULATOR = True
+USE_SIMULATOR = False
 class GPSValue:
     def __init__(self, lat, lon, alt):
         self.lat = lat
