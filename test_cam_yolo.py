@@ -119,21 +119,24 @@ class DroneKitGPSProvider(BaseGPSProvider):
         self.vehicle.add_attribute_listener('location.global_frame', self.gps_callback)
         logging.info("[DroneKitGPSProvider] Conexiune completă.")
 
-    def wait_until_ready(self):
-        
-        self.vehicle.ekf_ok = True
-        self.vehicle.is_armable = True
+ def wait_until_ready(self, timeout=30):
+        if self.bypass:
+            print("[DroneKit] Bypass activ → simulăm dronă armabilă.")
+            return True
+
         print("[DroneKit] Așteptăm ca drona să fie armabilă...")
+        start = time.time()
         while not self.vehicle.is_armable:
-            print("  -> Drona nu e armabilă încă...")
-            print("Mode:", self.vehicle.mode.name)
-            print("EKF OK:", self.vehicle.ekf_ok)
-            print("GPS fix type:", self.vehicle.gps_0.fix_type)
-            print("Satellites visible:", self.vehicle.gps_0.satellites_visible)
-            print("System status:", self.vehicle.system_status.state)
-            print(" -> is_armable:", self.vehicle.is_armable)
+            print("  -> EKF OK:", self.vehicle.ekf_ok)
+            print("  -> GPS fix:", self.vehicle.gps_0.fix_type)
+            print("  -> Sateliți:", self.vehicle.gps_0.satellites_visible)
+            print("  -> Sistem:", self.vehicle.system_status.state)
+            if time.time() - start > timeout:
+                print("[DroneKit] Timeout atins. Nu e armabilă.")
+                return False
             time.sleep(1)
         print("[DroneKit] Drona este gata.")
+        return True
 
     def gps_callback(self, self_ref, attr_name, value):
         try:
@@ -145,8 +148,9 @@ class DroneKitGPSProvider(BaseGPSProvider):
     def get_location(self):
         return self.location
 
-    def arm_and_takeoff(self, target_altitude):
-        self.wait_until_ready()
+def arm_and_takeoff(self, target_altitude):
+        if not self.wait_until_ready():
+            return "[DroneKit] Nu e armabilă. Ieșire."
 
         print("[DroneKit] Armare...")
         self.vehicle.mode = VehicleMode("GUIDED")
@@ -155,6 +159,10 @@ class DroneKitGPSProvider(BaseGPSProvider):
         while not self.vehicle.armed:
             print("  -> Așteptăm armarea...")
             time.sleep(1)
+
+        if self.bypass:
+            print("[DroneKit] Bypass activ → simulăm decolare.")
+            return "Drone Takeoff (simulat)"
 
         print(f"[DroneKit] Decolare la {target_altitude}m...")
         self.vehicle.simple_takeoff(target_altitude)
@@ -170,6 +178,10 @@ class DroneKitGPSProvider(BaseGPSProvider):
         return "Drone Takeoff"
 
     def land_drone(self):
+        if self.bypass:
+            print("[DroneKit] Bypass activ → simulăm aterizare.")
+            return "Drone Landing (simulat)"
+
         print("[DroneKit] Aterizare...")
         self.vehicle.mode = VehicleMode("LAND")
         while self.vehicle.armed:
@@ -187,7 +199,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
         
         
         
-gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider()
+gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider(bypass=True)
 
 
 
