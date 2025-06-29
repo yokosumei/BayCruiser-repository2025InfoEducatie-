@@ -120,6 +120,9 @@ class DroneKitGPSProvider(BaseGPSProvider):
         logging.info("[DroneKitGPSProvider] Conexiune completă.")
 
     def wait_until_ready(self):
+        
+        self.vehicle._ekf_ok = True
+        self.vehicle._is_armable = True
         print("[DroneKit] Așteptăm ca drona să fie armabilă...")
         while not self.vehicle.is_armable:
             print("  -> Drona nu e armabilă încă...")
