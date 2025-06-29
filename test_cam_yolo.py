@@ -76,12 +76,6 @@ def blank_frame():
     _, buffer = cv2.imencode('.jpg', img)
     return buffer.tobytes()
     
-# === DroneKit setup ===
-connection_string = '/dev/ttyUSB0'
-baud_rate = 57600
-print("Connecting to vehicle...")
-global vehicle
-vehicle = connect(connection_string, baud=baud_rate, wait_ready=False)   
 
 # === GPS SIMULATOR ===
 USE_SIMULATOR = False
@@ -115,58 +109,67 @@ class MockGPSProvider:
             
            
             
+# === DroneKit setup ===
 
 class DroneKitGPSProvider(BaseGPSProvider):
-    def __init__(self):
-        global vehicle  # asigurăm accesul la variabila globală
+    def __init__(self, connection_string='/dev/ttyUSB0', baud_rate=57600):
+        print("[DroneKitGPSProvider] Conectare la dronă...")
+        self.vehicle = connect(connection_string, baud=baud_rate, wait_ready=False)
+
+        print("[DroneKitGPSProvider] Așteptăm inițializarea dronei...")
+        while not self.vehicle.is_armable:
+            print("  -> Drona nu e armabilă încă...")
+            time.sleep(1)
+        print("[DroneKitGPSProvider] Drona este gata.")
+
         self.location = GPSValue(None, None, None)
-        vehicle.add_attribute_listener('location.global_frame', self.gps_callback)
+        self.vehicle.add_attribute_listener('location.global_frame', self.gps_callback)
+        logging.info("[DroneKitGPSProvider] Inițializat complet.")
 
     def gps_callback(self, self_ref, attr_name, value):
         try:
             self.location = GPSValue(value.lat, value.lon, value.alt)
-            logging.debug(f"[DroneKitGPSProvider] Coordonată returnată: lat={value.lat}, lon={value.lon}, alt={value.alt}")
+            logging.debug(f"[GPS] lat={value.lat}, lon={value.lon}, alt={value.alt}")
         except Exception as e:
-            logging.exception("[DroneKitGPSProvider] Eroare la generarea coordonatei")
-            return GPSValue(None, None, None)
+            logging.exception("[GPS] Eroare în gps_callback")
 
     def get_location(self):
         return self.location
 
-    def close(self):
-        global vehicle
-        print("Vehicle disarmed.")
-        vehicle.close()
-        
-    def arm_and_takeoff(self,target_altitude):
-        global vehicle  # asigurăm accesul la variabila globală
-        print("Checking pre-arm conditions...")
-        while not vehicle.is_armable:
-            print(" Waiting for vehicle to initialise...")
+    def arm_and_takeoff(self, target_altitude):
+        print("[DroneKit] Arming...")
+        self.vehicle.mode = VehicleMode("GUIDED")
+        self.vehicle.armed = True
+
+        while not self.vehicle.armed:
+            print("  -> Așteptăm armarea...")
             time.sleep(1)
-        print("Arming motors...")
-        vehicle.mode = VehicleMode("GUIDED")
-        vehicle.armed = True
-        while not vehicle.armed:
-            print(" Waiting for arming...")
-            time.sleep(1)
-        print("Taking off!")
-        vehicle.simple_takeoff(target_altitude)
+
+        print(f"[DroneKit] Decolare la {target_altitude}m...")
+        self.vehicle.simple_takeoff(target_altitude)
+
         while True:
-            alt = vehicle.location.global_relative_frame.alt
-            print(" Altitude: ", alt)
+            alt = self.vehicle.location.global_relative_frame.alt
+            print(f"  -> Altitudine curentă: {alt:.2f} m")
             if alt >= target_altitude * 0.95:
-                print("Reached target altitude")
+                print("[DroneKit] Altitudine atinsă.")
                 break
             time.sleep(1)
+
         return "Drone Takeoff"
-        
+
     def land_drone(self):
-        global vehicle  # asigurăm accesul la variabila globală
-        vehicle.mode = VehicleMode("LAND")
-        while vehicle.armed:
+        print("[DroneKit] Aterizare...")
+        self.vehicle.mode = VehicleMode("LAND")
+        while self.vehicle.armed:
+            print("  -> Așteptăm dezarmarea...")
             time.sleep(1)
-        return "Drone Landing"    
+        print("[DroneKit] Aterizare completă.")
+        return "Drone Landing"
+
+    def close(self):
+        print("[DroneKit] Închidere conexiune cu drona...")
+        self.vehicle.close()
       
   
         
@@ -348,13 +351,13 @@ def droneStatus():
     try:
         return jsonify({
             "battery": {
-                "level": vehicle.battery.level  # ex: 83
+                "level": gps_provider.vehicle.battery.level  # ex: 83
             },
-            "armed": vehicle.armed,  # True / False
-            "mode": vehicle.mode.name,  # "GUIDED", "LOITER", etc.
+            "armed": gps_provider.vehicle.armed,  # True / False
+            "mode": gps_provider.vehicle.mode.name,  # "GUIDED", "LOITER", etc.
             "location": {
-                "lat": vehicle.location.global_frame.lat,
-                "lon": vehicle.location.global_frame.lon
+                "lat": gps_provider.vehicle.location.global_frame.lat,
+                "lon": gps_provider.vehicle.location.global_frame.lon
             },
             "event_location": {
                 "lat": 11.11,
