@@ -1,53 +1,115 @@
 from flask import Flask, render_template, Response, jsonify
 from ultralytics import YOLO
 from picamera2 import Picamera2
-from gpiozero import AngularServo
+import RPi.GPIO as GPIO
 import numpy as np
 import threading
 import cv2
 import time
+import atexit
+from dronekit import connect, VehicleMode, LocationGlobalRelative
 
+# === DroneKit setup ===
+connection_string = '/dev/ttyUSB0'
+baud_rate = 57600
+print("Connecting to vehicle...")
+vehicle = connect(connection_string, baud=baud_rate, wait_ready=False)
+
+def arm_and_takeoff(target_altitude):
+    print("Checking pre-arm conditions...")
+    while not vehicle.is_armable:
+        print(" Waiting for vehicle to initialise...")
+        time.sleep(1)
+    print("Arming motors...")
+    vehicle.mode = VehicleMode("GUIDED")
+    vehicle.armed = True
+    while not vehicle.armed:
+        print(" Waiting for arming...")
+        time.sleep(1)
+    print("Taking off!")
+    vehicle.simple_takeoff(target_altitude)
+    while True:
+        alt = vehicle.location.global_relative_frame.alt
+        print(" Altitude: ", alt)
+        if alt >= target_altitude * 0.95:
+            print("Reached target altitude")
+            break
+        time.sleep(1)
+
+def land_drone():
+    vehicle.mode = VehicleMode("LAND")
+    while vehicle.armed:
+        time.sleep(1)
+    print("Landed and disarmed.")
+    vehicle.close()
+
+# === Flask App Setup ===
 app = Flask(__name__)
-
 model = YOLO("my_model.pt")
 picam2 = Picamera2()
 picam2.configure(picam2.create_video_configuration(main={"format": "RGB888", "size": (640, 480)}))
 picam2.start()
 
-servo = AngularServo(18, min_pulse_width=0.0006, max_pulse_width=0.0023)
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(11, GPIO.OUT)
+GPIO.setup(12, GPIO.OUT)
+servo1 = GPIO.PWM(11, 50)
+servo2 = GPIO.PWM(12, 50)
+servo1.start(0)
+servo2.start(0)
 
 streaming = False
 lock = threading.Lock()
 output_frame = None
-
 detected_flag = False
 popup_sent = False
-cooldown_active = False
+last_detection_time = 0
+
+def cleanup():
+    servo1.stop()
+    servo2.stop()
+    GPIO.cleanup()
+
+atexit.register(cleanup)
+
+def activate_servos():
+    servo1.ChangeDutyCycle(9.5)
+    servo2.ChangeDutyCycle(4.5) 
+    time.sleep(0.3)              
+    servo1.ChangeDutyCycle(0)    
+    servo2.ChangeDutyCycle(0)
 
 def blank_frame():
     img = np.zeros((480, 640, 3), dtype=np.uint8)
     _, buffer = cv2.imencode('.jpg', img)
     return buffer.tobytes()
 
+
 def detect_objects():
-    global output_frame, streaming, detected_flag, popup_sent, cooldown_active
+    global output_frame, streaming, detected_flag, popup_sent, last_detection_time
 
     while streaming:
         frame = picam2.capture_array()
         results = model(frame, verbose=False)
         annotated = results[0].plot()
 
-        # Detectăm "om_la_inec"
         names = results[0].names
         class_ids = results[0].boxes.cls.tolist()
-        detected = any(names[int(cls_id)] == "om_la_inec" for cls_id in class_ids)
 
-        if detected:
-            if not detected_flag and not cooldown_active:
+        for i, cls_id in enumerate(class_ids):
+            if names[int(cls_id)] == "om_la_inec":
                 detected_flag = True
-                popup_sent = True  
-        else:
-            detected_flag = False  # resetare
+                popup_sent = True
+                last_detection_time = time.time()
+                activate_servos()
+
+                box = results[0].boxes[i]
+                dx_cm, dy_cm = calculate_offset(box)
+                move_towards(dx_cm, dy_cm)
+
+        if time.time() - last_detection_time > 5:
+            detected_flag = False
+            popup_sent = False
 
         with lock:
             output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
@@ -91,29 +153,22 @@ def stop_stream():
 
 @app.route("/detection_status")
 def detection_status():
-    global popup_sent
     return jsonify({"detected": popup_sent})
 
 @app.route("/misca")
 def activate():
-    global detected_flag, popup_sent, cooldown_active
-
-    print(" Servomotor activat.")
-    servo.angle = 45
-    time.sleep(2)
-    servo.angle = 0
-    detected_flag = False
-    popup_sent = False
-    cooldown_active = True
-
-    # Cooldown de 10 secunde într-un thread separat
-    threading.Thread(target=cooldown_timer).start()
-
+    activate_servos()
     return "Servomotor activat"
 
-def cooldown_timer():
-    global cooldown_active
-    print("Cooldown 10s...")
-    time.sleep(10)
-    cooldown_active = False
-    print("Cooldown terminat.")
+@app.route("/takeoff")
+def takeoff():
+    arm_and_takeoff(1)
+    return "Drone Takeoff"
+
+@app.route("/land")
+def land():
+    land_drone()
+    return "Drone Landing"
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
