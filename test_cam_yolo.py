@@ -84,7 +84,7 @@ global vehicle
 vehicle = connect(connection_string, baud=baud_rate, wait_ready=False)   
 
 # === GPS SIMULATOR ===
-USE_SIMULATOR = False
+USE_SIMULATOR = True
 class GPSValue:
     def __init__(self, lat, lon, alt):
         self.lat = lat
@@ -135,7 +135,36 @@ class DroneKitGPSProvider(BaseGPSProvider):
 
     def close(self):
         global vehicle
+         print("Vehicle disarmed.")
         vehicle.close()
+        
+    def arm_and_takeoff(target_altitude):
+        print("Checking pre-arm conditions...")
+        while not vehicle.is_armable:
+            print(" Waiting for vehicle to initialise...")
+            time.sleep(1)
+        print("Arming motors...")
+        vehicle.mode = VehicleMode("GUIDED")
+        vehicle.armed = True
+        while not vehicle.armed:
+            print(" Waiting for arming...")
+            time.sleep(1)
+        print("Taking off!")
+        vehicle.simple_takeoff(target_altitude)
+        while True:
+            alt = vehicle.location.global_relative_frame.alt
+            print(" Altitude: ", alt)
+            if alt >= target_altitude * 0.95:
+                print("Reached target altitude")
+                break
+        time.sleep(1)    
+    def land_drone():
+        vehicle.mode = VehicleMode("LAND")
+        while vehicle.armed:
+            time.sleep(1)
+      
+  
+        
         
         
 gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider()
@@ -303,6 +332,15 @@ def detection_status():
 def activate():
     activate_servos()
     return "Servomotor activat"
+@app.route("/takeoff")
+def takeoff():
+    gps_provider.arm_and_takeoff(1)
+    return "Drone Takeoff"    
+
+@app.route("/land")
+def land():
+    gps_provider.land_drone()
+    return "Drone Landing"
 
 if __name__ == "__main__":
     threading.Thread(target=camera_thread, name="CameraThread", daemon=True).start()
