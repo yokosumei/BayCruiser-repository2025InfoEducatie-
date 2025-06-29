@@ -47,6 +47,34 @@ last_detection_time = 0
 detection_frame_skip = 2
 frame_counter = 0
 
+
+
+def cleanup():
+    servo1.stop()
+    servo2.stop()
+    GPIO.cleanup()
+
+atexit.register(cleanup)
+
+def activate_servos():
+    logging.debug("Activare servomotoare")
+    servo1.ChangeDutyCycle(12.5)
+    servo2.ChangeDutyCycle(2.5)
+    time.sleep(0.3)
+    servo1.ChangeDutyCycle(0)
+    servo2.ChangeDutyCycle(0)
+    time.sleep(2)
+    servo1.ChangeDutyCycle(7.5)
+    servo2.ChangeDutyCycle(7.5)
+    time.sleep(0.3)
+    servo1.ChangeDutyCycle(0)
+    servo2.ChangeDutyCycle(0)
+
+def blank_frame():
+    img = np.zeros((480, 640, 3), dtype=np.uint8)
+    _, buffer = cv2.imencode('.jpg', img)
+    return buffer.tobytes()
+
 # === GPS SIMULATOR ===
 USE_SIMULATOR = False
 class GPSValue:
@@ -79,12 +107,23 @@ class MockGPSProvider:
 
 class DroneKitGPSProvider(BaseGPSProvider):
     def __init__(self):
-        self.vehicle = connect('/dev/ttyUSB0', wait_ready=True, baud=57600)
+        self.vehicle = connect('/dev/ttyUSB0', baud=57600, wait_ready=False)
+        
+        print("Checking pre-arm conditions...")
+        while not self.vehicle.is_armable:
+            print(" Waiting for vehicle to initialise...")
+            time.sleep(1)
+        
         self.location = GPSValue(None, None, None)
         self.vehicle.add_attribute_listener('location.global_frame', self.gps_callback)
 
     def gps_callback(self, self_ref, attr_name, value):
-        self.location = GPSValue(value.lat, value.lon, value.alt)
+        try:
+            self.location = GPSValue(value.lat, value.lon, value.alt)
+            logging.debug(f"[DroneKitGPSProvider] Coordonată returnată: lat={value.lat}, lon={value.lon}, alt={value.alt}")
+        except Exception as e:
+            logging.exception("[DroneKitGPSProvider] Eroare la generarea coordonatei")
+            return GPSValue(None, None, None)    
 
     def get_location(self):
         return self.location
@@ -94,31 +133,9 @@ class DroneKitGPSProvider(BaseGPSProvider):
 
 gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider()
 
-def cleanup():
-    servo1.stop()
-    servo2.stop()
-    GPIO.cleanup()
 
-atexit.register(cleanup)
 
-def activate_servos():
-    logging.debug("Activare servomotoare")
-    servo1.ChangeDutyCycle(12.5)
-    servo2.ChangeDutyCycle(2.5)
-    time.sleep(0.3)
-    servo1.ChangeDutyCycle(0)
-    servo2.ChangeDutyCycle(0)
-    time.sleep(2)
-    servo1.ChangeDutyCycle(7.5)
-    servo2.ChangeDutyCycle(7.5)
-    time.sleep(0.3)
-    servo1.ChangeDutyCycle(0)
-    servo2.ChangeDutyCycle(0)
 
-def blank_frame():
-    img = np.zeros((480, 640, 3), dtype=np.uint8)
-    _, buffer = cv2.imencode('.jpg', img)
-    return buffer.tobytes()
 
 def camera_thread():
     global frame_buffer
