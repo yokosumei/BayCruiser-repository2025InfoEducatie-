@@ -202,19 +202,33 @@ function Ateriazare() {
 }
 
 function updateDroneStatus() {
-  fetch("/drone_status")
-    .then(res => res.json())
-    .then(data => {
-      document.getElementById("battery").innerText = data.battery.level + "%";
-      document.getElementById("armed").innerText = data.armed ? "DA" : "NU";
-      document.getElementById("mode").innerText = data.mode;
+fetch("/drone_status")
+  .then(res => res.json())
+  .then(data => {
+    console.log("Received drone status:", data); // 🔍 vezi ce primești
+    document.getElementById("battery").innerText = data.battery.level + "%";
+    document.getElementById("armed").innerText = data.armed ? "DA" : "NU";
+    document.getElementById("mode").innerText = data.mode;
+
+    if (data.location && data.location.lat && data.location.lon) {
       document.getElementById("current-coords").innerText =
         `Lat: ${data.location.lat.toFixed(5)}, Lon: ${data.location.lon.toFixed(5)}`;
+    }
+
+    if (data.event_location && data.event_location.lat && data.event_location.lon) {
       document.getElementById("event-coords").innerText =
-        data.event_location.lat ?
-        `Lat: ${data.event_location.lat.toFixed(5)}, Lon: ${data.event_location.lon.toFixed(5)}` :
-        "N/A";
-    });
+        `Lat: ${data.event_location.lat.toFixed(5)}, Lon: ${data.event_location.lon.toFixed(5)}`;
+    } else {
+      document.getElementById("event-coords").innerText = "N/A";
+    }
+  })
+  .catch(err => {
+    console.error("Eroare la fetch /drone_status:", err);
+  });
+
 }
+
+
+
 
 setInterval(updateDroneStatus, 1000);
