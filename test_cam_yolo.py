@@ -118,7 +118,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
         self.vehicle = connect(connection_string, baud=baud_rate, wait_ready=False)
         self.location = GPSValue(None, None, None)
         self.vehicle.add_attribute_listener('location.global_frame', self.gps_callback)
-        logging.info("[DroneKitGPSProvider] Conexiune completă.")
+        logging.info("[DroneKitGPSProvider] Conexiune completă....................................................................")
 
     def wait_until_ready(self, timeout=30):
         if self.bypass:
