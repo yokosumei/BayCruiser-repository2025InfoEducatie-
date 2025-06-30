@@ -158,7 +158,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
             return "[DroneKit] Nu e armabilă. Ieșire."
 
         print("[DroneKit] Armare...")
-       self.vehicle.mode = VehicleMode("GUIDED")
+        self.vehicle.mode = VehicleMode("GUIDED")
        
         ############################################
         # self.vehicle.mode = VehicleMode("STABILIZE")
