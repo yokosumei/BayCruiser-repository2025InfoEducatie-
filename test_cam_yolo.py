@@ -161,12 +161,12 @@ class DroneKitGPSProvider(BaseGPSProvider):
        # self.vehicle.mode = VehicleMode("GUIDED")
        
         ############################################
-         self.vehicle.mode = VehicleMode("STABILIZE")
+        self.vehicle.mode = VehicleMode("STABILIZE")
         time.sleep(2)
 
         # === Dezactivează verificările de armare (pentru test) ===
         print("[INFO] Dezactivare ARMING_CHECK...")
-        vehicle.parameters['ARMING_CHECK'] = 0
+        self.vehicle.parameters['ARMING_CHECK'] = 0
         time.sleep(1)
 
         # === Încearcă armarea ===
