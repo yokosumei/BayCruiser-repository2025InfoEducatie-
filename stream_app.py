@@ -1,7 +1,7 @@
 import os
 
 def reda_alarma():
-    os.system("mpg123 /home/dariuc/tututu.mp3")
+    os.system("mpg123 /home/dariuc/Downloads/tututu.mp3")
 
 # Test:
 if __name__ == "__main__":
