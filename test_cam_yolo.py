@@ -115,10 +115,14 @@ class DroneKitGPSProvider(BaseGPSProvider):
     def __init__(self, connection_string='/dev/ttyUSB0', baud_rate=57600, bypass=False):
         self.bypass = bypass
         print("[DroneKitGPSProvider] Conectare la dronă...")
-        self.vehicle = connect(connection_string, baud=baud_rate, wait_ready=True)
+        self.vehicle = connect(connection_string, baud=baud_rate, wait_ready=False)
         self.location = GPSValue(None, None, None)
         self.vehicle.add_attribute_listener('location.global_frame', self.gps_callback)
         logging.info("[DroneKitGPSProvider]  Conectare la Pixhawk......................................................................")
+        print("[INFO] Vehicle connected.")
+        print("Mode:", self.vehicle.mode.name)
+        print("EKF ok:", self.vehicle.ekf_ok)
+        print("Is armable:", self.vehicle.is_armable)
 
     def wait_until_ready(self, timeout=30):
         if self.bypass:
