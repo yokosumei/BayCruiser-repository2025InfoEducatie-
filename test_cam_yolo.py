@@ -57,9 +57,6 @@ def cleanup():
 
 atexit.register(cleanup)
 
-def reda_alarma():
-    os.system("mpg123 /home/dariuc/Downloads/tututu.mp3")
-
 def activate_servos():
     logging.debug("Activare servomotoare")
     servo1.ChangeDutyCycle(12.5)
@@ -214,7 +211,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
         
         
         
-gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider(bypass=True)
+gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider(bypass=False)
 
 
 
@@ -378,7 +375,6 @@ def detection_status():
 @app.route("/misca")
 def activate():
     activate_servos()
-    reda_alarma()
     return "Servomotor activat"
     
 @app.route("/takeoff")
