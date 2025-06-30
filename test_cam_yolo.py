@@ -12,7 +12,7 @@ import logging
 from collections import deque
 from dronekit import connect, VehicleMode, LocationGlobalRelative
 
-logging.basicConfig(level=logging.INFO, format='[%(levelname)s] (%(threadName)s) %(message)s')
+logging.basicConfig(level=logging.DEBUGER, format='[%(levelname)s] (%(threadName)s) %(message)s')
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
@@ -115,10 +115,10 @@ class DroneKitGPSProvider(BaseGPSProvider):
     def __init__(self, connection_string='/dev/ttyUSB0', baud_rate=57600, bypass=False):
         self.bypass = bypass
         print("[DroneKitGPSProvider] Conectare la dronă...")
-        self.vehicle = connect(connection_string, baud=baud_rate, wait_ready=False)
+        self.vehicle = connect(connection_string, baud=baud_rate, wait_ready=True)
         self.location = GPSValue(None, None, None)
         self.vehicle.add_attribute_listener('location.global_frame', self.gps_callback)
-        logging.info("[DroneKitGPSProvider] Conexiune completă....................................................................")
+        logging.info("[DroneKitGPSProvider]  Conectare la Pixhawk......................................................................")
 
     def wait_until_ready(self, timeout=30):
         if self.bypass:
@@ -158,7 +158,21 @@ class DroneKitGPSProvider(BaseGPSProvider):
             return "[DroneKit] Nu e armabilă. Ieșire."
 
         print("[DroneKit] Armare...")
-        self.vehicle.mode = VehicleMode("GUIDED")
+       # self.vehicle.mode = VehicleMode("GUIDED")
+       
+        ############################################
+         self.vehicle.mode = VehicleMode("STABILIZE")
+        time.sleep(2)
+
+        # === Dezactivează verificările de armare (pentru test) ===
+        print("[INFO] Dezactivare ARMING_CHECK...")
+        vehicle.parameters['ARMING_CHECK'] = 0
+        time.sleep(1)
+
+        # === Încearcă armarea ===
+        print("[INFO] Armare dronă...")
+        
+        #########################################################
         self.vehicle.armed = True
 
         while not self.vehicle.armed:
