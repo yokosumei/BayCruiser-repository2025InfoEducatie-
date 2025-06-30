@@ -12,7 +12,7 @@ import logging
 from collections import deque
 from dronekit import connect, VehicleMode, LocationGlobalRelative
 
-logging.basicConfig(level=logging.INFO, format='[%(levelname)s] (%(threadName)s) %(message)s')
+logging.basicConfig(level=logging.DEBUGER, format='[%(levelname)s] (%(threadName)s) %(message)s')
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
