@@ -115,14 +115,10 @@ class DroneKitGPSProvider(BaseGPSProvider):
     def __init__(self, connection_string='/dev/ttyUSB0', baud_rate=57600, bypass=False):
         self.bypass = bypass
         print("[DroneKitGPSProvider] Conectare la dronă...")
-        self.vehicle = connect(connection_string, baud=baud_rate, wait_ready=False)
+        self.vehicle = connect(connection_string, baud=baud_rate, wait_ready="minimal")
         self.location = GPSValue(None, None, None)
         self.vehicle.add_attribute_listener('location.global_frame', self.gps_callback)
-        logging.info("[DroneKitGPSProvider]  Conectare la Pixhawk......................................................................")
-        print("[INFO] Vehicle connected.")
-        print("Mode:", self.vehicle.mode.name)
-        print("EKF ok:", self.vehicle.ekf_ok)
-        print("Is armable:", self.vehicle.is_armable)
+        logging.info("[DroneKitGPSProvider]  Conectare la Pixhawk.....................................")
 
     def wait_until_ready(self, timeout=30):
         if self.bypass:
@@ -162,19 +158,19 @@ class DroneKitGPSProvider(BaseGPSProvider):
             return "[DroneKit] Nu e armabilă. Ieșire."
 
         print("[DroneKit] Armare...")
-       # self.vehicle.mode = VehicleMode("GUIDED")
+       self.vehicle.mode = VehicleMode("GUIDED")
        
         ############################################
-        self.vehicle.mode = VehicleMode("STABILIZE")
-        time.sleep(2)
+        # self.vehicle.mode = VehicleMode("STABILIZE")
+        # time.sleep(2)
 
         # === Dezactivează verificările de armare (pentru test) ===
-        print("[INFO] Dezactivare ARMING_CHECK...")
-        self.vehicle.parameters['ARMING_CHECK'] = 0
-        time.sleep(1)
+        #print("[INFO] Dezactivare ARMING_CHECK...")
+        #self.vehicle.parameters['ARMING_CHECK'] = 0
+        #time.sleep(1)
 
         # === Încearcă armarea ===
-        print("[INFO] Armare dronă...")
+        logging.debug(f"[GPS] [INFO] Armare dronă...")
         
         #########################################################
         self.vehicle.armed = True
