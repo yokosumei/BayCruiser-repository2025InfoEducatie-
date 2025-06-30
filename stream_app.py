@@ -3,7 +3,7 @@ from pymavlink import mavutil
 import time
 
 # === CONFIG ===
-PORT = '/dev/ttyAMA0'  # sau '/dev/ttyUSB0' dacă e pe USB
+PORT = '/dev/ttyUSB0'  # sau '/dev/ttyUSB0' dacă e pe USB
 BAUD = 57600
 
 print("[INFO] Conectare la Pixhawk...")
