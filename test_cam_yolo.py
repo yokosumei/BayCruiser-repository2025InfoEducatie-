@@ -118,6 +118,9 @@ class DroneKitGPSProvider(BaseGPSProvider):
         self.vehicle = connect(connection_string, baud=baud_rate, wait_ready=False)
         self.location = GPSValue(None, None, None)
         self.vehicle.add_attribute_listener('location.global_frame', self.gps_callback)
+        self.vehicle.parameters['ARMING_CHECK'] = 0
+        self.vehicle.parameters['EKF_CHECK_THRESH'] = 0.5  # sau 0.5
+        time.sleep(1)
         logging.info("[DroneKitGPSProvider]  Conectare la Pixhawk.....................................")
 
     def wait_until_ready(self, timeout=30):
@@ -158,7 +161,12 @@ class DroneKitGPSProvider(BaseGPSProvider):
             return "[DroneKit] Nu e armabilă. Ieșire."
 
         print("[DroneKit] Armare...")
-        self.vehicle.mode = VehicleMode("GUIDED")
+        #self.vehicle.mode = VehicleMode("GUIDED")
+        self.vehicle.mode = VehicleMode("STABILIZE")
+        
+        
+        time.sleep(2)
+
        
         ############################################
         # self.vehicle.mode = VehicleMode("STABILIZE")
