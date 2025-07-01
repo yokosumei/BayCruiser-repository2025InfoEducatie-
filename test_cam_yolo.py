@@ -192,15 +192,6 @@ class DroneKitGPSProvider(BaseGPSProvider):
             0, 0, 0, 0, 0
         )
 
-        for i in range(10):
-            if self.vehicle.armed:
-                print("[✅] Drone ARMED!")
-                break
-            print(f"[...] Aștept confirmare... ({i+1}/10)")
-            time.sleep(1)
-        else:
-            print("[❌] Armarea a eșuat complet (chiar și forțat).")
-
 
         print("..............[DroneKit] Așteptăm ca drona să fie armabilă...")
         start = time.time()
@@ -556,7 +547,7 @@ def activate():
 def takeoff():
     def takeoff_task():
         #GUIDED,STABILIZE
-        return gps_provider.arm_and_takeoff(1,"STABILIZE")
+        return gps_provider.arm_and_takeoff(2,"GUIDED")
     
     start_thread(takeoff_task, "TakeoffThread")
     return jsonify({"status": "takeoff initiated"})
