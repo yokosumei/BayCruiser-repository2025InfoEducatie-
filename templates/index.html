@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width" />
-  <title>kITTY</title>
+  <title>BayCruiser</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
 </head>
 <body>
@@ -15,26 +15,20 @@
     <aside id="sidebar">
       <div class="tab-container">
         <button class="tab-button" onclick="toggleTab('info')">Info</button>
-        <button class="tab-button" onclick="toggleTab('scop')">Scop</button>
         <button class="tab-button" onclick="toggleTab('Controale drona')">Controale dronă</button>
       </div>
       <div class="tab-content-wrapper">
         <div id="info" class="tab-content">
           <p>Aceasta pagina este conceputa ca o punte dintre drona si salvamar</p>
         </div>
-        <div id="scop" class="tab-content">
-          <p>De multe ori salvamarii au nevoie de ajutor pe mare si de o interventie rapida
-            insa de multe ori nu pot ajunge la victima in timp util. Aici intervine drona, care 
-            este capabila sa ajunga la victima in cateva secunde si sa ii ofere un colac de salvare.
-          </p>
-        </div>
         <div id="Controale drona" class="tab-content">
           <button onclick="TakeOff()" class="tab-buttont">Decolare</button>
           <br>
           <button onclick="Land()" class="tab-buttont">Aterizare</button>
           <br>
-          <button onclick="displayServoMessage()" class="tab-buttont">Misca servo</button>
-              
+          <button onclick="startGotoAndReturn()">GoRet</button>
+          <br>
+          <button id="orbitBtn" onclick="startOrbit()">Orbit</button>
       </div>
      
   </div>
@@ -86,11 +80,11 @@
             <li>Ultima detecție: <span id="last-detection">N/A</span></li>
          </ul>
 
-      <button onclick="alert('Test funcție dreapta')">Test Dreapta</button>
        <div >
     <button onclick="startStream()" class="control">START</button>
     <button onclick="toggleView()" class="circle2">⭕</button>
     <button onclick="stopStream()" class="control">STOP</button>
+         <br>
     <button onclick="setStreamView('raw')" class="control">RAW</button>
     <button onclick="setStreamView('yolo')" class="control">YOLO</button>
     <button onclick="setStreamView('split')" class="control">SPLIT VIEW</button>
