@@ -232,14 +232,14 @@ class DroneKitGPSProvider(BaseGPSProvider):
         if not self.wait_until_ready():
             return "[DroneKit] Nu e armabilă. Ieșire."
         # vehicle_mode=GUIDED,STABILIZE
-        print("[DroneKit] Armare..........")
+        print("[DroneKit] Armare..........in mod ",vehicle_mode)
         self.vehicle.mode = VehicleMode(vehicle_mode)
         time.sleep(3)
 
         self.vehicle.armed = True
 
         while not self.vehicle.armed:
-            print("  -> Așteptăm armarea...")
+            print("  -> Așteptăm armarea...",vehicle_mode)
             print("Mode:", self.vehicle.mode.name)
             print("Is armable:", self.vehicle.is_armable)
             print("EKF OK:", self.vehicle.ekf_ok)
