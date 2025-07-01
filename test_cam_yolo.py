@@ -150,7 +150,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
             raise Exception("Drone not connected")
         return True
 
-    def wait_until_ready(self, timeout=30):
+    def _wait_until_ready(self, timeout=30):
         if not self.ensure_connection():
             return False
             
@@ -175,6 +175,35 @@ class DroneKitGPSProvider(BaseGPSProvider):
             time.sleep(1)
         print("[DroneKit] Drona este gata.")
         return True
+    
+    def wait_until_ready(self, timeout=30):
+        if not self.ensure_connection():
+            return False
+        
+        print("[DroneKit] Așteptăm ca drona să fie armabilă...")
+        start = time.time()
+        while not self.vehicle.is_armable:
+            print("BYPASS=FALSE  -> EKF OK:", self.vehicle.ekf_ok)
+            print("  -> GPS fix:", self.vehicle.gps_0.fix_type)
+            print("  -> Sateliți:", self.vehicle.gps_0.satellites_visible)
+            print("  -> Sistem:", self.vehicle.system_status.state)
+            if time.time() - start > timeout:
+                print("[DroneKit] Timeout atins. Nu e armabilă.")
+                return False
+            time.sleep(1)
+            
+        vehicle._master.mav.command_long_send(
+            vehicle._master.target_system,
+            vehicle._master.target_component,
+            mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+            0,          # confirmation
+            1,          # param1: 1=arm, 0=disarm
+            21196,      # param2: magic code pentru override
+            0, 0, 0, 0, 0
+         )   
+           
+        print("[DroneKit] Drona este gata.")
+        return True
 
     def gps_callback(self, self_ref, attr_name, value):
         try:
@@ -186,7 +215,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
     def get_location(self):
         return self.location
     
-
+    
       
 
     def arm_and_takeoff(self, target_altitude,vehicle_mode):
@@ -612,4 +641,3 @@ if __name__ == "__main__":
     
     logging.info("Pornire server Flask")
     app.run(host="0.0.0.0", port=5000)
-    
