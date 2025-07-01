@@ -131,13 +131,14 @@ class DroneKitGPSProvider(BaseGPSProvider):
         try:
             print("[DroneKitGPSProvider] Conectare la dronă...")
             self.vehicle = connect(self.connection_string, baud=self.baud_rate, wait_ready=False)
+            time.sleep(1)
             self.vehicle.add_attribute_listener('location.global_frame', self.gps_callback)
             
-            if not self.bypass:
-                self.vehicle.parameters['ARMING_CHECK'] = 0
-                self.vehicle.parameters['EKF_CHECK_THRESH'] = 0.5
+            # if not self.bypass:
+            #     self.vehicle.parameters['ARMING_CHECK'] = 0
+            #     self.vehicle.parameters['EKF_CHECK_THRESH'] = 0.5
             
-            time.sleep(1)
+            time.sleep(5)
             self.connected = True
             logging.info("[DroneKitGPSProvider] Conectare la Pixhawk completă")
         except Exception as e:
@@ -233,7 +234,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
         # vehicle_mode=GUIDED,STABILIZE
         print("[DroneKit] Armare..........")
         self.vehicle.mode = VehicleMode(vehicle_mode)
-        time.sleep(2)
+        time.sleep(3)
 
         self.vehicle.armed = True
 
