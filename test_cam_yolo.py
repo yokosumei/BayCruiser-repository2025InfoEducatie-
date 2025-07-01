@@ -14,7 +14,7 @@ from dronekit import connect, VehicleMode, LocationGlobalRelative
 import math
 from pymavlink import mavutil
 
-logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] (%(threadName)s) %(message)s')
+logging.basicConfig(level=logging.INFO, format='[%(levelname)s] (%(threadName)s) %(message)s')
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
@@ -180,28 +180,31 @@ class DroneKitGPSProvider(BaseGPSProvider):
         if not self.ensure_connection():
             return False
         
-        print("[DroneKit] Așteptăm ca drona să fie armabilă...")
-        start = time.time()
-        while not self.vehicle.is_armable:
-            print("BYPASS=FALSE  -> EKF OK:", self.vehicle.ekf_ok)
-            print("  -> GPS fix:", self.vehicle.gps_0.fix_type)
-            print("  -> Sateliți:", self.vehicle.gps_0.satellites_visible)
-            print("  -> Sistem:", self.vehicle.system_status.state)
-            if time.time() - start > timeout:
-                print("[DroneKit] Timeout atins. Nu e armabilă.")
-                return False
-            time.sleep(1)
-            
-        vehicle._master.mav.command_long_send(
-            vehicle._master.target_system,
-            vehicle._master.target_component,
-            mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
-            0,          # confirmation
-            1,          # param1: 1=arm, 0=disarm
-            21196,      # param2: magic code pentru override
-            0, 0, 0, 0, 0
-         )   
-           
+
+    print("[INFO] Trimit comanda de armare forțată (MAV_CMD_COMPONENT_ARM_DISARM)...")
+    self.vehicle._master.mav.command_long_send(
+        self.vehicle._master.target_system,
+        self.vehicle._master.target_component,
+        mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+        0,          # confirmation
+        1,          # param1: 1=arm, 0=disarm
+        21196,      # param2: magic code pentru override
+        0, 0, 0, 0, 0
+    )
+
+    print("..............[DroneKit] Așteptăm ca drona să fie armabilă...")
+    start = time.time()
+    while not self.vehicle.is_armable:
+        print("..  -> EKF OK:", self.vehicle.ekf_ok)
+        print("..  -> GPS fix:", self.vehicle.gps_0.fix_type)
+        print("..  -> Sateliți:", self.vehicle.gps_0.satellites_visible)
+        print("..  -> Sistem:", self.vehicle.system_status.state)
+        if time.time() - start > timeout:
+            print(".....[DroneKit] Timeout atins. Nu e armabilă.")
+            return False
+        time.sleep(1)
+
+             
         print("[DroneKit] Drona este gata.")
         return True
 
@@ -227,7 +230,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
         if not self.wait_until_ready():
             return "[DroneKit] Nu e armabilă. Ieșire."
         # vehicle_mode=GUIDED,STABILIZE
-        print("[DroneKit] Armare...")
+        print("[DroneKit] Armare..........")
         self.vehicle.mode = VehicleMode(vehicle_mode)
         time.sleep(2)
 
