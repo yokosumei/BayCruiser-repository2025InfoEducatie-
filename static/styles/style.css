@@ -94,7 +94,7 @@ html, body {
   justify-content: center;
   align-items: center;
   margin: 0 auto;
-  width: 100%;
+  width: 90%;
   max-height: 320px; /* sau mai mic dacă ai ecran mic */
   aspect-ratio: 16 / 9;
   gap: 20px;
