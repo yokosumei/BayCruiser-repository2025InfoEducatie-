@@ -56,9 +56,14 @@ frame_counter = 0
 event_location = None  # Fixed: Initialize event_location
 
 def cleanup():
-    servo1.stop()
-    servo2.stop()
-    GPIO.cleanup()
+    try: servo1.stop()
+    except: pass
+    try: servo2.stop()
+    except: pass
+    try: picam2.stop()
+    except: pass
+    try: GPIO.cleanup()
+    except: pass
 
 atexit.register(cleanup)
 
