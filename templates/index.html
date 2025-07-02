@@ -110,20 +110,20 @@
   </footer>
     </div>
   </div>
-    <!-- Pop-up alert trebuie să fie înainte de scripturi -->
-  <div id="popup-alert" style="display: none;" class="popup-alert">
-    <img id="popup-frame" src="" style="width: 100%; max-height: 300px; object-fit: contain; border-bottom: 2px solid red; margin-bottom: 10px;" />
-    <p style="text-align: center; font-weight: bold;">Alarmă reală?</p>
-    <div class="popup-buttons" style="display: flex; justify-content: center; gap: 20px;">
-      <button onclick="confirmDetection(true)">DA</button>
-      <button onclick="confirmDetection(false)">NU</button>
-    </div>
+<!-- Pop-up alert -->
+<div id="popup-alert" style="display: none;" class="popup-alert">
+  <img id="popup-frame" src="" style="width: 100%; max-height: 300px; object-fit: contain; border-bottom: 2px solid red; margin-bottom: 10px;" />
+  <p style="text-align: center; font-weight: bold;">Alarmă reală?</p>
+  <div class="popup-buttons" style="display: flex; justify-content: center; gap: 20px;">
+    <button onclick="confirmDetection(true)">DA</button>
+    <button onclick="confirmDetection(false)">NU</button>
   </div>
+</div>
 
-  <!-- 🟢 Mutăm scripturile aici, DUPĂ popup-alert -->
-  <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
-  <script src="{{ url_for('static', filename='scripts/drone_ws.js') }}"></script>
-</body>
+<!-- Scripturi: trebuie să fie ultimele -->
+<script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+<script src="{{ url_for('static', filename='scripts/drone_ws.js') }}"></script>
 
 </body>
 </html>
+
