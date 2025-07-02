@@ -3,7 +3,7 @@ let streamActive = false;
 let popupShown = false;
 let detectedPreviously = false;
 
-function updateStatusIndicators() {
+window.updateStatusIndicators = function () {
   const boxes = document.querySelectorAll('.box');
   const status = document.querySelector('.status');
 
@@ -11,9 +11,9 @@ function updateStatusIndicators() {
     status.textContent = '| Live';
     status.style.color = 'green';
     if (boxes.length >= 3) {
-      boxes[0].textContent = '⚪'; // Upload
-      boxes[1].textContent = '⚪'; // Stop
-      boxes[2].textContent = '🟢'; // Start
+      boxes[0].textContent = '⚪';
+      boxes[1].textContent = '⚪';
+      boxes[2].textContent = '🟢';
     }
   } else {
     status.textContent = '| Non-live';
@@ -24,28 +24,30 @@ function updateStatusIndicators() {
       boxes[2].textContent = '⚪';
     }
   }
-}
+};
 
-function startStream() {
+window.startStream = function () {
   fetch('/start_stream')
     .then(() => {
       streamActive = true;
       streaming = true;
-      setStreamView('raw'); 
-      updateStatusIndicators();
+      window.setStreamView('raw');
+      window.updateStatusIndicators();
     });
-}
-function stopStream() {
+};
+
+window.stopStream = function () {
   fetch('/stop_stream')
     .then(() => {
       streamActive = false;
       streaming = false;
       document.getElementById('rawStream').style.display = 'none';
       document.getElementById('yoloStream').style.display = 'none';
-      updateStatusIndicators();
+      window.updateStatusIndicators();
     });
-}
-function toggleView() {
+};
+
+window.toggleView = function () {
   const live = document.getElementById("livestream-article");
   const upload = document.getElementById("upload-article");
   const boxes = document.querySelectorAll('.circle .box');
@@ -58,17 +60,18 @@ function toggleView() {
     status.style.color = 'yellow';
 
     if (boxes.length >= 3) {
-      boxes[0].textContent = '⚪'; // upload ON
+      boxes[0].textContent = '⚪';
       boxes[1].textContent = '🟡';
       boxes[2].textContent = '⚪';
     }
   } else {
     upload.style.display = "none";
     live.style.display = "block";
-    setTimeout(updateStatusIndicators, 10);
+    setTimeout(window.updateStatusIndicators, 10);
   }
-}
-function setStreamView(mode) {
+};
+
+window.setStreamView = function (mode) {
   const raw = document.getElementById("rawStream");
   const yolo = document.getElementById("yoloStream");
 
@@ -95,8 +98,9 @@ function setStreamView(mode) {
     raw.classList.add("split");
     yolo.classList.add("split");
   }
-}
-function toggleTab(tabId) {
+};
+
+window.toggleTab = function (tabId) {
   const contents = document.querySelectorAll('.tab-content');
   const buttons = document.querySelectorAll('.tab-button');
   const container = document.getElementById('tabContent');
@@ -124,8 +128,9 @@ function toggleTab(tabId) {
     btn => btn.textContent.trim().toLowerCase() === tabId.toLowerCase()
   );
   if (activeButton) activeButton.classList.add('active');
-}
-function confirmDetection(answer) {
+};
+
+window.confirmDetection = function (answer) {
   const popup = document.getElementById('popup-alert');
   if (popup) popup.style.display = 'none';
 
@@ -134,7 +139,7 @@ function confirmDetection(answer) {
       .then(res => res.text())
       .then(() => {
         alert("Inițiere protocol de salvare.");
-        setStreamView('split');
+        window.setStreamView('split');
       })
       .catch(() => {
         alert("Eroare la mișcarea servomotorului.");
@@ -143,10 +148,9 @@ function confirmDetection(answer) {
     alert("Alarmă ignorată.");
   }
   detectedPreviously = true;
-}
+};
 
-
-function checkDetectionStatus() {
+window.checkDetectionStatus = function () {
   if (!streamActive) return;
 
   fetch('/detection_status')
@@ -155,7 +159,7 @@ function checkDetectionStatus() {
       if (data.detected) {
         if (!popupShown && !detectedPreviously) {
           popupShown = true;
-          showPopup();
+          window.showPopup();
         }
       } else {
         popupShown = false;
@@ -169,22 +173,23 @@ function checkDetectionStatus() {
       }
     })
     .catch(err => console.warn("Eroare verificare detecție:", err));
-}
-setInterval(checkDetectionStatus, 1000);
+};
 
-function showPopup() {
+setInterval(window.checkDetectionStatus, 1000);
+
+window.showPopup = function () {
   const popup = document.getElementById("popup-alert");
   if (popup) popup.style.display = "flex";
 
   const img = document.getElementById("popup-frame");
   if (img) {
-    img.src = "/yolo_feed_snapshot?" + new Date().getTime(); // evităm cache
+    img.src = "/yolo_feed_snapshot?" + new Date().getTime();
   }
-}
+};
 
-function displayServoMessage() {
+window.displayServoMessage = function () {
   fetch("/misca")
     .then(res => res.text())
     .then(() => alert("Servomotorul a fost mișcat"))
     .catch(() => alert("Eroare la mișcarea servomotorului."));
-}
+};
