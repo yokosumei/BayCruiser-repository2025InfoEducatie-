@@ -1,5 +1,3 @@
-import eventlet
-eventlet.monkey_patch()
 from flask import Flask, render_template, Response, request, jsonify
 from flask_socketio import SocketIO
 import eventlet
@@ -23,7 +21,7 @@ logging.basicConfig(level=logging.INFO, format='[%(levelname)s] (%(threadName)s)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app, async_mode='eventlet')
+socketio = SocketIO(app, async_mode="threading")
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
