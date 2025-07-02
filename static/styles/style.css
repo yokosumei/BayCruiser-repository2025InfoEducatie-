@@ -13,6 +13,30 @@ header {
   text-align: center;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
+/* Stil pentru cutia de status */
+.drone-status-box {
+  background-image: url('../images/drone_bg.jpg'); /* schimbă cu ce imagine vrei */
+  background-size: cover;
+  background-position: center;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  color: white;
+}
+
+/* Stil pentru lista statusului */
+#drone-status {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#drone-status li {
+  margin-bottom: 12px;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
 .joystick-wrapper {
   margin-top: 30px;
   text-align: center;
