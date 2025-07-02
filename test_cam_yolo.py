@@ -1,5 +1,4 @@
 from flask import Flask, render_template, Response, request, jsonify
-from flask_socketio import SocketIO
 from ultralytics import YOLO
 from picamera2 import Picamera2
 import RPi.GPIO as GPIO
@@ -17,8 +16,7 @@ from pymavlink import mavutil
 
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] (%(threadName)s) %(message)s')
 
-app = Flask(__name__, static_folder='static', static_url_path='/static')
-socketio = SocketIO(app, cors_allowed_origins="*")
+app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -236,20 +234,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
         # vehicle_mode=GUIDED,STABILIZE
         print("[DroneKit] Armare..........in mod ",vehicle_mode)
         self.vehicle.mode = VehicleMode(vehicle_mode)
-        start = time.time()
-        while self.vehicle.mode.name != vehicle_mode:
-            print(f"  -> Aștept schimbarea modului... Curent: {self.vehicle.mode.name}")
-            if time.time() - start > 10:
-                print("  ⚠️ Timeout: Modul nu s-a schimbat.")
-                break
-            time.sleep(1)
-
-        if self.vehicle.mode.name != vehicle_mode:
-            print(f"[DroneKit] ✖ Nu am reușit să trec în modul {vehicle_mode}. Verifică GPS și EKF.")
-            return f"Modul {vehicle_mode} refuzat"
-
-
-
+        time.sleep(3)
 
         self.vehicle.armed = True
 
@@ -379,11 +364,6 @@ def orbit_around_point(vehicle, center_location, radius=5, velocity=1.0, duratio
 
 # Initialize GPS provider
 gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider(bypass=False)
-
-@socketio.on('ping')
-def handle_ping(data):
-    print("[WebSocket] Primit ping:", data)
-
 
 def camera_thread():
     global frame_buffer
@@ -665,4 +645,4 @@ if __name__ == "__main__":
     start_thread(stream_thread, "StreamThread")
     
     logging.info("Pornire server Flask")
-    socketio.run(app, host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5000)
