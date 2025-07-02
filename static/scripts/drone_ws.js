@@ -1,28 +1,10 @@
-// drone_ws.js
-const socket = io();  // conectare la serverul Flask-SocketIO
-
-function sendJoystickCommand(x, y, z, yaw) {
-  socket.emit('joystick_command', {
-    x: x,
-    y: y,
-    z: z,
-    yaw: yaw
-  });
-}
-
-// Exemplu: trimite continuu datele joystickului (mock demo)
-setInterval(() => {
-  const x = 0.0; // aici pui valorile reale din joystick
-  const y = 0.2;
-  const z = 0.0;
-  const yaw = 0.1;
-  sendJoystickCommand(x, y, z, yaw);
-}, 100);
+// === drone_ws.js ===
+let socket;  // globală
 
 document.addEventListener("DOMContentLoaded", () => {
-  const socket = io();
+  socket = io();  // o singură conexiune
 
-  // Emitere comenzi
+  // === Emitere comenzi ===
   window.TakeOff = function() {
     socket.emit('drone_command', { action: 'takeoff' });
     alert("Comandă decolare trimisă.");
@@ -43,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
     alert("Comandă Orbit trimisă.");
   };
 
-  // Recepție status dronă
+  // === Recepție status dronă ===
   socket.on('drone_status', (data) => {
     const droneIcon = document.getElementById("drone-connection");
 
@@ -73,4 +55,13 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("event-coords").innerText = "N/A";
     }
   });
+
+  // === Trimite comenzi joystick la fiecare 100ms ===
+  setInterval(() => {
+    const x = 0.0; // înlocuiește cu valorile reale
+    const y = 0.2;
+    const z = 0.0;
+    const yaw = 0.1;
+    socket.emit('joystick_command', { x, y, z, yaw });
+  }, 100);
 });
