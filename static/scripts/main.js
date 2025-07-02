@@ -3,8 +3,6 @@ let streamActive = false;
 let popupShown = false;
 let detectedPreviously = false;
 
-const socket = io();
-
 function updateStatusIndicators() {
   const boxes = document.querySelectorAll('.box');
   const status = document.querySelector('.status');
