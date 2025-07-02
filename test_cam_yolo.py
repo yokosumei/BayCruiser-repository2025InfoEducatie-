@@ -1,7 +1,4 @@
 from flask import Flask, render_template, Response, request, jsonify
-from flask_socketio import SocketIO
-import eventlet
-import eventlet.wsgi
 from ultralytics import YOLO
 from picamera2 import Picamera2
 import RPi.GPIO as GPIO
@@ -20,8 +17,6 @@ from pymavlink import mavutil
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] (%(threadName)s) %(message)s')
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app, async_mode="threading")
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -239,20 +234,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
         # vehicle_mode=GUIDED,STABILIZE
         print("[DroneKit] Armare..........in mod ",vehicle_mode)
         self.vehicle.mode = VehicleMode(vehicle_mode)
-        start = time.time()
-        while self.vehicle.mode.name != vehicle_mode:
-            print(f"  -> Aștept schimbarea modului... Curent: {self.vehicle.mode.name}")
-            if time.time() - start > 10:
-                print("  ⚠️ Timeout: Modul nu s-a schimbat.")
-                break
-            time.sleep(1)
-
-        if self.vehicle.mode.name != vehicle_mode:
-            print(f"[DroneKit] ✖ Nu am reușit să trec în modul {vehicle_mode}. Verifică GPS și EKF.")
-            return f"Modul {vehicle_mode} refuzat"
-
-
-
+        time.sleep(3)
 
         self.vehicle.armed = True
 
@@ -382,59 +364,6 @@ def orbit_around_point(vehicle, center_location, radius=5, velocity=1.0, duratio
 
 # Initialize GPS provider
 gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider(bypass=False)
-
-def status_thread():
-    while True:
-        try:
-            if gps_provider.connected and gps_provider.vehicle:
-                emit_data = {
-                    "connected": True,
-                    "battery": {
-                        "level": gps_provider.vehicle.battery.level
-                    },
-                    "armed": gps_provider.vehicle.armed,
-                    "mode": gps_provider.vehicle.mode.name,
-                    "location": {
-                        "lat": gps_provider.vehicle.location.global_frame.lat,
-                        "lon": gps_provider.vehicle.location.global_frame.lon
-                    },
-                    "event_location": {
-                        "lat": event_location.lat if event_location else None,
-                        "lon": event_location.lon if event_location else None
-                    }
-                }
-                socketio.emit('drone_status', emit_data)
-        except Exception as e:
-            print("[WS] Eroare status_thread:", e)
-
-        time.sleep(1)
-
-@socketio.on('client_message')
-def handle_message(data):
-    print('Am primit de la client:', data)
-    emit('server_response', {'message': 'Salut de la server!'})
-
-@socketio.on('drone_command')
-def handle_drone_command(data):
-    action = data.get('action')
-    print(f"[WS] Comandă primită: {action}")
-    
-    if action == 'takeoff':
-        start_thread(lambda: gps_provider.arm_and_takeoff(2, "GUIDED"), "WS_Takeoff")
-    elif action == 'land':
-        start_thread(lambda: gps_provider.land_drone(), "WS_Land")
-    elif action == 'goto_and_return':
-        if event_location:
-            start_thread(lambda: goto_and_return(gps_provider.vehicle, event_location, 4), "WS_GoRet")
-        else:
-            print("[WS] Nicio locație de eveniment salvată.")
-    elif action == 'orbit':
-        if event_location:
-            start_thread(lambda: orbit_around_point(gps_provider.vehicle, event_location, radius=5, velocity=1, duration=30), "WS_Orbit")
-        else:
-            print("[WS] Nicio locație de eveniment salvată.")
-    else:
-        print(f"[WS] Comandă necunoscută: {action}")
 
 def camera_thread():
     global frame_buffer
@@ -714,7 +643,6 @@ if __name__ == "__main__":
     start_thread(camera_thread, "CameraThread")
     start_thread(detection_thread, "DetectionThread")
     start_thread(stream_thread, "StreamThread")
-    start_thread(status_thread, "StatusThread")
-
+    
     logging.info("Pornire server Flask")
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000)
