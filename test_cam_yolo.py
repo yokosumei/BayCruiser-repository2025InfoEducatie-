@@ -1,4 +1,6 @@
 from flask import Flask, render_template, Response, request, jsonify
+from flask_socketio import SocketIO
+import eventlet
 from ultralytics import YOLO
 from picamera2 import Picamera2
 import RPi.GPIO as GPIO
@@ -16,7 +18,11 @@ from pymavlink import mavutil
 
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] (%(threadName)s) %(message)s')
 
+eventlet.monkey_patch()
+
 app = Flask(__name__)
+socketio = SocketIO(app, async_mode='eventlet')
+
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -553,30 +559,6 @@ def takeoff():
     start_thread(takeoff_task, "TakeoffThread")
     return jsonify({"status": "takeoff initiated"})
 
-@app.route("/drone_status")
-def droneStatus():
-    try:
-        if not gps_provider.connected or not gps_provider.vehicle:
-            return jsonify({"connected": False, "error": "Drone not connected"})
-            
-        return jsonify({
-            "connected": True,
-            "battery": {
-                "level": gps_provider.vehicle.battery.level
-            },
-            "armed": gps_provider.vehicle.armed,
-            "mode": gps_provider.vehicle.mode.name,
-            "location": {
-                "lat": gps_provider.vehicle.location.global_frame.lat,
-                "lon": gps_provider.vehicle.location.global_frame.lon
-            },
-            "event_location": {
-                "lat": event_location.lat if event_location else None,
-                "lon": event_location.lon if event_location else None
-            }
-        })
-    except Exception as e:
-        return jsonify({"connected": False, "error": str(e)}), 500
 
 @app.route("/land")
 def land():
@@ -637,12 +619,71 @@ def orbit_route():
         return jsonify({"status": "orbiting"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
+        
+@socketio.on('drone_command')
+def handle_drone_command(data):
+    action = data.get('action')
+    print(f"[WS] Comandă primită: {action}")
+    
+    if action == 'takeoff':
+        start_thread(lambda: gps_provider.arm_and_takeoff(2, "GUIDED"), "WS_Takeoff")
+    elif action == 'land':
+        start_thread(lambda: gps_provider.land_drone(), "WS_Land")
+    elif action == 'goto_and_return':
+        if event_location:
+            start_thread(lambda: goto_and_return(gps_provider.vehicle, event_location, 4), "WS_GoRet")
+    elif action == 'orbit':
+        if event_location:
+            start_thread(lambda: orbit_around_point(gps_provider.vehicle, event_location), "WS_Orbit")
+    else:
+        print(f"[WS] Comandă necunoscută: {action}")
+        
+@socketio.on('joystick_command')
+def handle_joystick(data):
+    x = data.get('x', 0)
+    y = data.get('y', 0)
+    z = data.get('z', 0)
+    yaw = data.get('yaw', 0)
+
+    print(f"[JOYSTICK] x={x:.2f} y={y:.2f} z={z:.2f} yaw={yaw:.2f}")
+    try:
+        gps_provider.ensure_connection()
+        vehicle = gps_provider.vehicle
+
+        # Aici poți adapta comenzile – ex:
+        send_ned_velocity(x, y, z, 1, vehicle)
+    except Exception as e:
+        print(f"[JOYSTICK ERROR] {e}")
+        
+def status_broadcast_loop():
+    while True:
+        try:
+            if gps_provider.connected and gps_provider.vehicle:
+                socketio.emit('drone_status', {
+                    "connected": True,
+                    "battery": {"level": gps_provider.vehicle.battery.level},
+                    "armed": gps_provider.vehicle.armed,
+                    "mode": gps_provider.vehicle.mode.name,
+                    "location": {
+                        "lat": gps_provider.vehicle.location.global_frame.lat,
+                        "lon": gps_provider.vehicle.location.global_frame.lon
+                    },
+                    "event_location": {
+                        "lat": event_location.lat if event_location else None,
+                        "lon": event_location.lon if event_location else None
+                    }
+                })
+        except Exception as e:
+            print(f"[STATUS ERROR] {e}")
+        time.sleep(1)
+
+start_thread(status_broadcast_loop, "StatusBroadcast")
 
 if __name__ == "__main__":
-    # Start all threads
     start_thread(camera_thread, "CameraThread")
     start_thread(detection_thread, "DetectionThread")
     start_thread(stream_thread, "StreamThread")
-    
-    logging.info("Pornire server Flask")
-    app.run(host="0.0.0.0", port=5000)
+
+    logging.info("Pornire server Flask + SocketIO")
+    socketio.run(app, host="0.0.0.0", port=5000)
+
