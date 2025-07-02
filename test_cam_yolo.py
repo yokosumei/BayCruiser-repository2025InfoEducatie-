@@ -1,5 +1,7 @@
 from flask import Flask, render_template, Response, request, jsonify
 from flask_socketio import SocketIO
+import eventlet
+import eventlet.wsgi
 from ultralytics import YOLO
 from picamera2 import Picamera2
 import RPi.GPIO as GPIO
