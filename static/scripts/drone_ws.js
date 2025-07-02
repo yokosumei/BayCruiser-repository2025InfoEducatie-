@@ -1,3 +1,24 @@
+// drone_ws.js
+const socket = io();  // conectare la serverul Flask-SocketIO
+
+function sendJoystickCommand(x, y, z, yaw) {
+  socket.emit('joystick_command', {
+    x: x,
+    y: y,
+    z: z,
+    yaw: yaw
+  });
+}
+
+// Exemplu: trimite continuu datele joystickului (mock demo)
+setInterval(() => {
+  const x = 0.0; // aici pui valorile reale din joystick
+  const y = 0.2;
+  const z = 0.0;
+  const yaw = 0.1;
+  sendJoystickCommand(x, y, z, yaw);
+}, 100);
+
 document.addEventListener("DOMContentLoaded", () => {
   const socket = io();
 
