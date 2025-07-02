@@ -1,5 +1,5 @@
 from flask import Flask, render_template, Response, request, jsonify
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO
 from ultralytics import YOLO
 from picamera2 import Picamera2
 import RPi.GPIO as GPIO
@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.INFO, format='[%(levelname)s] (%(threadName)s)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_mode='eventlet')
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
