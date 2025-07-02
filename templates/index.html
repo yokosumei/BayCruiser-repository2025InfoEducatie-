@@ -1,123 +1,27 @@
 <!DOCTYPE html>
-<html lang="en-US">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width" />
-  <title>BayCruiser</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
+  <meta charset="UTF-8">
+  <title>WebSocket Test</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 </head>
 <body>
-  <header>
-    <h1>Pagină de control</h1>
-  </header>
-  <main class="main-layout">
-    <!-- Coloana stângă: taburi -->
-    <aside id="sidebar">
-      <div class="tab-container">
-        <button class="tab-button" onclick="toggleTab('info')">Info</button>
-        <button class="tab-button" onclick="toggleTab('Controale drona')">Controale dronă</button>
-      </div>
-      <div class="tab-content-wrapper">
-        <div id="info" class="tab-content">
-          <p>Aceasta pagina este conceputa ca o punte dintre drona si salvamar</p>
-        </div>
-        <div id="Controale drona" class="tab-content">
-          <button onclick="TakeOff()" class="tab-buttont">Decolare</button>
-          <br>
-          <button onclick="Land()" class="tab-buttont">Aterizare</button>
-          <br>
-          <button onclick="startGotoAndReturn()">GoRet</button>
-          <br>
-          <button id="orbitBtn" onclick="startOrbit()">Orbit</button>
-      </div>
-     
-  </div>
- <div id="joystick-horizontal" class="joystick">
-        <div class="knob"></div>
-        </div>
-      </div>
-    </aside>
-    <section class="center-content">
-      <div class="card">
-        <div class="tools">
-          <div class="circle"><span style="font-size:21px" class="red box">⚪</span></div>
-          <div class="circle"><span style="font-size:21px" class="yellow box">⚪</span></div>
-          <div class="circle"><span style="font-size:21px" class="green box">⚪</span></div>
-          <div class="status" style="font-size:30px" >| Status</div>
-        </div>
-        <div class="content">
-          <article id="livestream-article" class="custom-article">
-            <div class="stream-wrapper">
-              <img id="rawStream" style="image-rendering: pixelated;" src="/video_feed" display:inline-block;" />
-              <img id="yoloStream" style="display: none;" src="/yolo_feed" display:inline-block;" />
-            </div>
-          </article>
+  <h1>Test WebSocket</h1>
+  <button onclick="sendPing()">Trimite Ping</button>
 
-          <article id="upload-article" class="custom-article" style="display: none; text-align: center;">
-            <form id="uploadForm" action="/" method="post" enctype="multipart/form-data">
-              <input type="file" name="file" accept="video/*" required>
-              <input type="submit" value="Upload Video">
-               <hr style="height:12px;background-color:red">
-            </form>
-            <video width="640" height="480" controls autoplay>
-              <source src="{{ url_for('static', filename='uploads/result.mp4') }}" type="video/mp4">
-              Browserul tău nu suportă tag-ul video.
-            </video>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <!-- Sidebar dreapta -->
-    <aside id="right-sidebar">
-      <h3>Status dronă</h3>
-          <ul id="drone-status">
-            <li>Baterie: <span id="battery">?</span></li>
-            <li>Armată: <span id="armed">?</span></li>
-            <li>Mod: <span id="mode">?</span></li>
-            <li>Poziție actuală: <span id="current-coords">?</span></li>
-            <li>Coordonate salvate: <span id="event-coords">?</span></li>
-            <li>Ultima detecție: <span id="last-detection">N/A</span></li>
-         </ul>
-
-       <div >
-    <button onclick="startStream()" class="control">START</button>
-    <button onclick="toggleView()" class="circle2">⭕</button>
-    <button onclick="stopStream()" class="control">STOP</button>
-         <br>
-    <button onclick="setStreamView('raw')" class="control">RAW</button>
-    <button onclick="setStreamView('yolo')" class="control">YOLO</button>
-    <button onclick="setStreamView('split')" class="control">SPLIT VIEW</button>
-     <div id="joystick-vertical" class="joystick">
-        <div class="knob"></div>
-      </div>
-    </div>
-
-  </div>
-    </aside>
-  </main>
-
-  <footer>
-    <p style="text-align: center">Pagină creată în scopul concursului InfoEducație</p>
-  </footer>
-
-  <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
   <script>
-    function toggleTab(tabId) {
-      document.querySelectorAll('.tab-content').forEach(tab => {
-        tab.classList.remove('active');
-      });
-      document.getElementById(tabId).classList.add('active');
+    // conectare la WebSocket
+    const socket = io("http://192.168.50.119:5000/");
+
+    socket.on("connect", () => {
+      console.log("Conectat la WebSocket");
+    });
+
+    function sendPing() {
+      const payload = { mesaj: "Salut de la browser!" };
+      console.log("Trimit ping:", payload);
+      socket.emit("ping", payload);
     }
   </script>
-<div id="popup-alert" style="display: none;" class="popup-alert">
-  <img id="popup-frame" src="" style="width: 100%; max-height: 300px; object-fit: contain; border-bottom: 2px solid red; margin-bottom: 10px;" />
-  <p style="text-align: center; font-weight: bold;">Alarmă reală?</p>
-  <div class="popup-buttons" style="display: flex; justify-content: center; gap: 20px;">
-    <button onclick="confirmDetection(true)">DA</button>
-    <button onclick="confirmDetection(false)">NU</button>
-  </div>
-</div>
-</div>
 </body>
 </html>
