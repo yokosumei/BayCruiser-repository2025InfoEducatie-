@@ -242,5 +242,3 @@ if (data.connected) {
   }
 });
 
-
-setInterval(updateDroneStatus, 1000);
