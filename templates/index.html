@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width" />
   <title>BayCruiser</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
 </head>
 <body>
@@ -69,16 +70,24 @@
     </section>
 
     <!-- Sidebar dreapta -->
-    <aside id="right-sidebar">
-      <h3>Status dronă</h3>
-          <ul id="drone-status">
-            <li>Baterie: <span id="battery">?</span></li>
-            <li>Armată: <span id="armed">?</span></li>
-            <li>Mod: <span id="mode">?</span></li>
-            <li>Poziție actuală: <span id="current-coords">?</span></li>
-            <li>Coordonate salvate: <span id="event-coords">?</span></li>
-            <li>Ultima detecție: <span id="last-detection">N/A</span></li>
-         </ul>
+   <aside id="right-sidebar" class="drone-status-box">
+  <div style="display: flex; align-items: center; gap: 10px;">
+  <h3 style="margin: 0;">Status dronă</h3>
+  <img id="drone-connection"
+     src="{{ url_for('static', filename='img/drone_icon.png') }}"
+     style="width: 28px; height: 28px; filter: brightness(0); transition: filter 0.3s, box-shadow 0.3s;"
+     title="Dronă deconectată">
+  </div>
+  <ul id="drone-status">
+    <li><strong>Baterie</strong><br><span id="battery">?</span></li>
+    <li><strong>Armată</strong><br><span id="armed">?</span></li>
+    <li><strong>Mod</strong><br><span id="mode">?</span></li>
+    <li><strong>Poziție actuală</strong><br><span id="current-coords">?</span></li>
+    <li><strong>Coordonate salvate</strong><br><span id="event-coords">?</span></li>
+    <li><strong>Ultima detecție</strong><br><span id="last-detection">N/A</span></li>
+  </ul>
+</aside>
+
 
        <div >
     <button onclick="startStream()" class="control">START</button>
