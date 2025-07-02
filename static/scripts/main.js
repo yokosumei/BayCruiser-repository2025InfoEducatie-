@@ -3,6 +3,8 @@ let streamActive = false;
 let popupShown = false;
 let detectedPreviously = false;
 
+const socket = io();
+
 function updateStatusIndicators() {
   const boxes = document.querySelectorAll('.box');
   const status = document.querySelector('.status');
@@ -190,45 +192,55 @@ function displayServoMessage() {
 }
 
 function TakeOff() {
-  fetch("/takeoff")
-    .then(res => res.text())
-    .then(() => alert("Drona a decolat."));
+  socket.emit('drone_command', { action: 'takeoff' });
+  alert("Comandă decolare trimisă.");
 }
 
-function Ateriazare() {
-  fetch("/land")
-    .then(res => res.text())
-    .then(() => alert("Drona a aterizat."));
+function Land() {
+  socket.emit('drone_command', { action: 'land' });
+  alert("Comandă aterizare trimisă.");
 }
 
-function updateDroneStatus() {
-fetch("/drone_status")
-  .then(res => res.json())
-  .then(data => {
-    console.log("Received drone status:", data); // 🔍 vezi ce primești
-    document.getElementById("battery").innerText = data.battery.level + "%";
-    document.getElementById("armed").innerText = data.armed ? "DA" : "NU";
-    document.getElementById("mode").innerText = data.mode;
+function startGotoAndReturn() {
+  socket.emit('drone_command', { action: 'goto_and_return' });
+  alert("Comandă Go & Return trimisă.");
+}
 
-    if (data.location && data.location.lat && data.location.lon) {
-      document.getElementById("current-coords").innerText =
-        `Lat: ${data.location.lat.toFixed(5)}, Lon: ${data.location.lon.toFixed(5)}`;
-    }
-
-    if (data.event_location && data.event_location.lat && data.event_location.lon) {
-      document.getElementById("event-coords").innerText =
-        `Lat: ${data.event_location.lat.toFixed(5)}, Lon: ${data.event_location.lon.toFixed(5)}`;
-    } else {
-      document.getElementById("event-coords").innerText = "N/A";
-    }
-  })
-  .catch(err => {
-    console.error("Eroare la fetch /drone_status:", err);
-  });
-
+function startOrbit() {
+  socket.emit('drone_command', { action: 'orbit' });
+  alert("Comandă Orbit trimisă.");
 }
 
 
+socket.on('drone_status', (data) => {
+  const droneIcon = document.getElementById("drone-connection");
+
+if (data.connected) {
+  droneIcon.style.filter = "brightness(1) saturate(1000%) sepia(100%) hue-rotate(-50deg)";
+  droneIcon.style.boxShadow = "0 0 8px 3px red";
+  droneIcon.title = "Dronă conectată";
+} else {
+  droneIcon.style.filter = "brightness(0)";
+  droneIcon.style.boxShadow = "none";
+  droneIcon.title = "Dronă deconectată";
+}
+
+  document.getElementById("battery").innerText = data.battery.level + "%";
+  document.getElementById("armed").innerText = data.armed ? "DA" : "NU";
+  document.getElementById("mode").innerText = data.mode;
+
+  if (data.location && data.location.lat && data.location.lon) {
+    document.getElementById("current-coords").innerText =
+      `Lat: ${data.location.lat.toFixed(5)}, Lon: ${data.location.lon.toFixed(5)}`;
+  }
+
+  if (data.event_location && data.event_location.lat && data.event_location.lon) {
+    document.getElementById("event-coords").innerText =
+      `Lat: ${data.event_location.lat.toFixed(5)}, Lon: ${data.event_location.lon.toFixed(5)}`;
+  } else {
+    document.getElementById("event-coords").innerText = "N/A";
+  }
+});
 
 
 setInterval(updateDroneStatus, 1000);
