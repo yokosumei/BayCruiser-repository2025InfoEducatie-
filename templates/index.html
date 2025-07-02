@@ -2,9 +2,11 @@
 <html lang="en-US">
 <head>
   <meta charset="UTF-8" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
   <meta name="viewport" content="width=device-width" />
   <title>BayCruiser</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
 <body>
   <header>
     <h1>Pagină de control</h1>
@@ -16,7 +18,7 @@
         <button class="tab-button" onclick="toggleTab('info')">Info</button>
         <button class="tab-button" onclick="toggleTab('Controale drona')">Controale dronă</button>
       </div>
-      <div class="tab-content-wrapper">
+      <div class="tab-content-wrapper" id="tabContent">
         <div id="info" class="tab-content">
           <p>Aceasta pagina este conceputa ca o punte dintre drona si salvamar</p>
         </div>
@@ -28,27 +30,27 @@
           <button onclick="startGotoAndReturn()">GoRet</button>
           <br>
           <button id="orbitBtn" onclick="startOrbit()">Orbit</button>
-      </div>
-     
-  </div>
- <div id="joystick-horizontal" class="joystick">
-        <div class="knob"></div>
+        </div>
+        <div id="joystick-horizontal" class="joystick">
+          <div class="knob"></div>
         </div>
       </div>
     </aside>
+
+    <!-- Secțiunea centrală -->
     <section class="center-content">
       <div class="card">
         <div class="tools">
-          <div class="circle"><span style="font-size:21px" class="red box">⚪</span></div>
-          <div class="circle"><span style="font-size:21px" class="yellow box">⚪</span></div>
-          <div class="circle"><span style="font-size:21px" class="green box">⚪</span></div>
-          <div class="status" style="font-size:30px" >| Status</div>
+          <div class="circle"><span class="red box" style="font-size:21px;">⚪</span></div>
+          <div class="circle"><span class="yellow box" style="font-size:21px;">⚪</span></div>
+          <div class="circle"><span class="green box" style="font-size:21px;">⚪</span></div>
+          <div class="status" style="font-size:30px;">| Status</div>
         </div>
         <div class="content">
           <article id="livestream-article" class="custom-article">
             <div class="stream-wrapper">
-              <img id="rawStream" style="image-rendering: pixelated;" src="/video_feed" display:inline-block;" />
-              <img id="yoloStream" style="display: none;" src="/yolo_feed" display:inline-block;" />
+              <img id="rawStream" style="image-rendering: pixelated;" src="/video_feed" />
+              <img id="yoloStream" style="display: none;" src="/yolo_feed" />
             </div>
           </article>
 
@@ -56,7 +58,7 @@
             <form id="uploadForm" action="/" method="post" enctype="multipart/form-data">
               <input type="file" name="file" accept="video/*" required>
               <input type="submit" value="Upload Video">
-               <hr style="height:12px;background-color:red">
+              <hr style="height:12px;background-color:red">
             </form>
             <video width="640" height="480" controls autoplay>
               <source src="{{ url_for('static', filename='uploads/result.mp4') }}" type="video/mp4">
@@ -67,16 +69,17 @@
       </div>
     </section>
 
-    <!-- Sidebar dreapta -->
-   <aside id="right-sidebar" class="drone-status-box">
+   <!-- Sidebar dreapta -->
+<aside id="right-sidebar" class="drone-status-box">
   <div style="display: flex; align-items: center; gap: 10px;">
-  <h3 style="margin: 0;">Status dronă</h3>
-  <img id="drone-connection"
-     src="{{ url_for('static', filename='img/drone_icon.png') }}"
-     style="width: 28px; height: 28px; filter: brightness(0); transition: filter 0.3s, box-shadow 0.3s;"
-     title="Dronă deconectată">
+    <h3 style="margin: 0;">Status dronă</h3>
+    <img id="drone-connection"
+         src="{{ url_for('static', filename='img/drone_icon.png') }}"
+         style="width: 28px; height: 28px; filter: brightness(0); transition: filter 0.3s, box-shadow 0.3s;"
+         title="Dronă deconectată">
   </div>
-  <ul id="drone-status">
+
+  <ul id="drone-status" style="margin-bottom: 15px;">
     <li><strong>Baterie</strong><br><span id="battery">?</span></li>
     <li><strong>Armată</strong><br><span id="armed">?</span></li>
     <li><strong>Mod</strong><br><span id="mode">?</span></li>
@@ -84,47 +87,38 @@
     <li><strong>Coordonate salvate</strong><br><span id="event-coords">?</span></li>
     <li><strong>Ultima detecție</strong><br><span id="last-detection">N/A</span></li>
   </ul>
-</aside>
 
-
-       <div >
+  <!-- Butoanele video + control stream -->
+  <div class="video-controls" style="display: flex; flex-direction: column; gap: 6px;">
     <button onclick="startStream()" class="control">START</button>
-    <button onclick="toggleView()" class="circle2">⭕</button>
     <button onclick="stopStream()" class="control">STOP</button>
-         <br>
+    <button onclick="toggleView()" class="circle2">⭕</button>
     <button onclick="setStreamView('raw')" class="control">RAW</button>
     <button onclick="setStreamView('yolo')" class="control">YOLO</button>
     <button onclick="setStreamView('split')" class="control">SPLIT VIEW</button>
-     <div id="joystick-vertical" class="joystick">
-        <div class="knob"></div>
-      </div>
-    </div>
 
+    <div id="joystick-vertical" class="joystick" style="margin-top: 10px;">
+      <div class="knob"></div>
+    </div>
   </div>
-    </aside>
+</aside>
+
   </main>
 
   <footer>
     <p style="text-align: center">Pagină creată în scopul concursului InfoEducație</p>
   </footer>
 
+  <!-- Scripturi -->
   <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
-  <script>
-    function toggleTab(tabId) {
-      document.querySelectorAll('.tab-content').forEach(tab => {
-        tab.classList.remove('active');
-      });
-      document.getElementById(tabId).classList.add('active');
-    }
-  </script>
-<div id="popup-alert" style="display: none;" class="popup-alert">
-  <img id="popup-frame" src="" style="width: 100%; max-height: 300px; object-fit: contain; border-bottom: 2px solid red; margin-bottom: 10px;" />
-  <p style="text-align: center; font-weight: bold;">Alarmă reală?</p>
-  <div class="popup-buttons" style="display: flex; justify-content: center; gap: 20px;">
-    <button onclick="confirmDetection(true)">DA</button>
-    <button onclick="confirmDetection(false)">NU</button>
+
+  <div id="popup-alert" style="display: none;" class="popup-alert">
+    <img id="popup-frame" src="" style="width: 100%; max-height: 300px; object-fit: contain; border-bottom: 2px solid red; margin-bottom: 10px;" />
+    <p style="text-align: center; font-weight: bold;">Alarmă reală?</p>
+    <div class="popup-buttons" style="display: flex; justify-content: center; gap: 20px;">
+      <button onclick="confirmDetection(true)">DA</button>
+      <button onclick="confirmDetection(false)">NU</button>
+    </div>
   </div>
-</div>
-</div>
 </body>
 </html>
