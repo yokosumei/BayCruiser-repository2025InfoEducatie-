@@ -3,23 +3,6 @@ let streamActive = false;
 let popupShown = false;
 let detectedPreviously = false;
 
-document.addEventListener("DOMContentLoaded", () => {
-  const socket = io(); // se conectează la Flask socketio
-
-  socket.on("connect", () => {
-    console.log("✅ Conectat la Flask WebSocket");
-    socket.emit("ping", { msg: "Test de la browser" });
-  });
-
-  socket.on("disconnect", () => {
-    console.log("❌ Deconectat de la WebSocket");
-  });
-
-  socket.on("connect_error", (err) => {
-    console.error("❌ Eroare conectare WebSocket:", err.message);
-  });
-});
-
 function updateStatusIndicators() {
   const boxes = document.querySelectorAll('.box');
   const status = document.querySelector('.status');
