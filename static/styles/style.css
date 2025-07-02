@@ -2,7 +2,7 @@ header {
   background: url("/static/img/head.jpg") no-repeat center center;
   background-color: black;
   background-size: cover;
-  height: 120px;
+  height: 90px;
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -43,8 +43,8 @@ header {
 }
 
 .joystick {
-  width: 200px;
-  height: 200px;
+  width: 180px;
+  height: 180px;
   background: #e0e0e0;
   margin: 10px auto;
   border-radius: 50%;
@@ -65,11 +65,12 @@ header {
   transition: transform 0.1s ease-out;
   pointer-events: none;
 }
-body {
+html, body {
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
+  height: 100%;
   overflow-y: auto;
+  overflow-x: hidden;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -84,6 +85,7 @@ body {
   justify-content: center;
   align-items: flex-start;
   padding: 20px;
+  overflow: hidden; 
   background-color: transparent;
 }
 
@@ -92,10 +94,10 @@ body {
   justify-content: center;
   align-items: center;
   margin: 0 auto;
-  gap: 20px;
   width: 100%;
-  max-width: 720px;
+  max-height: 320px; /* sau mai mic dacă ai ecran mic */
   aspect-ratio: 16 / 9;
+  gap: 20px;
   padding: 0;
   overflow: hidden;
   background-color: #111;
@@ -154,42 +156,34 @@ body {
 
 .popup-alert {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  width: 400px;
+  top: 20px;
+  right: 20px;
+  width: 280px;
   max-width: 90vw;
-  background: white;
-  transform: translate(-50%, -50%);
+  background: #0f0d0d;
   padding: 15px;
-  border: 3px solid red;
-  border-radius: 12px;
+  border: 2px solid red;
+  border-radius: 10px;
   z-index: 9999;
   display: none;
   flex-direction: column;
   align-items: center;
-  box-shadow: 0px 0px 10px rgba(0,0,0,0.3);
+  box-shadow: 0px 0px 10px rgba(0,0,0,0.4);
+  color: white;
 }
 
-   .circle2
-{
-background-color: #ff605c;
- border: none;
- padding: 15px;
- text-align: center;
- font-size: 16px;
- cursor: pointer;
- clip-path: circle(49%);
+.control {
+  padding: 4px 6px;
+  font-size: 11px;
+  border-radius: 4px;
 }
-  .control
-{
-  
-  background-color: #114B5F;
-  font-size: 16px;
-  padding: 16px 30px;
-  border: none;
-  cursor: pointer;
-  border-radius: 5px;
-  text-align: center;
+
+.circle2 {
+  padding: 5px;
+  font-size: 12px;
+  clip-path: circle(45%);
+  margin: 2px;
+}
 }
 
 .control:hover {
@@ -224,6 +218,15 @@ background-color: #ff605c;
 
 
   }
+.tab-button, .tab-buttont {
+  font-size: 12px;
+  padding: 4px 5px;
+  margin-bottom: 3px;
+}
+.tab-content-wrapper {
+  background: url("/static/img/bg-tab.jpg") no-repeat center center;
+  background-size: cover;
+}
 
 .popup-alert {
   position: fixed;
@@ -323,7 +326,6 @@ background-color: #ff605c;
 .tab-container {
   display: flex;
   flex-direction: column;
-  height: 40%;
 }
 /* Butoanele tab */
 .tab-button {
@@ -343,11 +345,14 @@ background-color: #ff605c;
 /* Zona în care apare conținutul taburilor */
 .tab-content-wrapper {
   flex-grow: 1;
+  height: 40%;
+  overflow-y: auto;
+  margin-bottom: 10px;
+  border-radius: 10px;
   margin-top: 15px;
   background-color: #456990;
-  padding: 10px;
+  padding: 1px;
   overflow-y: auto;
-  height: 50%;
   box-sizing: border-box;
 }
 /* Fiecare tab (doar unul vizibil) */
@@ -436,3 +441,4 @@ background-color: #ff605c;
    padding:6px;
    color: white;
 {
+
