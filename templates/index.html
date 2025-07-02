@@ -101,7 +101,6 @@
     <p style="text-align: center">Pagină creată în scopul concursului InfoEducație</p>
   </footer>
 
-  <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
   <script>
     function toggleTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(tab => {
@@ -116,6 +115,10 @@
   <div class="popup-buttons" style="display: flex; justify-content: center; gap: 20px;">
     <button onclick="confirmDetection(true)">DA</button>
     <button onclick="confirmDetection(false)">NU</button>
+    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='scripts/drone_ws.js') }}"></script>
+
   </div>
 </div>
 </div>
