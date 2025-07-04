@@ -49,7 +49,8 @@
           <article id="livestream-article" class="custom-article">
             <div class="stream-wrapper">
               <img id="rawStream" style="image-rendering: pixelated;" src="/video_feed" display:inline-block;" />
-              <img id="yoloStream" style="display: none;" src="/yolo_feed" display:inline-block;" />
+              <img id="yoloStream" style="image-rendering: pixelated;" src="/yolo_feed" display:inline-block;" />
+              <img id="poseStream" style="image-rendering: pixelated;" src="/pose_feed" display:inline-block;" />
             </div>
           </article>
 
@@ -87,7 +88,9 @@
          <br>
     <button onclick="setStreamView('raw')" class="control">RAW</button>
     <button onclick="setStreamView('yolo')" class="control">YOLO</button>
+        <br>
     <button onclick="setStreamView('split')" class="control">SPLIT</button>
+    <button onclick="setStreamView('pose')" class="control">POSE</button>
      <div id="joystick-verticl" class="joystick">
         <div class="knob"></div>
       </div>
