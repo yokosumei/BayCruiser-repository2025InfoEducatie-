@@ -330,23 +330,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
         print("[DroneKit] Aterizare completă.")
         return "Drone Landing"
 
-    def _land_drone(self):
-        try:
-            self.ensure_connection()
-        except:
-            return "[DroneKit] Drone not connected"
-            
-        if self.bypass:
-            print("[DroneKit] Bypass activ → simulăm aterizare.")
-            return "Drone Landing (simulat)"
-
-        print("[DroneKit] Aterizare...")
-        self.vehicle.mode = VehicleMode("LAND")
-        while self.vehicle.armed:
-            print("  -> Așteptăm dezarmarea...")
-            time.sleep(1)
-        print("[DroneKit] Aterizare completă.")
-        return "Drone Landing"
+    
 
     def close(self):
         if self.vehicle:
@@ -699,6 +683,7 @@ def handle_drone_command(data):
         
 @socketio.on('joystick_command')
 def handle_joystick(data):
+    print(f"[handle_joystick] Comandă primită: {data}")
     x = data.get('x', 0)
     y = data.get('y', 0)
     z = data.get('z', 0)

@@ -1,9 +1,14 @@
-// === drone_ws.js ===
-let socket;  // globală
+let socket;  // global
 
 function setupJoystick(containerId, axis) {
   const container = document.getElementById(containerId);
-  const knob = container.querySelector('.knob');
+  const knob = container ? container.querySelector('.knob') : null;
+
+  if (!container || !knob) {
+    console.warn(`Joystick "${containerId}" nu a fost găsit în DOM.`);
+    return () => ({ dx: 0, dy: 0 });  // fallback: joystick inactiv
+  }
+
   const rect = container.getBoundingClientRect();
   const centerX = rect.width / 2;
   const centerY = rect.height / 2;
@@ -80,32 +85,38 @@ function setupJoystick(containerId, axis) {
   return () => ({ dx: currentDX, dy: currentDY });
 }
 
-let getHJoystick = null;
-let getVJoystick = null;
+let getHJoystick = () => ({ dx: 0, dy: 0 });
+let getVJoystick = () => ({ dx: 0, dy: 0 });
 
-// === Setup WebSocket ===
 document.addEventListener("DOMContentLoaded", () => {
   socket = io();
 
   // === Comenzi drone ===
   window.TakeOff = function() {
-    socket.emit('drone_command', { action: 'takeoff' });
-    alert("Comandă decolare trimisă.");
+    if (socket && socket.connected) {
+      socket.emit('drone_command', { action: 'takeoff' });
+    }
   };
 
   window.Land = function() {
-    socket.emit('drone_command', { action: 'land' });
-    alert("Comandă aterizare trimisă.");
+    if (socket && socket.connected) {
+      socket.emit('drone_command', { action: 'land' });
+      alert("Comandă aterizare trimisă.");
+    }
   };
 
   window.startGotoAndReturn = function() {
-    socket.emit('drone_command', { action: 'goto_and_return' });
-    alert("Comandă Go & Return trimisă.");
+    if (socket && socket.connected) {
+      socket.emit('drone_command', { action: 'goto_and_return' });
+      alert("Comandă Go & Return trimisă.");
+    }
   };
 
   window.startOrbit = function() {
-    socket.emit('drone_command', { action: 'orbit' });
-    alert("Comandă Orbit trimisă.");
+    if (socket && socket.connected) {
+      socket.emit('drone_command', { action: 'orbit' });
+      alert("Comandă Orbit trimisă.");
+    }
   };
 
   // === Status dronă ===
@@ -145,10 +156,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // === Trimite comenzi joystick la fiecare 100ms ===
   setInterval(() => {
-    if (!getHJoystick || !getVJoystick) return;
+    if (!socket || !socket.connected) {
+     console.warn("Socket not connected, skipping joystick update."); 
+      return;
+    }
+    if (!getHJoystick || !getVJoystick) {
+      console.warn("Joystick not initialized, skipping joystick update.");
+      return;
+
     const h = getHJoystick();
     const v = getVJoystick();
+    console.log(`Joystick values: h.dx=${h.dx}, h.dy=${h.dy}, v.dx=${v.dx}, v.dy=${v.dy}`);
 
+    // fallback în caz că joystick-ul nu returnează valori valide
+    if (isNaN(h.dx) || isNaN(h.dy) || isNaN(v.dx) || isNaN(v.dy)) return;
+
+    console.warn("emit joystick_move.");
     socket.emit('joystick_move', {
       joystick: 'combined',
       x: h.dx,   // stânga-dreapta → roll
