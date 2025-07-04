@@ -351,6 +351,8 @@ def set_roi(location, vehicle):
 
 def send_ned_velocity(velocity_x, velocity_y, velocity_z, duration, vehicle):
     """Send NED velocity commands to drone"""
+
+    print(f"[DRONA] Trimit viteză NED: vx={velocity_x}, vy={velocity_y}, vz={velocity_z} pentru {duration} secunde")
     msg = vehicle.message_factory.set_position_target_local_ned_encode(
         0, 0, 0,
         mavutil.mavlink.MAV_FRAME_BODY_NED,
@@ -683,19 +685,19 @@ def handle_drone_command(data):
         
 @socketio.on('joystick_move')
 def handle_joystick(data):
-    print(f"[handle_joystick] Comandă primită: {data}")
+   # print(f"[handle_joystick] Comandă primită: {data}")
     x = data.get('x', 0)
     y = data.get('y', 0)
     z = data.get('z', 0)
     yaw = data.get('yaw', 0)
 
-    print(f"[JOYSTICK] x={x:.2f} y={y:.2f} z={z:.2f} yaw={yaw:.2f}")
+   # print(f"[JOYSTICK] x={x:.2f} y={y:.2f} z={z:.2f} yaw={yaw:.2f}")
     try:
-        gps_provider.ensure_connection()
-        vehicle = gps_provider.vehicle
 
-        # Aici poți adapta comenzile – ex:
-        send_ned_velocity(x, y, z, 1, vehicle)
+        if not gps_provider.ensure_connection():
+            return False
+
+        send_ned_velocity(x, y, z, 1, gps_provider.vehicle)
     except Exception as e:
         print(f"[JOYSTICK ERROR] {e}")
         

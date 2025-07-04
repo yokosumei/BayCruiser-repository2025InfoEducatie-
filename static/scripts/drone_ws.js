@@ -1,4 +1,5 @@
 let socket;  // global
+let lastJoystickValues = { x: 0, y: 0, z: 0, yaw: 0 };
 
 function setupJoystick(containerId, axis) {
   const container = document.getElementById(containerId);
@@ -92,27 +93,27 @@ document.addEventListener("DOMContentLoaded", () => {
   socket = io();
 
   // === Comenzi drone ===
-  window.TakeOff = function() {
+  window.TakeOff = function () {
     if (socket && socket.connected) {
       socket.emit('drone_command', { action: 'takeoff' });
     }
   };
 
-  window.Land = function() {
+  window.Land = function () {
     if (socket && socket.connected) {
       socket.emit('drone_command', { action: 'land' });
       alert("Comandă aterizare trimisă.");
     }
   };
 
-  window.startGotoAndReturn = function() {
+  window.startGotoAndReturn = function () {
     if (socket && socket.connected) {
       socket.emit('drone_command', { action: 'goto_and_return' });
       alert("Comandă Go & Return trimisă.");
     }
   };
 
-  window.startOrbit = function() {
+  window.startOrbit = function () {
     if (socket && socket.connected) {
       socket.emit('drone_command', { action: 'orbit' });
       alert("Comandă Orbit trimisă.");
@@ -156,32 +157,51 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // === Trimite comenzi joystick la fiecare 100ms ===
   setInterval(() => {
-  if (!socket || !socket.connected) {
-    console.warn("Socket not connected, skipping joystick update."); 
-    return;
-  }
+    if (!socket || !socket.connected) {
+      console.warn("Socket not connected, skipping joystick update.");
+      return;
+    }
 
-  if (!getHJoystick || !getVJoystick) {
-    console.warn("Joystick not initialized, skipping joystick update.");
-    return;
-  } // <-- ACEASTA lipsea
+    if (!getHJoystick || !getVJoystick) {
+      console.warn("Joystick not initialized, skipping joystick update.");
+      return;
+    } // <-- ACEASTA lipsea
 
-  const h = getHJoystick();
-  const v = getVJoystick();
-  console.log(`Joystick values: h.dx=${h.dx}, h.dy=${h.dy}, v.dx=${v.dx}, v.dy=${v.dy}`);
+    const h = getHJoystick();
+    const v = getVJoystick();
+    //console.log(`Joystick values: h.dx=${h.dx}, h.dy=${h.dy}, v.dx=${v.dx}, v.dy=${v.dy}`);
 
-  // fallback în caz că joystick-ul nu returnează valori valide
-  if (isNaN(h.dx) || isNaN(h.dy) || isNaN(v.dx) || isNaN(v.dy)) return;
+    // fallback în caz că joystick-ul nu returnează valori valide
+    if (isNaN(h.dx) || isNaN(h.dy) || isNaN(v.dx) || isNaN(v.dy)) return;
+
+    const current = {
+      x: h.dx,
+      y: v.dy,
+      z: v.dx,
+      yaw: h.dy
+    };
+
+    // verificăm dacă s-au schimbat valorile față de ultima comandă
+    const changed = (
+      current.x !== lastJoystickValues.x ||
+      current.y !== lastJoystickValues.y ||
+      current.z !== lastJoystickValues.z ||
+      current.yaw !== lastJoystickValues.yaw
+    );
 
 
-  //console.warn("emit joystick_move.");
-  socket.emit('joystick_move', {
-    joystick: 'combined',
-    x: h.dx,
-    y: v.dy,
-    z: v.dx,
-    yaw: h.dy
-  });
-}, 100);
+
+    //console.warn("emit joystick_move.");
+    if (changed) {
+      socket.emit('joystick_move', {
+        joystick: 'combined',
+        ...current
+      });
+    }
+
+    lastJoystickValues = current;
+
+
+  }, 100);
 
 });
