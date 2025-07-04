@@ -278,58 +278,57 @@ class DroneKitGPSProvider(BaseGPSProvider):
         return "Drone Takeoff"
     
     
- def land_drone(self):
-    if self.bypass:
-        print("[DroneKit] Bypass activ → simulăm aterizare.")
-        return "Drone Landing (simulat)"
-        
-    try:
-        self.ensure_connection()
-    except:
-        return "[DroneKit] Drone not connected"
-        
+    def land_drone(self):
+        if self.bypass:
+            print("[DroneKit] Bypass activ → simulăm aterizare.")
+            return "Drone Landing (simulat)"
+            
+        try:
+            self.ensure_connection()
+        except:
+            return "[DroneKit] Drone not connected"
+            
 
+        print("[DroneKit] Aterizare...")
+        self.vehicle.mode = VehicleMode("LAND")
+        time.sleep(2)
 
-    print("[DroneKit] Aterizare...")
-    self.vehicle.mode = VehicleMode("LAND")
-    time.sleep(2)
+        # Monitorizează altitudinea și așteaptă să ajungă aproape de sol
+        while True:
+            alt = self.vehicle.location.global_relative_frame.alt
+            print(f"  -> Altitudine curentă: {alt:.2f} m")
 
-    # Monitorizează altitudinea și așteaptă să ajungă aproape de sol
-    while True:
-        alt = self.vehicle.location.global_relative_frame.alt
-        print(f"  -> Altitudine curentă: {alt:.2f} m")
+            if alt is not None and alt < 0.2:
+                print("[DroneKit] Altitudine joasă – forțăm dezarmarea...")
+                try:
+                    # Comandă directă de dezarmare cu magic code
+                    self.vehicle._master.mav.command_long_send(
+                        self.vehicle._master.target_system,
+                        self.vehicle._master.target_component,
+                        mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+                        0,          # confirmation
+                        0,          # param1: 0 = disarm
+                        21196,      # param2: magic disarm
+                        0, 0, 0, 0, 0
+                    )
+                except Exception as e:
+                    print("[DroneKit] Eroare la comanda de dezarmare:", e)
+                break
 
-        if alt is not None and alt < 0.2:
-            print("[DroneKit] Altitudine joasă – forțăm dezarmarea...")
-            try:
-                # Comandă directă de dezarmare cu magic code
-                self.vehicle._master.mav.command_long_send(
-                    self.vehicle._master.target_system,
-                    self.vehicle._master.target_component,
-                    mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
-                    0,          # confirmation
-                    0,          # param1: 0 = disarm
-                    21196,      # param2: magic disarm
-                    0, 0, 0, 0, 0
-                )
-            except Exception as e:
-                print("[DroneKit] Eroare la comanda de dezarmare:", e)
-            break
+            time.sleep(1)
 
-        time.sleep(1)
+        # Așteaptă să confirme că drona s-a dezarmat
+        timeout = time.time() + 10  # maxim 10 secunde
+        while self.vehicle.armed and time.time() < timeout:
+            print("  -> Așteptăm dezarmarea completă...")
+            time.sleep(1)
 
-    # Așteaptă să confirme că drona s-a dezarmat
-    timeout = time.time() + 10  # maxim 10 secunde
-    while self.vehicle.armed and time.time() < timeout:
-        print("  -> Așteptăm dezarmarea completă...")
-        time.sleep(1)
+        if self.vehicle.armed:
+            print("[WARN] Drona NU s-a dezarmat automat. Forțăm .armed = False")
+            self.vehicle.armed = False
 
-    if self.vehicle.armed:
-        print("[WARN] Drona NU s-a dezarmat automat. Forțăm .armed = False")
-        self.vehicle.armed = False
-
-    print("[DroneKit] Aterizare completă.")
-    return "Drone Landing"
+        print("[DroneKit] Aterizare completă.")
+        return "Drone Landing"
 
     def _land_drone(self):
         try:
