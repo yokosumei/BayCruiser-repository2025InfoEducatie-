@@ -149,31 +149,6 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       document.getElementById("event-coords").innerText = "N/A";
     }
-
-  const armedText = document.getElementById("armed").innerText;
-  const modeText = document.getElementById("mode").innerText;
-
-  const showControls = (armedText === "DA" && modeText === "GUIDED");
-
-  const elementsToToggle = [
-    "joystick-horizontal",
-    "joystick-vertical",
-    "landBtn",
-    "goRetBtn",
-    "orbitBtn"
-  ];
-
-  elementsToToggle.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      if (showControls) {
-        el.style.display = "block";
-      } else {
-        el.style.display = "none";
-      }
-    }
-    
-
   });
 
   // === Inițializează joystick-uri ===
@@ -230,4 +205,3 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 100);
 
 });
-
