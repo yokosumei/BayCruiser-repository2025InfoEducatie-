@@ -681,7 +681,7 @@ def handle_drone_command(data):
     else:
         print(f"[WS] Comandă necunoscută: {action}")
         
-@socketio.on('joystick_command')
+@socketio.on('joystick_move')
 def handle_joystick(data):
     print(f"[handle_joystick] Comandă primită: {data}")
     x = data.get('x', 0)

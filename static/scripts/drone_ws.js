@@ -173,7 +173,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // fallback în caz că joystick-ul nu returnează valori valide
   if (isNaN(h.dx) || isNaN(h.dy) || isNaN(v.dx) || isNaN(v.dy)) return;
 
-  console.warn("emit joystick_move.");
+
+  //console.warn("emit joystick_move.");
   socket.emit('joystick_move', {
     joystick: 'combined',
     x: h.dx,
