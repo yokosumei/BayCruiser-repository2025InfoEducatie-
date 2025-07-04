@@ -166,7 +166,11 @@ document.addEventListener("DOMContentLoaded", () => {
   elementsToToggle.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
-      el.style.display = showControls ? "block" : "none";
+      if (showControls) {
+        el.style.display = "block";
+      } else {
+        el.style.display = "none";
+      }
     }
     
   });
