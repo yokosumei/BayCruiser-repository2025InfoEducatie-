@@ -149,6 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       document.getElementById("event-coords").innerText = "N/A";
     }
+<<<<<<< HEAD
 
     const armedText = document.getElementById("armed").innerText;
   const modeText = document.getElementById("mode").innerText;
@@ -173,6 +174,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     
+=======
+>>>>>>> parent of 1c85d07 (non)
   });
 
   // === Inițializează joystick-uri ===
