@@ -156,28 +156,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // === Trimite comenzi joystick la fiecare 100ms ===
   setInterval(() => {
-    if (!socket || !socket.connected) {
-     console.warn("Socket not connected, skipping joystick update."); 
-      return;
-    }
-    if (!getHJoystick || !getVJoystick) {
-      console.warn("Joystick not initialized, skipping joystick update.");
-      return;
+  if (!socket || !socket.connected) {
+    console.warn("Socket not connected, skipping joystick update."); 
+    return;
+  }
 
-    const h = getHJoystick();
-    const v = getVJoystick();
-    console.log(`Joystick values: h.dx=${h.dx}, h.dy=${h.dy}, v.dx=${v.dx}, v.dy=${v.dy}`);
+  if (!getHJoystick || !getVJoystick) {
+    console.warn("Joystick not initialized, skipping joystick update.");
+    return;
+  } // <-- ACEASTA lipsea
 
-    // fallback în caz că joystick-ul nu returnează valori valide
-    if (isNaN(h.dx) || isNaN(h.dy) || isNaN(v.dx) || isNaN(v.dy)) return;
+  const h = getHJoystick();
+  const v = getVJoystick();
+  console.log(`Joystick values: h.dx=${h.dx}, h.dy=${h.dy}, v.dx=${v.dx}, v.dy=${v.dy}`);
 
-    console.warn("emit joystick_move.");
-    socket.emit('joystick_move', {
-      joystick: 'combined',
-      x: h.dx,   // stânga-dreapta → roll
-      y: v.dy,   // sus-jos → throttle
-      z: v.dx,   // față-spate → pitch
-      yaw: h.dy  // rotire → yaw
-    });
-  }, 100);
+  // fallback în caz că joystick-ul nu returnează valori valide
+  if (isNaN(h.dx) || isNaN(h.dy) || isNaN(v.dx) || isNaN(v.dy)) return;
+
+  console.warn("emit joystick_move.");
+  socket.emit('joystick_move', {
+    joystick: 'combined',
+    x: h.dx,
+    y: v.dy,
+    z: v.dx,
+    yaw: h.dy
+  });
+}, 100);
+
 });
