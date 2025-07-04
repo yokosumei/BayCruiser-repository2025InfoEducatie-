@@ -23,19 +23,6 @@ header {
   box-shadow: 0 0 10px rgba(0,0,0,0.2);
   color: white;
 }
-#joystick-horizontal,
-#joystick-vertical,
-#landBtn,
-#goRetBtn,
-#orbitBtn {
-  transition: opacity 0.3s ease;
-  opacity: 0;
-  display: none;
-}
-.show-control {
-  display: block !important;
-  opacity: 1;
-}
 
 /* Stil pentru lista statusului */
 #drone-status {
@@ -470,4 +457,3 @@ html, body {
    padding:6px;
    color: white;
 {
-
