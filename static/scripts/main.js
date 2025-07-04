@@ -71,31 +71,43 @@ function toggleView() {
 function setStreamView(mode) {
   const raw = document.getElementById("rawStream");
   const yolo = document.getElementById("yoloStream");
+  const pose = document.getElementById("poseStream");
 
   if (!streaming) {
     raw.style.display = "none";
     yolo.style.display = "none";
+    pose.style.display = "none";
     return;
   }
 
   raw.classList.remove("single", "split");
   yolo.classList.remove("single", "split");
+  pose.classList.remove("single", "split");
 
   if (mode === "raw") {
     raw.style.display = "inline-block";
-    raw.classList.add("single");
     yolo.style.display = "none";
+    pose.style.display = "none";
+    raw.classList.add("single");
   } else if (mode === "yolo") {
     yolo.style.display = "inline-block";
-    yolo.classList.add("single");
     raw.style.display = "none";
+    pose.style.display = "none";
+    yolo.classList.add("single");
+  } else if (mode === "pose") {
+    pose.style.display = "inline-block";
+    raw.style.display = "none";
+    yolo.style.display = "none";
+    pose.classList.add("single");
   } else if (mode === "split") {
     raw.style.display = "inline-block";
     yolo.style.display = "inline-block";
+    pose.style.display = "none";
     raw.classList.add("split");
     yolo.classList.add("split");
   }
 }
+
 function toggleTab(tabId) {
   const contents = document.querySelectorAll('.tab-content');
   const buttons = document.querySelectorAll('.tab-button');
