@@ -104,6 +104,22 @@ html, body {
   border-radius: 10px;
 }
 
+#poseStream {
+  display: none;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border: 3px solid #000;
+  border-radius: 10px;
+  background-color: transparent;
+}
+
+#poseStream.single {
+  display: inline-block;
+  width: 100%;
+  height: 100%;
+}
+
 #rawStream,
 #yoloStream {
   display: none;
