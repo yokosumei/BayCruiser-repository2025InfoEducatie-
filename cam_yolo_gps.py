@@ -203,6 +203,8 @@ class DroneKitGPSProvider(BaseGPSProvider):
             0, 0, 0, 0, 0
         )
 
+        self.vehicle.parameters['FS_THR_ENABLE'] = 0
+        self.vehicle.parameters['ARMING_CHECK'] = 0
 
         print("..............[DroneKit] Așteptăm ca drona să fie armabilă...")
         start = time.time()
