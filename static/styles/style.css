@@ -220,23 +220,25 @@ html, body {
    margin-left: 220px;
 
 }
+
  
-  .tab-buttont {
-  justify-content: center;
-  border: 2px solid #E4FDE1;
-  background-color: #1c1c1c;
-  border-radius: 0.9em;
-  cursor: pointer;
-  padding: 0.8em 1.2em 0.8em 1em;
-  transition: all ease-in-out 0.2s;
-  font-size: 16px;
+/* Buton uniform pentru toate comenzile dronei */
+.tab-buttont {
   display: block;
-  margin: 0 auto;
+  width: 100%;
+  margin: 4px 0;
+  padding: 8px 12px;
+  font-size: 14px;
   color: white;
+  background-color: #1c1c1c;
+  border: 2px solid #E4FDE1;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  text-align: center;
 }
 
-.tab-buttont:hover,
-.tab-buttont.active {
+.tab-buttont:hover {
   background-color: #8f2424c5;
 }
 
