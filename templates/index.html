@@ -21,15 +21,16 @@
         <div id="info" class="tab-content">
           <p>Aceasta pagina este conceputa ca o punte dintre drona si salvamar</p>
         </div>
-        <div id="Controale drona" class="tab-content">
-          <button onclick="TakeOff()" class="tab-buttont">Decolare</button>
-          <br>
-          <button onclick="Land()" class="tab-buttont">Aterizare</button>
-          <br>
-          <button onclick="startGotoAndReturn()">GoRet</button>
-          <br>
-          <button id="orbitBtn" onclick="startOrbit()">Orbit</button>
-      </div>
+       <div id="Controale drona" class="tab-content">
+  <button id="takeOffBtn" onclick="TakeOff()" class="tab-buttont">Decolare</button>
+  <br>
+  <button id="landBtn" onclick="Land()" class="tab-buttont">Aterizare</button>
+  <br>
+  <button id="goRetBtn" onclick="startGotoAndReturn()" class="tab-buttont">GoRet</button>
+  <br>
+  <button id="orbitBtn" onclick="startOrbit()" class="tab-buttont">Orbit</button>
+</div>
+
      
   </div>
  <div id="joystick-horizontal" class="joystick">
@@ -91,8 +92,8 @@
         <br>
     <button onclick="setStreamView('split')" class="control">SPLIT</button>
     <button onclick="setStreamView('pose')" class="control">POSE</button>
-     <div id="joystick-verticl" class="joystick">
-        <div class="knob"></div>
+     <div id="joystick-vertical" class="joystick">
+       <div class="knob"></div>
       </div>
     </div>
 
