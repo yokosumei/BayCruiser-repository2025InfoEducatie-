@@ -13,6 +13,14 @@ header {
   text-align: center;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
+#joystick-horizontal,
+#joystick-vertical,
+#landBtn,
+#goRetBtn,
+#orbitBtn {
+  display: none;
+}
+
 /* Stil pentru cutia de status */
 .drone-status-box {
   background-image: url('../images/drone_bg.jpg'); /* schimbă cu ce imagine vrei */
