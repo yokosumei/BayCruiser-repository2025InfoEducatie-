@@ -1,48 +1,59 @@
 import cv2
+import numpy as np
+import ncnn
 from picamera2 import Picamera2
-from ultralytics import YOLO
 
-# Set up the camera with Picam
+# Config
+MODEL_PARAM = "yolo11n-pose-opt.param"
+MODEL_BIN = "yolo11n-pose-opt.bin"
+IMG_SIZE = 640
+CONF_THRESH = 0.5
+
+# Initialize NCNN
+net = ncnn.Net()
+net.opt.use_vulkan_compute = False  # GPU off for Pi
+net.load_param(MODEL_PARAM)
+net.load_model(MODEL_BIN)
+
+# Start camera
 picam2 = Picamera2()
-picam2.preview_configuration.main.size = (1280, 1280)
+picam2.preview_configuration.main.size = (IMG_SIZE, IMG_SIZE)
 picam2.preview_configuration.main.format = "RGB888"
 picam2.preview_configuration.align()
 picam2.configure("preview")
 picam2.start()
 
-# Load our YOLO11 model
-model = YOLO("yolo11n-pose.pt")
+# Pose drawing (17 keypoints COCO format)
+def draw_pose(img, kpts, conf_thresh=CONF_THRESH):
+    for i in range(0, len(kpts), 3):
+        x = int(kpts[i] * img.shape[1])
+        y = int(kpts[i + 1] * img.shape[0])
+        conf = kpts[i + 2]
+        if conf > conf_thresh:
+            cv2.circle(img, (x, y), 3, (0, 255, 0), -1)
 
 while True:
-    # Capture a frame from the camera
+    # Capture frame
     frame = picam2.capture_array()
-    
-    # Run YOLO model on the captured frame and store the results
-    results = model.predict(frame, imgsz = 640)
+    resized = cv2.resize(frame, (IMG_SIZE, IMG_SIZE))
 
-    # Output the visual detection data, we will draw this on our camera preview window
-    annotated_frame = results[0].plot()
-    
-    # Get inference time
-    inference_time = results[0].speed['inference']
-    fps = 1000 / inference_time  # Convert to milliseconds
-    text = f'FPS: {fps:.1f}'
+    # Convert to NCNN format
+    mat = ncnn.Mat.from_pixels(resized, ncnn.Mat.PixelType.PIXEL_RGB, IMG_SIZE, IMG_SIZE)
 
-    # Define font and position
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    text_size = cv2.getTextSize(text, font, 1,2)[0]
-    text_x = annotated_frame.shape[1] - text_size[0] - 10  # 10 pixels from the right
-    text_y = text_size[1] + 10  # 10 pixels from the top
+    # Run model
+    ex = net.create_extractor()
+    ex.input("images", mat)
 
-    # Draw the text on the annotated frame
-    cv2.putText(annotated_frame, text, (text_x, text_y), font, 1, (255, 255, 255), 2, cv2.LINE_AA)
+    ret, out = ex.extract("output")  # Change "output" if your model uses a different name
 
-    # Display the resulting frame
-    cv2.imshow("Camera", annotated_frame)
+    if ret == 0 and out.w > 0:
+        # Assuming shape [1, 51] for 17 keypoints (x, y, conf) → total 51 floats
+        keypoints = np.array(out)[0]
+        draw_pose(resized, keypoints)
 
-    # Exit the program if q is pressed
-    if cv2.waitKey(1) == ord("q"):
+    # Display
+    cv2.imshow("YOLOv11 Pose (NCNN)", resized)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# Close all windows
 cv2.destroyAllWindows()
