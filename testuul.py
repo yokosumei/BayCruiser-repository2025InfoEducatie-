@@ -1,48 +1,43 @@
 import cv2
 import numpy as np
-import ncnn
+import onnxruntime as ort
 from picamera2 import Picamera2
 
-MODEL_PARAM = "yolo11n-pose-opt.param"
-MODEL_BIN = "yolo11n-pose-opt.bin"
-IMG_SIZE = 640
-CONF_THRESH = 0.5
-
-net = ncnn.Net()
-net.opt.use_vulkan_compute = False
-net.load_param(MODEL_PARAM)
-net.load_model(MODEL_BIN)
-
+# === 1. Inițializează camera ===
 picam2 = Picamera2()
-config = picam2.create_video_configuration(main={"format": "RGB888", "size": (IMG_SIZE, IMG_SIZE)})
-picam2.configure(config)
+picam2.preview_configuration.main.size = (640, 640)  # input pt model ONNX
+picam2.preview_configuration.main.format = "RGB888"
+picam2.preview_configuration.align()
+picam2.configure("preview")
 picam2.start()
 
-def draw_pose(img, kpts, conf_thresh=CONF_THRESH):
-    for i in range(0, len(kpts), 3):
-        x = int(kpts[i] * img.shape[1])
-        y = int(kpts[i + 1] * img.shape[0])
-        conf = kpts[i + 2]
-        if conf > conf_thresh:
-            cv2.circle(img, (x, y), 3, (0, 255, 0), -1)
+# === 2. Încarcă modelul ONNX ===
+session = ort.InferenceSession("yolo11n-pose.onnx", providers=["CPUExecutionProvider"])
+input_name = session.get_inputs()[0].name
 
+# === 3. Funcție pentru preprocesare imagine ===
+def preprocess(image):
+    resized = cv2.resize(image, (640, 640))
+    img = resized.astype(np.float32) / 255.0
+    img = np.transpose(img, (2, 0, 1))  # HWC -> CHW
+    img = np.expand_dims(img, axis=0)  # [1, 3, 640, 640]
+    return img
+
+# === 4. Loop principal ===
 while True:
     frame = picam2.capture_array()
-    resized = cv2.resize(frame, (IMG_SIZE, IMG_SIZE))
-    resized = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
+    input_tensor = preprocess(frame)
 
-    mat = ncnn.Mat.from_pixels(resized, ncnn.Mat.PixelType.PIXEL_RGB, IMG_SIZE, IMG_SIZE)
-    ex = net.create_extractor()
-    ex.input("images", mat)
+    # === 5. Inferență ONNX ===
+    outputs = session.run(None, {input_name: input_tensor})
 
-    ret, out = ex.extract("output0")  # Confirmă că numele e "output0"
-    if ret == 0 and out.w == 51 and out.h == 1:
-        keypoints = np.array(out)[0]
-        draw_pose(resized, keypoints)
+    # === 6. TODO: decodificare keypoints + desenare ===
+    # outputs[0] are shape [1, 56, 8400] -> trebuie decodificat manual
+    # pentru acum doar afișăm imaginea inițială
 
-    cv2.imshow("YOLOv11 Pose NCNN", resized)
-    if cv2.waitKey(1) & 0xFF == ord("q"):
+    cv2.imshow("Camera", frame)
+
+    if cv2.waitKey(1) == ord("q"):
         break
 
-picam2.stop()
 cv2.destroyAllWindows()
