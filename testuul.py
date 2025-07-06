@@ -17,7 +17,7 @@ net.load_model(MODEL_BIN)
 
 # === Inițializare cameră Pi ===
 picam2 = Picamera2()
-camera_config = picam2.create_preview_configuration(main={"format": "RGB888", "size": (2028, 1520)})
+camera_config = picam2.create_video_configuration(main={"format": "RGB888", "size": (640, 640)})
 picam2.configure(camera_config)
 picam2.start()
 
