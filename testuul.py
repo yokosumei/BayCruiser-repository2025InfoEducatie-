@@ -49,4 +49,9 @@ while True:
         draw_pose(img, keypoints)
 
     # Afișare
-    cv2.imshow("YOLOv11 Pos
+    cv2.imshow("YOLOv11 Pose - Live", img)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
