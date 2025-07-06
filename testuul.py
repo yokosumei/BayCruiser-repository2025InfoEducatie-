@@ -15,7 +15,7 @@ net.opt.use_vulkan_compute = False  # GPU off for Pi
 net.load_param(MODEL_PARAM)
 net.load_model(MODEL_BIN)
 
-# Start camera
+# Start PiCamera2
 picam2 = Picamera2()
 picam2.preview_configuration.main.size = (IMG_SIZE, IMG_SIZE)
 picam2.preview_configuration.main.format = "RGB888"
@@ -33,27 +33,26 @@ def draw_pose(img, kpts, conf_thresh=CONF_THRESH):
             cv2.circle(img, (x, y), 3, (0, 255, 0), -1)
 
 while True:
-    # Capture frame
     frame = picam2.capture_array()
     resized = cv2.resize(frame, (IMG_SIZE, IMG_SIZE))
 
     # Convert to NCNN format
     mat = ncnn.Mat.from_pixels(resized, ncnn.Mat.PixelType.PIXEL_RGB, IMG_SIZE, IMG_SIZE)
 
-    # Run model
+    # Run inference
     ex = net.create_extractor()
     ex.input("images", mat)
 
-    ret, out = ex.extract("output0")  # Change "output" if your model uses a different name
+    ret, out = ex.extract("output0")  # Confirmed name
 
-    if ret == 0 and out.w > 0:
-        # Assuming shape [1, 51] for 17 keypoints (x, y, conf) → total 51 floats
+    if ret == 0 and out.w == 51:  # 17 keypoints × 3 (x, y, conf)
         keypoints = np.array(out)[0]
         draw_pose(resized, keypoints)
 
-    # Display
-    cv2.imshow("YOLOv11 Pose (NCNN)", resized)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    # Show frame
+    cv2.imshow("YOLOv11 Pose NCNN", resized)
+    if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
+picam2.stop()
 cv2.destroyAllWindows()
