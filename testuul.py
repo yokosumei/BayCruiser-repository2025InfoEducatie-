@@ -44,7 +44,7 @@ while True:
     ex = net.create_extractor()
     ex.input("images", mat)
 
-    ret, out = ex.extract("output")  # Change "output" if your model uses a different name
+    ret, out = ex.extract("output0")  # Change "output" if your model uses a different name
 
     if ret == 0 and out.w > 0:
         # Assuming shape [1, 51] for 17 keypoints (x, y, conf) → total 51 floats
