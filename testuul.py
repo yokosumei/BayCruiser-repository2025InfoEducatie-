@@ -1,174 +1,52 @@
-from flask import Flask, render_template, Response, jsonify
-from ultralytics import YOLO
-from picamera2 import Picamera2
-import RPi.GPIO as GPIO
-import numpy as np
-import threading
 import cv2
-import time
-import atexit
-from dronekit import connect, VehicleMode, LocationGlobalRelative
+import numpy as np
+import ncnn
 
-# === DroneKit setup ===
-connection_string = '/dev/ttyUSB0'
-baud_rate = 57600
-print("Connecting to vehicle...")
-vehicle = connect(connection_string, baud=baud_rate, wait_ready=False)
+# === Configurație model ===
+MODEL_PARAM = "yolo11n-pose-opt.param"
+MODEL_BIN = "yolo11n-pose-opt.bin"
+IMG_SIZE = 640
+CONF_THRESHOLD = 0.5
 
-def arm_and_takeoff(target_altitude):
-    print("Checking pre-arm conditions...")
-    while not vehicle.is_armable:
-        print(" Waiting for vehicle to initialise...")
-        time.sleep(1)
-    print("Arming motors...")
-    vehicle.mode = VehicleMode("GUIDED")
-    vehicle.armed = True
-    while not vehicle.armed:
-        print(" Waiting for arming...")
-        time.sleep(1)
-    print("Taking off!")
-    vehicle.simple_takeoff(target_altitude)
-    while True:
-        alt = vehicle.location.global_relative_frame.alt
-        print(" Altitude: ", alt)
-        if alt >= target_altitude * 0.95:
-            print("Reached target altitude")
-            break
-        time.sleep(1)
+# === Inițializare NCNN ===
+net = ncnn.Net()
+net.load_param(MODEL_PARAM)
+net.load_model(MODEL_BIN)
 
-def land_drone():
-    vehicle.mode = VehicleMode("LAND")
-    while vehicle.armed:
-        time.sleep(1)
-    print("Landed and disarmed.")
-    vehicle.close()
+# === Inițializare cameră ===
+cap = cv2.VideoCapture(0)  # index 0 = camera default
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, IMG_SIZE)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, IMG_SIZE)
 
-# === Flask App Setup ===
-app = Flask(__name__)
-model = YOLO("my_model.pt")
-picam2 = Picamera2()
-picam2.configure(picam2.create_video_configuration(main={"format": "RGB888", "size": (640, 480)}))
-picam2.start()
+# === Funcție pentru desenare keypoints (COCO format - 17 puncte) ===
+def draw_pose(frame, keypoints, threshold=CONF_THRESHOLD):
+    for i in range(0, len(keypoints), 3):
+        x = int(keypoints[i] * frame.shape[1])
+        y = int(keypoints[i+1] * frame.shape[0])
+        conf = keypoints[i+2]
+        if conf > threshold:
+            cv2.circle(frame, (x, y), 4, (0, 255, 0), -1)
 
-GPIO.setmode(GPIO.BOARD)
-GPIO.setup(11, GPIO.OUT)
-GPIO.setup(12, GPIO.OUT)
-servo1 = GPIO.PWM(11, 50)
-servo2 = GPIO.PWM(12, 50)
-servo1.start(0)
-servo2.start(0)
+# === Loop video ===
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        break
 
-streaming = False
-lock = threading.Lock()
-output_frame = None
-detected_flag = False
-popup_sent = False
-last_detection_time = 0
+    # Redimensionare + NCNN input
+    img = cv2.resize(frame, (IMG_SIZE, IMG_SIZE))
+    mat = ncnn.Mat.from_pixels_resize(img, ncnn.Mat.PixelType.PIXEL_BGR, IMG_SIZE, IMG_SIZE)
 
-def cleanup():
-    servo1.stop()
-    servo2.stop()
-    GPIO.cleanup()
+    # Inferență
+    ex = net.create_extractor()
+    ex.input("images", mat)
+    
+    ret, out = ex.extract("output")  # poate fi și "output1", "cls", depinde de model
+    
+    # Conversie NCNN → NumPy (dacă e tip [1, 17*3])
+    if out.w == 51:  # 17 keypoints x (x,y,conf)
+        keypoints = np.array(out)[0]  # [1, 51]
+        draw_pose(img, keypoints)
 
-atexit.register(cleanup)
-
-def activate_servos():
-    servo1.ChangeDutyCycle(9.5)
-    servo2.ChangeDutyCycle(4.5) 
-    time.sleep(0.3)              
-    servo1.ChangeDutyCycle(0)    
-    servo2.ChangeDutyCycle(0)
-
-def blank_frame():
-    img = np.zeros((480, 640, 3), dtype=np.uint8)
-    _, buffer = cv2.imencode('.jpg', img)
-    return buffer.tobytes()
-
-
-def detect_objects():
-    global output_frame, streaming, detected_flag, popup_sent, last_detection_time
-
-    while streaming:
-        frame = picam2.capture_array()
-        results = model(frame, verbose=False)
-        annotated = results[0].plot()
-
-        names = results[0].names
-        class_ids = results[0].boxes.cls.tolist()
-
-        for i, cls_id in enumerate(class_ids):
-            if names[int(cls_id)] == "om_la_inec":
-                detected_flag = True
-                popup_sent = True
-                last_detection_time = time.time()
-                activate_servos()
-
-                box = results[0].boxes[i]
-                dx_cm, dy_cm = calculate_offset(box)
-                move_towards(dx_cm, dy_cm)
-
-        if time.time() - last_detection_time > 5:
-            detected_flag = False
-            popup_sent = False
-
-        with lock:
-            output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
-
-        time.sleep(0.05)
-
-@app.route("/")
-def index():
-    return render_template("index.html")
-
-@app.route("/video_feed")
-def video_feed():
-    def generate():
-        global output_frame
-        while True:
-            if not streaming:
-                time.sleep(0.1)
-                continue
-            with lock:
-                frame = output_frame if output_frame is not None else blank_frame()
-            yield (b"--frame\r\n"
-                   b"Content-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
-            time.sleep(0.05)
-    return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
-
-@app.route("/start_stream")
-def start_stream():
-    global streaming
-    if not streaming:
-        streaming = True
-        thread = threading.Thread(target=detect_objects)
-        thread.daemon = True
-        thread.start()
-    return jsonify({"status": "started"})
-
-@app.route("/stop_stream")
-def stop_stream():
-    global streaming
-    streaming = False
-    return jsonify({"status": "stopped"})
-
-@app.route("/detection_status")
-def detection_status():
-    return jsonify({"detected": popup_sent})
-
-@app.route("/misca")
-def activate():
-    activate_servos()
-    return "Servomotor activat"
-
-@app.route("/takeoff")
-def takeoff():
-    arm_and_takeoff(1)
-    return "Drone Takeoff"
-
-@app.route("/land")
-def land():
-    land_drone()
-    return "Drone Landing"
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    # Afișare
+    cv2.imshow("YOLOv11 Pos
