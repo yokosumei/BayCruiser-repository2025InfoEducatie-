@@ -1,59 +1,48 @@
 import cv2
-import numpy as np
-import onnxruntime as ort
 from picamera2 import Picamera2
+from ultralytics import YOLO
 
-# === Setări cameră ===
+# Set up the camera with Picam
 picam2 = Picamera2()
-picam2.preview_configuration.main.size = (640, 640)
+picam2.preview_configuration.main.size = (1280, 1280)
 picam2.preview_configuration.main.format = "RGB888"
 picam2.preview_configuration.align()
 picam2.configure("preview")
 picam2.start()
 
-# === Încarcă modelul ONNX ===
-onnx_path = "yolo11n-pose.onnx"
-session = ort.InferenceSession(onnx_path)
-input_name = session.get_inputs()[0].name
-input_size = 640
+# Load our YOLO11 model
+model = YOLO("yolo11n-pose_ncnn_model")
 
 while True:
-    # === Capturează un frame din cameră ===
+    # Capture a frame from the camera
     frame = picam2.capture_array()
-    original_h, original_w = frame.shape[:2]
+    
+    # Run YOLO model on the captured frame and store the results
+    results = model.predict(frame, imgsz = 320)
 
-    # === Preprocesare pentru model ===
-    img = cv2.resize(frame, (input_size, input_size))
-    img = img.astype(np.float32) / 255.0
-    img = img.transpose(2, 0, 1)  # Channel-first
-    img = np.expand_dims(img, axis=0)
+    # Output the visual detection data, we will draw this on our camera preview window
+    annotated_frame = results[0].plot()
+    
+    # Get inference time
+    inference_time = results[0].speed['inference']
+    fps = 1000 / inference_time  # Convert to milliseconds
+    text = f'FPS: {fps:.1f}'
 
-    # === Inferență ===
-    outputs = session.run(None, {input_name: img})
-    output = outputs[0][0]  # (56, 8400)
+    # Define font and position
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    text_size = cv2.getTextSize(text, font, 1,2)[0]
+    text_x = annotated_frame.shape[1] - text_size[0] - 10  # 10 pixels from the right
+    text_y = text_size[1] + 10  # 10 pixels from the top
 
-    # === Extrage keypoints ===
-    keypoints = output[:51, :]  # 17 * 3 = 51
-    keypoints = keypoints.reshape(17, 3, -1)
-    keypoints = keypoints.mean(axis=2)  # (17, 3)
+    # Draw the text on the annotated frame
+    cv2.putText(annotated_frame, text, (text_x, text_y), font, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
-    # === Desenare keypoints ===
-    for i in range(17):
-        x, y, conf = keypoints[i]
-        if conf > 0.5:
-            cx = int(x / input_size * original_w)
-            cy = int(y / input_size * original_h)
-            cv2.circle(frame, (cx, cy), 3, (0, 255, 0), -1)
+    # Display the resulting frame
+    cv2.imshow("Camera", annotated_frame)
 
-    # === FPS calculat simplu ===
-    text = "YOLO Pose Estimation (ONNX)"
-    cv2.putText(frame, text, (10, 30),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-
-    # === Afișare ===
-    cv2.imshow("Live Pose", frame)
-
+    # Exit the program if q is pressed
     if cv2.waitKey(1) == ord("q"):
         break
 
+# Close all windows
 cv2.destroyAllWindows()
