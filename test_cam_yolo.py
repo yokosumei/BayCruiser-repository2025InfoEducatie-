@@ -72,7 +72,6 @@ seg_output_frame = None
 pose_output_frame = None
 pose_triggered = False
 
-pose_model = YOLO("models/yolo11n-pose.pt")  # sau "yolo11n-pose_ncnn_model"
 
 def cleanup():
     try: servo1.stop()
@@ -575,7 +574,7 @@ def stream_thread():
 
 def livings_inference_thread(video=None):
     global mar_output_frame, pose_triggered
-    cap = cv2.VideoCapture(video)
+    cap = cv2.VideoCapture(0) if video is None else cv2.VideoCapture(video)
     session = ort.InferenceSession("models/livings.onnx")
     input_name = session.get_inputs()[0].name
 
@@ -614,8 +613,8 @@ def livings_inference_thread(video=None):
 
 def segmentation_inference_thread(video=None):
     global seg_output_frame
-    model = YOLO("models/yolo11n-seg-custom.pt")
-    cap = cv2.VideoCapture(video)
+    model = YOLO("models/yolo11n-seg-custom.onnx")
+    cap = cv2.VideoCapture(0) if video is None else cv2.VideoCapture(video)
     
     while cap.isOpened():
         ret, frame = cap.read()
@@ -650,7 +649,8 @@ def pose_xgb_inference_thread(video=None):
 
     cap = None
     if video:
-        cap = cv2.VideoCapture(video)
+        cap = cv2.VideoCapture(0) if video is None else cv2.VideoCapture(video)
+
 
     while True:
         if video:
