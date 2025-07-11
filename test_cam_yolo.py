@@ -72,7 +72,7 @@ seg_output_frame = None
 pose_output_frame = None
 pose_triggered = False
 
-pose_model = YOLO("yolo11n-pose.pt")  # sau "yolo11n-pose_ncnn_model"
+pose_model = YOLO("models/yolo11n-pose.pt")  # sau "yolo11n-pose_ncnn_model"
 
 def cleanup():
     try: servo1.stop()
@@ -573,10 +573,10 @@ def stream_thread():
             output_frame = jpeg
         time.sleep(0.05)
 
-def livings_demo_thread(video='demo_livings.mp4'):
+def livings_inference_thread(video=None):
     global mar_output_frame, pose_triggered
     cap = cv2.VideoCapture(video)
-    session = ort.InferenceSession("livings.onnx")
+    session = ort.InferenceSession("models/livings.onnx")
     input_name = session.get_inputs()[0].name
 
     while cap.isOpened():
@@ -612,9 +612,9 @@ def livings_demo_thread(video='demo_livings.mp4'):
 
     cap.release()
 
-def segmentation_demo_thread(video='demo_segmentation.mp4'):
+def segmentation_inference_thread(video=None):
     global seg_output_frame
-    model = YOLO("yolo11n-seg-custom.pt")
+    model = YOLO("models/yolo11n-seg-custom.pt")
     cap = cv2.VideoCapture(video)
     
     while cap.isOpened():
@@ -639,10 +639,13 @@ def segmentation_demo_thread(video='demo_segmentation.mp4'):
 
     cap.release()
 
-def pose_xgb_demo_thread(video=None):
+def pose_xgb_inference_thread(video=None):
     global pose_output_frame
-    from your_xgb_module import xgb_predict  # înlocuiește cu calea reală dacă e nevoie
-    model = YOLO("yolo11n-pose.pt")  # sau folosește variabila globală deja definită
+    from your_xgb_module import xgb_predict  # înlocuiește dacă ai un fișier propriu
+
+    session = ort.InferenceSession("models/yolo11n-pose.onnx")
+    input_name = session.get_inputs()[0].name
+    output_name = session.get_outputs()[0].name
     buffer = deque(maxlen=30)
 
     cap = None
@@ -662,34 +665,37 @@ def pose_xgb_demo_thread(video=None):
                 continue
             frame = data["image"]
 
-        results = model.predict(frame, stream=True)
-        for result in results:
-            if result.keypoints is None:
-                continue
+        img_resized = cv2.resize(frame, (640, 640))
+        img_rgb = cv2.cvtColor(img_resized, cv2.COLOR_BGR2RGB)
+        img_input = img_rgb.astype(np.float32) / 255.0
+        img_input = np.transpose(img_input, (2, 0, 1))[np.newaxis, :]
 
-            keypoints = result.keypoints.xy  # [N,17,2]
-            if len(keypoints) == 0:
-                continue
+        outputs = session.run([output_name], {input_name: img_input})
+        keypoints = outputs[0][0]  # [1, 17, 3] → (x, y, conf)
 
-            vec34 = keypoints[0].cpu().numpy().flatten()  # vector [34]
-            buffer.append(vec34)
+        if keypoints.shape != (17, 3):
+            continue
 
-            for x, y in keypoints[0]:
-                cv2.circle(frame, (int(x), int(y)), 4, (0, 255, 0), -1)
+        vec34 = keypoints[:, :2].flatten()  # [17, 2] → [34]
+        buffer.append(vec34)
 
-            if len(buffer) == 30:
-                vector_1020 = np.array(buffer).flatten()
-                prediction = xgb_predict(vector_1020)
-                if prediction == "inec":
-                    cv2.putText(frame, "POSIBIL INEC!", (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 0, 255), 3)
+        for (x, y, conf) in keypoints:
+            if conf > 0.4:
+                cv2.circle(img_resized, (int(x), int(y)), 3, (0, 255, 0), -1)
+
+        if len(buffer) == 30:
+            vector_1020 = np.array(buffer).flatten()
+            prediction = xgb_predict(vector_1020)
+            if prediction == "inec":
+                cv2.putText(img_resized, "POSIBIL INEC!", (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 0, 255), 3)
 
         with pose_lock:
-            pose_output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
+            pose_output_frame = cv2.imencode('.jpg', img_resized)[1].tobytes()
+
         time.sleep(0.05)
 
     if cap:
         cap.release()
-
 
 
 def xgb_predict(vector_1020):
@@ -821,15 +827,15 @@ def right_feed():
 @app.route("/start_official")
 def start_official():
     global pose_thread_started
-    start_thread(lambda: livings_demo_thread(), "Demo_Mar")
-    start_thread(lambda: segmentation_demo_thread(), "Demo_Seg")
+    start_thread(livings_inference_thread, "LivingsDetection")
+    start_thread(segmentation_inference_thread, "SegmentationDetection")
 
     def watch_pose_trigger():
         global pose_triggered, pose_thread_started
         while not pose_thread_started:
             if pose_triggered:
                 pose_thread_started = True
-                start_thread(lambda: pose_xgb_demo_thread(), "Demo_XGB")
+                start_thread(pose_xgb_inference_thread, "PoseXGBDetection")
                 break
             time.sleep(0.5)
 
@@ -938,17 +944,17 @@ def auto_route():
 
 @app.route("/start_seg")
 def start_seg():
-    start_thread(lambda: segmentation_demo_thread(), "SegThread")
+    start_thread(lambda: segmentation_inference_thread(), "SegThread")
     return jsonify({"status": "segmentation started"})
 
 @app.route("/start_livings")
 def start_livings():
-    start_thread(lambda: livings_demo_thread(), "LivingsThread")
+    start_thread(lambda: livings_inference_thread(), "LivingsThread")
     return jsonify({"status": "livings started"})
 
 @app.route("/start_pose_xgb")
 def start_pose_xgb():
-    start_thread(lambda: pose_xgb_demo_thread(), "XGBThread")
+    start_thread(lambda: pose_xgb_inference_thread(), "XGBThread")
     return jsonify({"status": "xgb started"})
 
         
