@@ -1,5 +1,9 @@
 from flask import Flask, render_template, Response, request, jsonify
 from flask_socketio import SocketIO
+from werkzeug.utils import secure_filename
+from threading import Lock
+import onnxruntime as ort
+import uuid
 import eventlet
 from ultralytics import YOLO
 from picamera2 import Picamera2
@@ -41,10 +45,19 @@ time.sleep(0.3)
 servo1.ChangeDutyCycle(0)
 servo2.ChangeDutyCycle(0)
 
+right_stream_type = "yolo"
+pose_triggered = False
+pose_thread_started = False
 streaming = False
 frame_lock = threading.Lock()
 output_lock = threading.Lock()
+mar_lock = threading.Lock()
+seg_lock = threading.Lock()
+pose_lock = threading.Lock()
 
+output_frame_pose = None
+output_lock_pose = threading.Lock()
+pose_sequence_buffer = deque(maxlen=30)
 frame_buffer = None
 output_frame = None
 yolo_output_frame = None
@@ -54,6 +67,12 @@ last_detection_time = 0
 detection_frame_skip = 2
 frame_counter = 0
 event_location = None  # Fixed: Initialize event_location
+mar_output_frame = None
+seg_output_frame = None
+pose_output_frame = None
+pose_triggered = False
+
+pose_model = YOLO("yolo11n-pose.pt")  # sau "yolo11n-pose_ncnn_model"
 
 def cleanup():
     try: servo1.stop()
@@ -300,7 +319,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
 
 # === Utility Functions ===
 def set_roi(location, vehicle):
-    """Set Region of Interest for camera gimbal"""
+
     msg = vehicle.message_factory.command_long_encode(
         0, 0,
         mavutil.mavlink.MAV_CMD_DO_SET_ROI,
@@ -311,7 +330,7 @@ def set_roi(location, vehicle):
     vehicle.send_mavlink(msg)
 
 def send_ned_velocity(velocity_x, velocity_y, velocity_z, duration, vehicle):
-    """Send NED velocity commands to drone"""
+
     msg = vehicle.message_factory.set_position_target_local_ned_encode(
         0, 0, 0,
         mavutil.mavlink.MAV_FRAME_BODY_NED,
@@ -326,13 +345,13 @@ def send_ned_velocity(velocity_x, velocity_y, velocity_z, duration, vehicle):
         time.sleep(1)
 
 def get_distance_metres(aLocation1, aLocation2):
-    """Calculate distance between two GPS coordinates"""
+    
     dlat = aLocation2.lat - aLocation1.lat
     dlon = aLocation2.lon - aLocation1.lon
     return math.sqrt((dlat*dlat) + (dlon*dlon)) * 1.113195e5
 
 def goto_and_return(vehicle, target_location, cruise_speed=5):
-    """Go to target location, wait, then return to starting point"""
+    
     home_location = vehicle.location.global_relative_frame
     vehicle.groundspeed = cruise_speed
     
@@ -371,6 +390,46 @@ def orbit_around_point(vehicle, center_location, radius=5, velocity=1.0, duratio
         time.sleep(0.1)
 
     print("[DRONA] Orbită completă sau întreruptă.")
+
+def autonomous_search(vehicle, area_size=5, step=1, height=2):
+    """Zboară serpuit pe aria dată și reacționează la detecție."""
+    global detected_flag, event_location
+
+    home = vehicle.location.global_relative_frame
+    print("[AUTO] Locatie de start salvată.")
+
+    dx = np.linspace(0, area_size, int(area_size / step))
+    dy = np.linspace(0, area_size, int(area_size / step))
+    
+    print("[AUTO] Încep serpuirea...")
+
+    for i, y in enumerate(dy):
+        for x in (dx if i % 2 == 0 else reversed(dx)):
+            if detected_flag and event_location:
+                print("[AUTO] Detecție activată! Mă duc la locația salvată.")
+                vehicle.simple_goto(event_location)
+                time.sleep(5)
+                orbit_around_point(vehicle, event_location, radius=3, duration=20)
+                print("[AUTO] Activez servomotorul!")
+                activate_servos()
+                print("[AUTO] Revin la punctul inițial...")
+                vehicle.simple_goto(home)
+                while get_distance_metres(vehicle.location.global_relative_frame, home) > 2:
+                    time.sleep(1)
+                print("[AUTO] Misiune completă.")
+                return
+            
+            new_location = LocationGlobalRelative(
+                home.lat + (y / 111111),  # ~1 grad lat ≈ 111km
+                home.lon + (x / (111111 * math.cos(math.radians(home.lat)))),
+                height
+            )
+            vehicle.simple_goto(new_location)
+            time.sleep(3)  # așteaptă să ajungă
+
+    print("[AUTO] Serpuirea terminată fără detecție.")
+    vehicle.simple_goto(home)
+
 
 # Initialize GPS provider
 gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider(bypass=False)
@@ -471,7 +530,28 @@ def detection_thread():
             detected_flag = False
             popup_sent = False
             object_present = False
-            
+        
+        obiecte_detectate = []
+        nivel_detectat = None
+
+        for i, cls_id in enumerate(class_ids):
+            label = names[int(cls_id)]
+
+            if label in ["rechin", "meduza", "person", "rip_current"]:
+                obiecte_detectate.append(label)
+
+            if label == "lvl_mic":
+                nivel_detectat = "mic"
+            elif label == "lvl_mediu":
+                nivel_detectat = "mediu"
+            elif label == "lvl_adanc":
+                nivel_detectat = "adânc"
+
+        # Trimite doar dacă există modificări (poți adăuga și comparație cu stare anterioară dacă vrei)
+        socketio.emit("detection_update", {
+            "obiecte": obiecte_detectate,
+            "nivel": nivel_detectat
+        })     
         with output_lock:
             yolo_output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
         time.sleep(0.01)
@@ -492,6 +572,129 @@ def stream_thread():
         with output_lock:
             output_frame = jpeg
         time.sleep(0.05)
+
+def livings_demo_thread(video='demo_livings.mp4'):
+    global mar_output_frame, pose_triggered
+    cap = cv2.VideoCapture(video)
+    session = ort.InferenceSession("livings.onnx")
+    input_name = session.get_inputs()[0].name
+
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        input_img = cv2.resize(frame, (640, 640))
+        img = cv2.cvtColor(input_img, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
+        img = np.transpose(img, (2, 0, 1))[np.newaxis, :]
+
+        outputs = session.run(None, {input_name: img})
+        detections = outputs[0][0]
+
+        obiecte_detectate = []
+        for det in detections:
+            x1, y1, x2, y2, score, cls_id = det
+            if score < 0.5:
+                continue
+            label = int(cls_id)
+            name = ["rechin", "meduza", "person"][label]
+            obiecte_detectate.append(name)
+            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0,255,0), 2)
+            cv2.putText(frame, name, (int(x1), int(y1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,0), 2)
+
+            if name == "person":
+                pose_triggered = True
+
+        socketio.emit("detection_update", {"obiecte": obiecte_detectate})
+        with mar_lock:
+            mar_output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
+        time.sleep(0.05)
+
+    cap.release()
+
+def segmentation_demo_thread(video='demo_segmentation.mp4'):
+    global seg_output_frame
+    model = YOLO("yolo11n-seg-custom.pt")
+    cap = cv2.VideoCapture(video)
+    
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        result = model(frame, conf=0.7, classes=[0,1,2,3])[0]
+        seg_frame = result.plot()
+
+        nivel_detectat = None
+        for box in result.boxes:
+            cls = int(box.cls.item())
+            name = ["lvl_mic", "lvl_mediu", "lvl_adanc", "rip_current"][cls]
+            if name.startswith("lvl"):
+                nivel_detectat = name.replace("lvl_", "")
+
+        socketio.emit("detection_update", {"nivel": nivel_detectat})
+        with seg_lock:
+            seg_output_frame = cv2.imencode('.jpg', seg_frame)[1].tobytes()
+        time.sleep(0.05)
+
+    cap.release()
+
+def pose_xgb_demo_thread(video=None):
+    global pose_output_frame
+    from your_xgb_module import xgb_predict  # înlocuiește cu calea reală dacă e nevoie
+    model = YOLO("yolo11n-pose.pt")  # sau folosește variabila globală deja definită
+    buffer = deque(maxlen=30)
+
+    cap = None
+    if video:
+        cap = cv2.VideoCapture(video)
+
+    while True:
+        if video:
+            ret, frame = cap.read()
+            if not ret:
+                break
+        else:
+            with frame_lock:
+                data = frame_buffer.copy() if frame_buffer else None
+            if not data:
+                time.sleep(0.05)
+                continue
+            frame = data["image"]
+
+        results = model.predict(frame, stream=True)
+        for result in results:
+            if result.keypoints is None:
+                continue
+
+            keypoints = result.keypoints.xy  # [N,17,2]
+            if len(keypoints) == 0:
+                continue
+
+            vec34 = keypoints[0].cpu().numpy().flatten()  # vector [34]
+            buffer.append(vec34)
+
+            for x, y in keypoints[0]:
+                cv2.circle(frame, (int(x), int(y)), 4, (0, 255, 0), -1)
+
+            if len(buffer) == 30:
+                vector_1020 = np.array(buffer).flatten()
+                prediction = xgb_predict(vector_1020)
+                if prediction == "inec":
+                    cv2.putText(frame, "POSIBIL INEC!", (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 0, 255), 3)
+
+        with pose_lock:
+            pose_output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
+        time.sleep(0.05)
+
+    if cap:
+        cap.release()
+
+
+
+def xgb_predict(vector_1020):
+    # dummy fallback, înlocuiește cu modelul real când îl ai
+    return "inec" if np.random.rand() < 0.2 else "inot"
 
 # === Flask Routes ===
 @app.route("/")
@@ -532,6 +735,106 @@ def yolo_feed_snapshot():
     with output_lock:
         frame = yolo_output_frame if yolo_output_frame is not None else blank_frame()
     return Response(frame, mimetype='image/jpeg')
+
+@app.route("/", methods=["POST"])
+def process_uploaded():
+    file = request.files["file"]
+    if not file:
+        return "No file", 400
+
+    filename = secure_filename(file.filename)
+    filepath = os.path.join(app.config["UPLOAD_FOLDER"], f"input_{uuid.uuid4()}.mp4")
+    file.save(filepath)
+
+    result_path = os.path.join(app.config["UPLOAD_FOLDER"], "result.mp4")
+    threading.Thread(target=process_pose_video, args=(filepath, result_path), daemon=True).start()
+
+    return render_template("index.html", video_processed=True)
+
+@app.route("/mar_feed")
+def mar_feed():
+    def generate():
+        while True:
+            with mar_lock:
+                frame = mar_output_frame or blank_frame()
+            yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
+            time.sleep(0.05)
+    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route("/seg_feed")
+def seg_feed():
+    def generate():
+        while True:
+            with seg_lock:
+                frame = seg_output_frame or blank_frame()
+            yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
+            time.sleep(0.05)
+    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route("/xgb_feed")
+def xgb_feed():
+    def generate():
+        while True:
+            with pose_lock:
+                frame = pose_output_frame or blank_frame()
+            yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
+            time.sleep(0.05)
+    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route("/set_right_stream", methods=["POST"])
+def set_right_stream():
+    global right_stream_type
+    data = request.json
+    selected = data.get("type")
+    if selected in ["yolo", "seg", "mar", "xgb"]:
+        right_stream_type = selected
+        return jsonify({"status": "ok", "current": right_stream_type})
+    return jsonify({"status": "invalid"})
+
+@app.route("/right_feed")
+def right_feed():
+    def generate():
+        global right_stream_type
+        while True:
+            if not streaming:
+                time.sleep(0.1)
+                continue
+            if right_stream_type == "yolo":
+                with output_lock:
+                    frame = yolo_output_frame or blank_frame()
+            elif right_stream_type == "seg":
+                with seg_lock:
+                    frame = seg_output_frame or blank_frame()
+            elif right_stream_type == "mar":
+                with mar_lock:
+                    frame = mar_output_frame or blank_frame()
+            elif right_stream_type == "xgb":
+                with pose_lock:
+                    frame = pose_output_frame or blank_frame()
+            else:
+                frame = blank_frame()
+
+            yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
+            time.sleep(0.05)
+    return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
+
+@app.route("/start_official")
+def start_official():
+    global pose_thread_started
+    start_thread(lambda: livings_demo_thread(), "Demo_Mar")
+    start_thread(lambda: segmentation_demo_thread(), "Demo_Seg")
+
+    def watch_pose_trigger():
+        global pose_triggered, pose_thread_started
+        while not pose_thread_started:
+            if pose_triggered:
+                pose_thread_started = True
+                start_thread(lambda: pose_xgb_demo_thread(), "Demo_XGB")
+                break
+            time.sleep(0.5)
+
+    start_thread(watch_pose_trigger, "Watcher_XGB")
+    return jsonify({"status": "official detection started"})
 
 @app.route("/start_stream")
 def start_stream():
@@ -623,6 +926,31 @@ def orbit_route():
         return jsonify({"status": "orbiting"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
+
+@app.route("/auto")
+def auto_route():
+    try:
+        gps_provider.ensure_connection()
+        start_thread(lambda: autonomous_search(gps_provider.vehicle, area_size=5), "AutoThread")
+        return jsonify({"status": "auto started"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
+
+@app.route("/start_seg")
+def start_seg():
+    start_thread(lambda: segmentation_demo_thread(), "SegThread")
+    return jsonify({"status": "segmentation started"})
+
+@app.route("/start_livings")
+def start_livings():
+    start_thread(lambda: livings_demo_thread(), "LivingsThread")
+    return jsonify({"status": "livings started"})
+
+@app.route("/start_pose_xgb")
+def start_pose_xgb():
+    start_thread(lambda: pose_xgb_demo_thread(), "XGBThread")
+    return jsonify({"status": "xgb started"})
+
         
 @socketio.on('drone_command')
 def handle_drone_command(data):
@@ -665,7 +993,10 @@ def status_broadcast_loop():
             if gps_provider.connected and gps_provider.vehicle:
                 socketio.emit('drone_status', {
                     "connected": True,
-                    "battery": {"level": gps_provider.vehicle.battery.level},
+                    "battery": {
+                        "voltage": gps_provider.vehicle.battery.voltage,
+                        "current": gps_provider.vehicle.battery.current
+                    },
                     "armed": gps_provider.vehicle.armed,
                     "mode": gps_provider.vehicle.mode.name,
                     "location": {
@@ -690,4 +1021,3 @@ if __name__ == "__main__":
 
     logging.info("Pornire server Flask + SocketIO")
     socketio.run(app, host="0.0.0.0", port=5000)
-
