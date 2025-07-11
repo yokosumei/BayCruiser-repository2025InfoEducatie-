@@ -613,30 +613,43 @@ def livings_inference_thread(video=None):
 
 def segmentation_inference_thread(video=None):
     global seg_output_frame
-    model = YOLO("models/yolo11n-seg-custom.onnx")
+    assert os.path.exists("models/yolo11n-seg-custom.onnx"), "Modelul de segmentare lipsește!"
+    session = ort.InferenceSession("models/yolo11n-seg-custom.onnx")
+    input_name = session.get_inputs()[0].name
     cap = cv2.VideoCapture(0) if video is None else cv2.VideoCapture(video)
-    
+
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
             break
 
-        result = model(frame, conf=0.7, classes=[0,1,2,3])[0]
-        seg_frame = result.plot()
+        # pregătire frame (la fel ca în livings)
+        input_img = cv2.resize(frame, (640, 640))
+        img = cv2.cvtColor(input_img, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
+        img = np.transpose(img, (2, 0, 1))[np.newaxis, :]
+
+        outputs = session.run(None, {input_name: img})
+        detections = outputs[0][0]
 
         nivel_detectat = None
-        for box in result.boxes:
-            cls = int(box.cls.item())
+        for det in detections:
+            x1, y1, x2, y2, score, cls_id = det
+            if score < 0.5:
+                continue
+            cls = int(cls_id)
             name = ["lvl_mic", "lvl_mediu", "lvl_adanc", "rip_current"][cls]
+            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0,255,255), 2)
+            cv2.putText(frame, name, (int(x1), int(y1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,255), 2)
             if name.startswith("lvl"):
                 nivel_detectat = name.replace("lvl_", "")
 
         socketio.emit("detection_update", {"nivel": nivel_detectat})
         with seg_lock:
-            seg_output_frame = cv2.imencode('.jpg', seg_frame)[1].tobytes()
+            seg_output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
         time.sleep(0.05)
 
     cap.release()
+
 
 def pose_xgb_inference_thread(video=None):
     global pose_output_frame
