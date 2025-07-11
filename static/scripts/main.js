@@ -1,8 +1,13 @@
+///video
 let streaming = false;
 let streamActive = false;
 let popupShown = false;
 let detectedPreviously = false;
+let poseStarted = false;
 
+const socket = io();
+
+// actualizează indicatorul vizual live / non-live
 function updateStatusIndicators() {
   const boxes = document.querySelectorAll('.box');
   const status = document.querySelector('.status');
@@ -11,9 +16,9 @@ function updateStatusIndicators() {
     status.textContent = '| Live';
     status.style.color = 'green';
     if (boxes.length >= 3) {
-      boxes[0].textContent = '⚪'; // Upload
-      boxes[1].textContent = '⚪'; // Stop
-      boxes[2].textContent = '🟢'; // Start
+      boxes[0].textContent = '⚪';
+      boxes[1].textContent = '⚪';
+      boxes[2].textContent = '🟢';
     }
   } else {
     status.textContent = '| Non-live';
@@ -26,6 +31,7 @@ function updateStatusIndicators() {
   }
 }
 
+// START stream video
 function startStream() {
   fetch('/start_stream')
     .then(() => {
@@ -35,129 +41,106 @@ function startStream() {
       updateStatusIndicators();
     });
 }
+
+// STOP stream video
 function stopStream() {
   fetch('/stop_stream')
     .then(() => {
       streamActive = false;
       streaming = false;
       document.getElementById('rawStream').style.display = 'none';
-      document.getElementById('yoloStream').style.display = 'none';
+      document.getElementById('rightStream').style.display = 'none';
       updateStatusIndicators();
     });
 }
-function toggleView() {
-  const live = document.getElementById("livestream-article");
-  const upload = document.getElementById("upload-article");
-  const boxes = document.querySelectorAll('.circle .box');
-  const status = document.querySelector('.status');
 
-  if (live.style.display !== "none") {
-    live.style.display = "none";
-    upload.style.display = "block";
-    status.textContent = '| Upload';
-    status.style.color = 'yellow';
-
-    if (boxes.length >= 3) {
-      boxes[0].textContent = '⚪'; // upload ON
-      boxes[1].textContent = '🟡';
-      boxes[2].textContent = '⚪';
-    }
-  } else {
-    upload.style.display = "none";
-    live.style.display = "block";
-    setTimeout(updateStatusIndicators, 10);
-  }
-}
+// comută între view RAW / SPLIT
 function setStreamView(mode) {
   const raw = document.getElementById("rawStream");
-  const yolo = document.getElementById("yoloStream");
-  const pose = document.getElementById("poseStream");
+  const right = document.getElementById("rightStream");
 
   if (!streaming) {
     raw.style.display = "none";
-    yolo.style.display = "none";
-    pose.style.display = "none";
+    right.style.display = "none";
     return;
   }
 
   raw.classList.remove("single", "split");
-  yolo.classList.remove("single", "split");
-  pose.classList.remove("single", "split");
+  right.classList.remove("single", "split");
 
   if (mode === "raw") {
     raw.style.display = "inline-block";
-    yolo.style.display = "none";
-    pose.style.display = "none";
+    right.style.display = "none";
     raw.classList.add("single");
-  } else if (mode === "yolo") {
-    yolo.style.display = "inline-block";
-    raw.style.display = "none";
-    pose.style.display = "none";
-    yolo.classList.add("single");
-  } else if (mode === "pose") {
-    pose.style.display = "inline-block";
-    raw.style.display = "none";
-    yolo.style.display = "none";
-    pose.classList.add("single");
   } else if (mode === "split") {
     raw.style.display = "inline-block";
-    yolo.style.display = "inline-block";
-    pose.style.display = "none";
+    right.style.display = "inline-block";
     raw.classList.add("split");
-    yolo.classList.add("split");
+    right.classList.add("split");
   }
 }
 
-function toggleTab(tabId) {
-  const contents = document.querySelectorAll('.tab-content');
-  const buttons = document.querySelectorAll('.tab-button');
-  const container = document.getElementById('tabContent');
+// comută streamul dreapta (YOLO, SEG, MAR, XGB)
+function changeRightStream(type) {
+  fetch("/set_right_stream", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type: type })
+  }).then(resp => resp.json()).then(data => {
+    if (data.status === "ok") {
+      const rs = document.getElementById("rightStream");
+      rs.src = "/right_feed?dummy=" + Date.now();
 
-  let isAlreadyOpen = false;
-
-  contents.forEach(content => {
-    if (content.id === tabId && content.classList.contains('active')) {
-      isAlreadyOpen = true;
+      // actualizează textul "Mod detectare"
+      const label = document.getElementById("detection-mode-label");
+      const nameMap = {
+        yolo: "ÎNEC (YOLO)",
+        seg: "SEGMENTARE",
+        mar: "LIVINGS (RECHINI, PERSOANE)",
+        xgb: "POSE + XGBoost"
+      };
+      label.textContent = "Mod detectare: " + (nameMap[type] || type.toUpperCase());
     }
-    content.classList.remove('active');
   });
-
-  buttons.forEach(btn => btn.classList.remove('active'));
-
-  if (isAlreadyOpen) {
-    container.classList.remove('active');
-    return;
-  }
-
-  document.getElementById(tabId).classList.add('active');
-  container.classList.add('active');
-
-  const activeButton = Array.from(buttons).find(
-    btn => btn.textContent.trim().toLowerCase() === tabId.toLowerCase()
-  );
-  if (activeButton) activeButton.classList.add('active');
-}
-function confirmDetection(answer) {
-  const popup = document.getElementById('popup-alert');
-  if (popup) popup.style.display = 'none';
-
-  if (answer) {
-    fetch("/misca")
-      .then(res => res.text())
-      .then(() => {
-        alert("Inițiere protocol de salvare.");
-        setStreamView('split');
-      })
-      .catch(() => {
-        alert("Eroare la mișcarea servomotorului.");
-      });
-  } else {
-    alert("Alarmă ignorată.");
-  }
-  detectedPreviously = true;
 }
 
 
+// pornește SEG + LIVINGS, și dacă apare person -> comută pe XGB
+function startOfficialMode() {
+  fetch("/start_official")
+    .then(() => {
+      changeRightStream("mar");
+      setStreamView("split");
+    });
+}
+
+// DETECȚIE și NIVEL realtime
+socket.on("detection_update", data => {
+  const detectie = document.getElementById("detectie-info");
+  const nivel = document.getElementById("nivel-info");
+
+  let text = "-";
+  if (data.obiecte && data.obiecte.length > 0) {
+    const count = {};
+    data.obiecte.forEach(obj => {
+      count[obj] = (count[obj] || 0) + 1;
+    });
+    text = Object.entries(count)
+                .map(([k, v]) => `${v} ${k}${v > 1 ? "i" : ""}`)
+                .join(", ");
+  }
+
+  detectie.textContent = "DETECȚIE: " + text;
+  nivel.textContent = "NIVEL: " + (data.nivel || "-");
+
+  if (data.obiecte && data.obiecte.includes("person") && !poseStarted) {
+    poseStarted = true;
+    changeRightStream("xgb");
+    console.log("[AUTO] Comut pe pose+xgb");
+  }
+});
+
+// POPUP dacă detectează "om_la_inec"
 function checkDetectionStatus() {
   if (!streamActive) return;
 
@@ -184,20 +167,39 @@ function checkDetectionStatus() {
 }
 setInterval(checkDetectionStatus, 1000);
 
+// afișează popup
 function showPopup() {
   const popup = document.getElementById("popup-alert");
   if (popup) popup.style.display = "flex";
 
   const img = document.getElementById("popup-frame");
   if (img) {
-    img.src = "/yolo_feed_snapshot?" + new Date().getTime(); // evităm cache
+    img.src = "/yolo_feed_snapshot?" + new Date().getTime(); // evită cache
   }
+}
+
+// confirmare buton DA / NU
+function confirmDetection(answer) {
+  const popup = document.getElementById('popup-alert');
+  if (popup) popup.style.display = 'none';
+
+  if (answer) {
+    fetch("/misca")
+      .then(() => {
+        alert("Inițiere protocol de salvare.");
+        setStreamView('split');
+      })
+      .catch(() => {
+        alert("Eroare la mișcarea servomotorului.");
+      });
+  } else {
+    alert("Alarmă ignorată.");
+  }
+  detectedPreviously = true;
 }
 
 function displayServoMessage() {
   fetch("/misca")
-    .then(res => res.text())
     .then(() => alert("Servomotorul a fost mișcat"))
     .catch(() => alert("Eroare la mișcarea servomotorului."));
 }
-
