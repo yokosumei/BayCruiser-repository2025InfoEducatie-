@@ -573,23 +573,19 @@ def stream_thread():
 
 def livings_inference_thread(video=None):
     logging.info("Firul livings_inference_thread a pornit.")
-    global mar_output_frame, pose_triggered
-    #cap = cv2.VideoCapture(0) if video is None else cv2.VideoCapture(video)
-    cap = cv2.VideoCapture(video)
-    session = ort.InferenceSession("models/livings.onnx")
-    input_name = session.get_inputs()[0].name
-
-
-    if os.path.exists("models/livings.onnxt"):
+    if os.path.exists("models/livings.onnx"):
         print("Fișierul există!")
     else:
         print("Fișierul NU există.")
-    print("input_name:",input_name)
+    global mar_output_frame, pose_triggered
+   
+    session = ort.InferenceSession("models/livings.onnx")
+    input_name = session.get_inputs()[0].name
+    print("input_name:", input_name)
 
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
+    while True:
+        # Citire frame de la PiCamera2
+        frame = picam2.capture_array()
 
         input_img = cv2.resize(frame, (640, 640))
         img = cv2.cvtColor(input_img, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
@@ -606,8 +602,8 @@ def livings_inference_thread(video=None):
             label = int(cls_id)
             name = ["rechin", "meduza", "person"][label]
             obiecte_detectate.append(name)
-            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0,255,0), 2)
-            cv2.putText(frame, name, (int(x1), int(y1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,0), 2)
+            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
+            cv2.putText(frame, name, (int(x1), int(y1) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
 
             if name == "person":
                 pose_triggered = True
@@ -616,9 +612,7 @@ def livings_inference_thread(video=None):
         with mar_lock:
             mar_output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
         time.sleep(0.05)
-
-    cap.release()
-
+        
 def segmentation_inference_thread(video=None):
     global seg_output_frame
     assert os.path.exists("models/yolo11n-seg-custom.onnx"), "Modelul de segmentare lipsește!"
