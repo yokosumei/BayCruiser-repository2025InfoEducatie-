@@ -148,6 +148,8 @@ function startOfficialMode() {
     .then(() => {
       changeRightStream("mar");
       setStreamView("split");
+      btn.textContent = 'RAW';
+      currentViewMode = 'raw';
     });
 }
 
@@ -225,6 +227,8 @@ function confirmDetection(answer) {
       .then(() => {
         alert("Inițiere protocol de salvare.");
         setStreamView('split');
+        btn.textContent = 'RAW';
+        currentViewMode = 'raw';
       })
       .catch(() => {
         alert("Eroare la mișcarea servomotorului.");

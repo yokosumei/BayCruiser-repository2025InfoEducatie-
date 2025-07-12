@@ -593,7 +593,7 @@ def stream_thread():
 
 
 def livings_inference_thread(video=None):
-    logging.info("Firul livings_inference_thread a pornit.")
+
     global mar_output_frame, frame_buffer
     obiecte_detectate = []
     model = YOLO("models/livings.pt")
@@ -646,15 +646,28 @@ def livings_inference_thread(video=None):
 
 def segmentation_inference_thread(video=None):
     global seg_output_frame
+
     assert os.path.exists("models/yolo11n-seg-custom.onnx"), "Modelul de segmentare lipsește!"
+
     session = ort.InferenceSession("models/yolo11n-seg-custom.onnx")
     input_name = session.get_inputs()[0].name
-    cap = cv2.VideoCapture(0) if video is None else cv2.VideoCapture(video)
-    #stop_segmentation_event = Event()
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
+
+
+
+    while not stop_segmentation_event.is_set():
+        logging.info("Firul segmentation_inference_thread rulează...")
+        if not streaming:
+            time.sleep(0.1)
+            continue
+            
+        with frame_lock:
+            data = frame_buffer.copy() if frame_buffer is not None else None
+        if data is None:
+            time.sleep(0.05)
+            continue
+            
+        frame = data["image"]
+        gps_info = data["gps"]
 
         # pregătire frame (la fel ca în livings)
         input_img = cv2.resize(frame, (640, 640))
