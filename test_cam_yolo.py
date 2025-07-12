@@ -45,7 +45,7 @@ time.sleep(0.3)
 servo1.ChangeDutyCycle(0)
 servo2.ChangeDutyCycle(0)
 
-right_stream_type = "yolo"
+right_stream_type = "vctr"
 
 
 detection_thread = None
