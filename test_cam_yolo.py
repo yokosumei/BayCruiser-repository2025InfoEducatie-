@@ -853,7 +853,13 @@ def right_feed():
             logging.info("se verifica  yolo_function_thread este activ")
 
             if detection_thread is None or not detection_thread.is_alive():
+                stop_detection_event.clear()
                 detection_thread =start_thread(yolo_function_thread, "DetectionThread")
+            if detection_thread and detection_thread.is_alive():
+                stop_detection_event.set()
+                detection_thread.join()  # așteaptă să se termine curentul thread
+                stop_detection_event.clear()
+                detection_thread =start_thread(yolo_function_thread, "DetectionThread"))    
 
             with output_lock:
                 frame = yolo_output_frame or blank_frame()
