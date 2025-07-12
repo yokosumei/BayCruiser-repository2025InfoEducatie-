@@ -1,11 +1,16 @@
 <!DOCTYPE html>
 <html lang="en-US">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width" />
   <title>BayCruiser</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
+  <script src="{{ url_for('static', filename='scripts/drone_ws.js') }}"></script>
 </head>
+
 <body>
   <header>
     <h1>Pagină de control</h1>
@@ -21,21 +26,21 @@
         <div id="info" class="tab-content">
           <p>Aceasta pagina este conceputa ca o punte dintre drona si salvamar</p>
         </div>
-       <div id="Controale drona" class="tab-content">
-  <button id="takeOffBtn" onclick="TakeOff()" class="tab-buttont">Decolare</button>
-  <br>
-  <button id="landBtn" onclick="Land()" class="tab-buttont">Aterizare</button>
-  <br>
-  <button id="goRetBtn" onclick="startGotoAndReturn()" class="tab-buttont">GoRet</button>
-  <br>
-  <button id="orbitBtn" onclick="startOrbit()" class="tab-buttont">Orbit</button>
-</div>
-
-     
-  </div>
- <div id="joystick-horizontal" class="joystick">
-        <div class="knob"></div>
+        <div id="Controale drona" class="tab-content">
+          <button id="takeOffBtn" onclick="TakeOff()" class="tab-buttont">Decolare</button>
+          <br>
+          <button id="landBtn" onclick="Land()" class="tab-buttont">Aterizare</button>
+          <br>
+          <button id="goRetBtn" onclick="startGotoAndReturn()" class="tab-buttont">GoRet</button>
+          <br>
+          <button id="orbitBtn" onclick="startOrbit()" class="tab-buttont">Orbit</button>
         </div>
+
+
+      </div>
+      <div id="joystick-horizontal" class="joystick">
+        <div class="knob"></div>
+      </div>
       </div>
     </aside>
     <section class="center-content">
@@ -45,24 +50,25 @@
           <div class="circle"><span style="font-size:21px" class="yellow box">⚪</span></div>
           <div class="circle"><span style="font-size:21px" class="green box">⚪</span></div>
           <div class="status" style="font-size:30px">| Status ||</div>
-<div id="detectie-info" style="font-size:25px; color:#eee; margin-top:5px;">DETECȚIE:  ||</div>
-<div id="nivel-info" style="font-size:25px; color:#eee;margin-top:5px">NIVEL: -</div>
+          <div id="detectie-info" style="font-size:25px; color:#eee; margin-top:5px;">DETECȚIE: ||</div>
+          <div id="nivel-info" style="font-size:25px; color:#eee;margin-top:5px">NIVEL: -</div>
         </div>
         <div class="content">
           <article id="livestream-article" class="custom-article">
             <div class="stream-wrapper">
-             <img id="rawStream" style="image-rendering: pixelated;" src="/video_feed" />
-<img id="rightStream" style="image-rendering: pixelated;" src="/right_feed" />
+              <img id="rawStream" style="image-rendering: pixelated;" src="/video_feed" />
+              <img id="rightStream" style="image-rendering: pixelated;" src="/right_feed" />
             </div>
-            <p id="detection-mode-label" style="font-size: 14px; text-align: center; font-weight: bold; margin-top: 10px;">
-  Mod detectare: -</p>
+            <p id="detection-mode-label"
+              style="font-size: 14px; text-align: center; font-weight: bold; margin-top: 10px;">
+              Mod detectare: -</p>
           </article>
 
           <article id="upload-article" class="custom-article" style="display: none; text-align: center;">
             <form id="uploadForm" action="/" method="post" enctype="multipart/form-data">
               <input type="file" name="file" accept="video/*" required>
               <input type="submit" value="Upload Video">
-               <hr style="height:12px;background-color:red">
+              <hr style="height:12px;background-color:red">
             </form>
             <video width="640" height="480" controls autoplay>
               <source src="{{ url_for('static', filename='uploads/result.mp4') }}" type="video/mp4">
@@ -75,35 +81,35 @@
 
     <!-- Sidebar dreapta -->
     <aside id="right-sidebar">
-      <h3>Status dronă <img id="drone-connection"src="/static/img/icon_negru.png"></h3>
-          <ul id="drone-status">
-            <li>Baterie: <span id="battery">?</span></li>
-            <li>Armată: <span id="armed">?</span></li>
-            <li>Mod: <span id="mode">?</span></li>
-            <li>Poziție actuală: <span id="current-coords">?</span></li>
-            <li>Coordonate salvate: <span id="event-coords">?</span></li>
-            <li>Ultima detecție: <span id="last-detection">N/A</span></li>
-         </ul>
+      <h3>Status dronă <img id="drone-connection" src="/static/img/icon_negru.png"></h3>
+      <ul id="drone-status">
+        <li>Baterie: <span id="battery">?</span></li>
+        <li>Armată: <span id="armed">?</span></li>
+        <li>Mod: <span id="mode">?</span></li>
+        <li>Poziție actuală: <span id="current-coords">?</span></li>
+        <li>Coordonate salvate: <span id="event-coords">?</span></li>
+        <li>Ultima detecție: <span id="last-detection">N/A</span></li>
+      </ul>
 
-       <div >
-    <button onclick="startStream()" class="control">START</button>
-    <button onclick="toggleView()" class="circle2">⭕</button>
-    <button onclick="stopStream()" class="control">STOP</button>
-         <br>
-    <button onclick="setStreamView('raw')" class="control">RAW</button>
-    <button onclick="setStreamView('yolo')" class="control">YOLO</button>
-    <button onclick="setStreamView('split')" class="control">SPLIT</button>
-      <button onclick="changeRightStream('yolo')" class="control">YOLO</button>
-  <button onclick="changeRightStream('seg')" class="control">SEG</button>
-  <button onclick="changeRightStream('mar')" class="control">LIV</button>
-  <button onclick="changeRightStream('xgb')" class="control">POSE</button>
-  <button onclick="startOfficialMode()" class="control">OFIC</button>
-     <div id="joystick-vertical" class="joystick">
-       <div class="knob"></div>
+      <div>
+        <button onclick="startStream()" class="control">START</button>
+        <button onclick="toggleView()" class="circle2">⭕</button>
+        <button onclick="stopStream()" class="control">STOP</button>
+        <br>
+        <button onclick="setStreamView('raw')" class="control">RAW</button>
+        <button onclick="setStreamView('yolo')" class="control">YOLO</button>
+        <button onclick="setStreamView('split')" class="control">SPLIT</button>
+        <button onclick="changeRightStream('yolo')" class="control">YOLO</button>
+        <button onclick="changeRightStream('seg')" class="control">SEG</button>
+        <button onclick="changeRightStream('mar')" class="control">LIV</button>
+        <button onclick="changeRightStream('xgb')" class="control">POSE</button>
+        <button onclick="startOfficialMode()" class="control">OFIC</button>
+        <div id="joystick-vertical" class="joystick">
+          <div class="knob"></div>
+        </div>
       </div>
-    </div>
 
-  </div>
+      </div>
     </aside>
   </main>
 
@@ -119,20 +125,19 @@
       document.getElementById(tabId).classList.add('active');
     }
   </script>
-<div id="popup-alert" style="display: none;" class="popup-alert">
-  <img id="popup-frame" src="" style="width: 100%; max-height: 300px; object-fit: contain; border-bottom: 2px solid red; margin-bottom: 10px;" />
-  <p style="text-align: center; font-weight: bold;">Alarmă reală?</p>
-  <div class="popup-buttons" style="display: flex; justify-content: center; gap: 20px;">
-    <button onclick="confirmDetection(true)">DA</button>
-    <button onclick="confirmDetection(false)">NU</button>
-    <script src="{{ url_for('static', filename='scripts/main.js') }}"></script>
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="{{ url_for('static', filename='scripts/drone_ws.js') }}"></script>
+  <div id="popup-alert" style="display: none;" class="popup-alert">
+    <img id="popup-frame" src=""
+      style="width: 100%; max-height: 300px; object-fit: contain; border-bottom: 2px solid red; margin-bottom: 10px;" />
+    <p style="text-align: center; font-weight: bold;">Alarmă reală?</p>
+    <div class="popup-buttons" style="display: flex; justify-content: center; gap: 20px;">
+      <button onclick="confirmDetection(true)">DA</button>
+      <button onclick="confirmDetection(false)">NU</button>
 
+
+
+    </div>
   </div>
-</div>
-</div>
+  </div>
 </body>
-  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-<script src="{{ url_for('static', filename='scripts/drone_ws.js') }}"></script>
+
 </html>

@@ -584,6 +584,9 @@ def livings_inference_thread(video=None):
     model = YOLO("models/livings.pt")
     while True:
         obiecte_detectate.clear()
+        if not streaming:
+            time.sleep(0.1)
+            continue
             
         with frame_lock:
             data = frame_buffer.copy() if frame_buffer is not None else None
