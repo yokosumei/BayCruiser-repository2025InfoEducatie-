@@ -158,6 +158,15 @@ socket.on("detection_update", data => {
   const detectie = document.getElementById("detectie-info");
   const nivel = document.getElementById("nivel-info");
 
+  // Dacă e eveniment de înec
+  if (data.eveniment && data.gps) {
+    const msg = `${data.eveniment} la [${data.gps.lat}, ${data.gps.lon}] @ ${data.timestamp.toFixed?.(2) ?? data.timestamp}`;
+    detectie.textContent = "ALERTĂ: " + msg;
+    nivel.textContent = "NIVEL: " + (data.nivel || "-");
+    return;
+  }
+
+  // Dacă sunt obiecte detectate
   let text = "-";
   if (data.obiecte && data.obiecte.length > 0) {
     const count = {};
@@ -167,17 +176,21 @@ socket.on("detection_update", data => {
     text = Object.entries(count)
       .map(([k, v]) => `${v} ${k}${v > 1 ? "i" : ""}`)
       .join(", ");
-  }
 
-  detectie.textContent = "DETECȚIE: " + text;
-  nivel.textContent = "NIVEL: " + (data.nivel || "-");
+    detectie.textContent = "DETECȚIE: " + text;
+    nivel.textContent = "NIVEL: " + (data.nivel || "-");
 
-  if (data.obiecte && data.obiecte.includes("person") && !poseStarted) {
-    poseStarted = true;
-    changeRightStream("xgb");
-    console.log("[AUTO] Comut pe pose+xgb");
+    if (data.obiecte.includes("person") && !poseStarted) {
+      poseStarted = true;
+      changeRightStream("xgb");
+      console.log("[AUTO] Comut pe pose+xgb");
+    }
+  } else {
+    detectie.textContent = "DETECȚIE: -";
+    nivel.textContent = "NIVEL: -";
   }
 });
+
 
 // POPUP dacă detectează "om_la_inec"
 function checkDetectionStatus() {

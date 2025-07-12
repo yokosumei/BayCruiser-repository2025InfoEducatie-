@@ -762,17 +762,28 @@ def pose_xgb_inference_thread(video=None):
             prediction = xgb_predict(vector_1020)
 
             if prediction == "inec":
-                # 🔴 Text pe ecran
+
                 cv2.putText(frame, "POSIBIL INEC!", (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 0, 255), 3)
 
-                # 📌 Salvare detalii (ai opțiunea să salvezi într-un fișier sau listă globală)
-                logging.warning(f"[ALERTĂ INEC] Timp: {timestamp:.2f} | Lat: {gps_info['lat']:.6f} | Lon: {gps_info['lon']:.6f}")
+                lat = gps_info.get('lat')
+                lon = gps_info.get('lon')
+
+                lat_str = f"{lat:.6f}" if lat is not None else "necunoscut"
+                lon_str = f"{lon:.6f}" if lon is not None else "necunoscut"
+
+                logging.warning(f"[ALERTĂ INEC] Timp: {timestamp:.2f} | Lat: {lat_str} | Lon: {lon_str}")
+
+                socketio.emit("detection_update", {
+                    "eveniment": "POSIBIL INEC!",
+                    "nivel": "inec",
+                    "timestamp": timestamp,
+                    "gps": {
+                        "lat": lat_str,
+                        "lon": lon_str
+                    }}) 
 
                 # ✅ Activare servo / dronă / alertă
-                try:
-                    activate_alert(gps_info)  # tu creezi această funcție
-                except Exception as e:
-                    logging.error(f"Eroare la activare alertă: {e}")
+
 
         with pose_lock:
             pose_output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
