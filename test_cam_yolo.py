@@ -54,6 +54,11 @@ stop_detection_event = Event()
 detection_liv_thread = None
 stop_detection_liv_event = Event()
 
+segmnetation_thread= None
+stop_segmentation_event = Event()
+
+pose_thread= None
+stop_pose_event = Event()
 
 pose_triggered = False
 pose_thread_started = False
@@ -472,12 +477,13 @@ def yolo_function_thread():
         if not streaming:
             time.sleep(0.1)
             continue
-        logging.info("Firul yolo_function_thread este activ...................")
+        
         frame_counter += 1
         if frame_counter % detection_frame_skip != 0:
             time.sleep(0.01)
             continue
-            
+
+        logging.info("Firul yolo_function_thread este activ...................")    
         with frame_lock:
             data = frame_buffer.copy() if frame_buffer is not None else None
         if data is None:
@@ -644,7 +650,7 @@ def segmentation_inference_thread(video=None):
     session = ort.InferenceSession("models/yolo11n-seg-custom.onnx")
     input_name = session.get_inputs()[0].name
     cap = cv2.VideoCapture(0) if video is None else cv2.VideoCapture(video)
-
+    #stop_segmentation_event = Event()
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
@@ -692,7 +698,7 @@ def pose_xgb_inference_thread(video=None):
         cap = cv2.VideoCapture(0) if video is None else cv2.VideoCapture(video)
 
 
-    while True:
+    while not stop_pose_event.is_set():
         if video:
             ret, frame = cap.read()
             if not ret:
@@ -839,6 +845,8 @@ def set_right_stream():
         if selected == "yolo":
             #oprire alte threaduri
             stop_detection_liv_event.set()
+            stop_segmentation_event.set()
+            stop_pose_event.set()
              #pornire thread
             if detection_thread is None or not detection_thread.is_alive():
                 stop_detection_event.clear()
@@ -854,10 +862,23 @@ def set_right_stream():
             #oprire alte threaduri
             stop_detection_event.set()
             stop_detection_liv_event.set()
-            #start_thread(segmentation_inference_thread, "SegmentationDetection")
+            stop_pose_event.set()
+            #pornire thread
+            if segmnetation_thread is None or not segmnetation_thread.is_alive():
+                stop_segmentation_event.clear()
+                segmnetation_thread =start_thread(segmentation_inference_thread, "SegmentationDetection")
+            #repornire thread
+            if segmnetation_thread and segmnetation_thread.is_alive():
+                stop_segmentation_event.set()
+                segmnetation_thread.join()  # așteaptă să se termine curentul thread
+                stop_segmentation_event.clear()
+                segmnetation_thread =start_thread(segmentation_inference_thread, "SegmentationDetection") 
+
         elif selected == "mar":
             #oprire alte threaduri
             stop_detection_event.set()
+            stop_segmentation_event.set()
+            stop_pose_event.set()
             #pornire thread
             if detection_liv_thread is None or not detection_liv_thread.is_alive():
                 stop_detection_liv_event.clear()
@@ -872,7 +893,17 @@ def set_right_stream():
             #oprire alte threaduri
             stop_detection_event.set()
             stop_detection_liv_event.set()
-            start_thread(pose_xgb_inference_thread, "PoseXGBDetection")
+            stop_segmentation_event.set()
+            #pornire thread
+            if pose_thread is None or not pose_thread.is_alive():
+                stop_pose_event.clear()
+                pose_thread =start_thread(pose_xgb_inference_thread, "PoseXGBDetection")
+            #repornire thread
+            if pose_thread and pose_thread.is_alive():
+                stop_pose_event.set()
+                pose_thread.join()  # așteaptă să se termine curentul thread
+                stop_pose_event.clear()
+                pose_thread =start_thread(pose_xgb_inference_thread, "PoseXGBDetection") 
         else:
             logging.error(f"[FLASK] Invalid stream type: {selected}")
 
