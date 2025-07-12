@@ -850,7 +850,7 @@ def xgb_feed():
 
 @app.route("/set_right_stream", methods=["POST"])
 def set_right_stream():
-    global right_stream_type,detection_thread,detection_liv_thread,stop_detection_event,stop_detection_liv_event
+    global right_stream_type,detection_thread,detection_liv_thread,stop_detection_event,stop_detection_liv_event,pose_thread,stop_pose_event,segmnetation_thread,stop_segmentation_event
     data = request.json
     selected = data.get("type")
     logging.info(f"[FLASK] Set right stream type: {selected}")
