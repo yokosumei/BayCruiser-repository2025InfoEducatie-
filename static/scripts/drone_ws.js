@@ -1,4 +1,4 @@
-let socket;  // global
+//let socket;  // global
 let lastJoystickValues = { x: 0, y: 0, z: 0, yaw: 0 };
 
 function setupJoystick(containerId, axis) {
@@ -90,7 +90,7 @@ let getHJoystick = () => ({ dx: 0, dy: 0 });
 let getVJoystick = () => ({ dx: 0, dy: 0 });
 
 document.addEventListener("DOMContentLoaded", () => {
-  socket = io();
+ // socket = io();
 
   // === Comenzi drone ===
   window.TakeOff = function () {
