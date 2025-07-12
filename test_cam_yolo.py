@@ -602,13 +602,7 @@ def livings_inference_thread(video=None):
             x1, y1, x2, y2, score, cls_id = det[:6]
 
 
-            print(f"[INFO] Detecția #{i}:")
-            #print(f"  x1     = {x1}")
-            #print(f"  y1     = {y1}")
-            #print(f"  x2     = {x2}")
-            #print(f"  y2     = {y2}")
-            #print(f"  scor   = {score}")
-            #print(f"  cls_id = {cls_id}")
+            print(f" detecția #{i} are doar {len(det)} valori: {det}")
 
             if not (0.0 <= score <= 1.0):
                 print(f"[WARN] scorul nu este valid (score={score}) -> ignorăm")
