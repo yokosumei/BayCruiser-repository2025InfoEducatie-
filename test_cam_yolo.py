@@ -853,8 +853,10 @@ def right_feed():
 
             if right_stream_type == "yolo":
                 stop_detection_liv_event.set()
-                if not detection_thread.is_alive:
+
+                if detection_thread is None or not detection_thread.is_alive():
                     detection_thread =start_thread(yolo_function_thread, "DetectionThread")
+
                 with output_lock:
                     frame = yolo_output_frame or blank_frame()
 
@@ -866,7 +868,8 @@ def right_feed():
                     frame = seg_output_frame or blank_frame()
             elif right_stream_type == "mar":
                 stop_detection_event.is_set()
-                if not detection_liv_thread.is_alive:
+
+                if detection_liv_thread is None or not detection_thread.is_alive():
                     detection_liv_thread=start_thread(livings_inference_thread, "LivingsDetection")
 
 
