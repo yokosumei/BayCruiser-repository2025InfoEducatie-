@@ -590,11 +590,9 @@ def livings_inference_thread(video=None):
     logging.info("Firul livings_inference_thread a pornit.")
     global mar_output_frame, frame_buffer
     obiecte_detectate = []
-
-
-
     model = YOLO("models/livings.pt")
     while not stop_detection_liv_event.is_set():
+        logging.info("Firul livings_inference_thread rulează...")
         obiecte_detectate.clear()
         if not streaming:
             time.sleep(0.1)
@@ -938,6 +936,8 @@ def start_stream():
 def stop_stream():
     global streaming
     streaming = False
+    stop_detection_event.set()
+    stop_detection_liv_event.set()
     return jsonify({"status": "stopped"})
 
 @app.route("/detection_status")
