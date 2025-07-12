@@ -18,6 +18,7 @@ from collections import deque
 from dronekit import connect, VehicleMode, LocationGlobalRelative
 import math
 from pymavlink import mavutil
+from threading import Event
 
 logging.basicConfig(level=logging.INFO, format='[%(levelname)s] (%(threadName)s) %(message)s')
 
@@ -45,6 +46,15 @@ servo1.ChangeDutyCycle(0)
 servo2.ChangeDutyCycle(0)
 
 right_stream_type = "yolo"
+
+
+detection_thread = None
+stop_detection_event = Event()
+
+detection_liv_thread = None
+stop_detection_liv_event = Event()
+
+
 pose_triggered = False
 pose_thread_started = False
 streaming = False
@@ -450,14 +460,14 @@ def camera_thread():
             frame_buffer = {"image": frame.copy(), "gps": gps_snapshot}
         time.sleep(0.01)
 
-def detection_thread():
+def yolo_function_thread():
     global frame_buffer, yolo_output_frame, detected_flag, popup_sent, last_detection_time, frame_counter, event_location
     cam_x, cam_y = 320, 240
     PIXELS_PER_CM = 10
     object_present = False
     logging.info("Firul 2 (detectie) a pornit.")
     
-    while True:
+    while not stop_detection_event.is_set():
         if not streaming:
             time.sleep(0.1)
             continue
@@ -582,7 +592,7 @@ def livings_inference_thread(video=None):
 
 
     model = YOLO("models/livings.pt")
-    while True:
+    while not stop_detection_liv_event.is_set():
         obiecte_detectate.clear()
         if not streaming:
             time.sleep(0.1)
@@ -832,22 +842,39 @@ def set_right_stream():
 @app.route("/right_feed")
 def right_feed():
     def generate():
-        global right_stream_type
+        global right_stream_type,detection_thread,detection_liv_thread 
+    
         logging.info(f"[FLASK] right_feed: {right_stream_type}")
         while True:
             if not streaming:
                 time.sleep(0.1)
                 continue
+
+
             if right_stream_type == "yolo":
+                stop_detection_liv_event.set()
+                if not detection_thread.is_alive:
+                    detection_thread =start_thread(yolo_function_thread, "DetectionThread")
                 with output_lock:
                     frame = yolo_output_frame or blank_frame()
+
             elif right_stream_type == "seg":
+                stop_detection_event.is_set()
+                stop_detection_liv_event.set()
+
                 with seg_lock:
                     frame = seg_output_frame or blank_frame()
             elif right_stream_type == "mar":
+                stop_detection_event.is_set()
+                if not detection_liv_thread.is_alive:
+                    detection_liv_thread=start_thread(livings_inference_thread, "LivingsDetection")
+
+
                 with mar_lock:
                     frame = mar_output_frame or blank_frame()
             elif right_stream_type == "xgb":
+                stop_detection_event.is_set()
+                stop_detection_liv_event.set()
                 with pose_lock:
                     frame = pose_output_frame or blank_frame()
             else:
@@ -1055,8 +1082,8 @@ start_thread(status_broadcast_loop, "StatusBroadcast")
 
 if __name__ == "__main__":
     start_thread(camera_thread, "CameraThread")
-    start_thread(detection_thread, "DetectionThread")
     start_thread(stream_thread, "StreamThread")
+    
 
     logging.info("Pornire server Flask + SocketIO")
     socketio.run(app, host="0.0.0.0", port=5000)
