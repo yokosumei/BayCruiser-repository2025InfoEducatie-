@@ -813,8 +813,10 @@ def set_right_stream():
     global right_stream_type
     data = request.json
     selected = data.get("type")
+    logging.info(f"[FLASK] Set right stream type: {selected}")
     if selected in ["yolo", "seg", "mar", "xgb"]:
         right_stream_type = selected
+        logging.info(f"[FLASK] right_stream_type: {right_stream_type}")
         return jsonify({"status": "ok", "current": right_stream_type})
     return jsonify({"status": "invalid"})
 
@@ -822,6 +824,7 @@ def set_right_stream():
 def right_feed():
     def generate():
         global right_stream_type
+        logging.info(f"[FLASK] right_feed: {right_stream_type}")
         while True:
             if not streaming:
                 time.sleep(0.1)
