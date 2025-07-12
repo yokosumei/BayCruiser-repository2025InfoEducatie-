@@ -92,11 +92,10 @@
       </ul>
 
       <div>
-        <button onclick="startStream()" class="control">START</button>
-        <button onclick="toggleView()" class="circle2">⭕</button>
-        <button onclick="stopStream()" class="control">STOP</button>
+           <button id="toggleStartStopBtn" onclick="toggleStartStop()" class="control">START</button>
+           <button onclick="toggleView()" class="circle2">⭕</button>
+           <button id="toggleViewBtn" onclick="toggleStreamView()" class="control">RAW</button>
         <br>
-        <button id="toggleViewBtn" onclick="toggleStreamView()" class="control">RAW</button>
         <button onclick="changeRightStream('yolo')" class="control">YOLO</button>
         <button onclick="changeRightStream('seg')" class="control">SEG</button>
         <button onclick="changeRightStream('mar')" class="control">LIV</button>

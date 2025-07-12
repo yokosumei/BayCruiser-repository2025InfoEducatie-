@@ -5,6 +5,7 @@ let popupShown = false;
 let detectedPreviously = false;
 let poseStarted = false;
 let currentViewMode = 'raw';
+let currentStartStop = 'start'; // 'start' or 'stop'
 
 const socket = io();
 
@@ -54,6 +55,23 @@ function stopStream() {
       updateStatusIndicators();
     });
 }
+
+
+
+function toggleStartStop() {
+  const btn = document.getElementById("toggleStartStopBtn");
+  
+  if (currentStartStop === 'start') {
+    startStream();
+    btn.textContent = 'STOP';
+    currentStartStop = 'stop';
+  } else {
+    stopStream();
+    btn.textContent = 'START';
+    currentStartStop = 'start';
+  }
+}
+
 
 function toggleStreamView() {
   const btn = document.getElementById("toggleViewBtn");
