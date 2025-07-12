@@ -59,7 +59,7 @@ function stopStream() {
 function toggleStartStop() {
   const btn = document.getElementById("toggleStartStopBtn");
   const viewBtn = document.getElementById("toggleViewBtn");
-  currentViewMode = 'raw';
+  currentViewMode = 'split';
   toggleStreamView();
 
   if (currentStartStop === 'start') {
@@ -78,10 +78,6 @@ function toggleStartStop() {
 
 function toggleStreamView() {
   const btn = document.getElementById("toggleViewBtn");
-
-  if (!streamActive) {
-    return;
-  }
 
   if (currentViewMode === 'raw') {
     setStreamView('raw');
