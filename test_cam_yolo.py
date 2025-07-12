@@ -570,112 +570,61 @@ def stream_thread():
         with output_lock:
             output_frame = jpeg
         time.sleep(0.05)
-def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
-def compute_iou(box1, box2):
-    x1 = max(box1[0], box2[0])
-    y1 = max(box1[1], box2[1])
-    x2 = min(box1[2], box2[2])
-    y2 = min(box1[3], box2[3])
-    inter_area = max(0, x2 - x1) * max(0, y2 - y1)
-    box1_area = (box1[2] - box1[0]) * (box1[3] - box1[1])
-    box2_area = (box2[2] - box2[0]) * (box2[3] - box2[1])
-    union_area = box1_area + box2_area - inter_area
-    return inter_area / union_area if union_area > 0 else 0
 
-def non_max_suppression(predictions, conf_threshold=0.3, iou_threshold=0.45):
-    boxes = []
 
-    for i, pred in enumerate(predictions):
-        x_center, y_center, w, h = pred[0:4]
-        objectness = pred[4]
-        class_scores = pred[5:]
-        cls_id = np.argmax(class_scores)
-        cls_score = class_scores[cls_id]
-        conf = objectness * cls_score
-
-        if conf < conf_threshold:
-            continue
-
-        x1 = x_center - w / 2
-        y1 = y_center - h / 2
-        x2 = x_center + w / 2
-        y2 = y_center + h / 2
-        boxes.append([x1, y1, x2, y2, conf, cls_id])
-
-    boxes = sorted(boxes, key=lambda x: x[4], reverse=True)
-    selected = []
-
-    while boxes:
-        chosen_box = boxes.pop(0)
-        selected.append(chosen_box)
-        boxes = [box for box in boxes if compute_iou(chosen_box, box) < iou_threshold]
-
-    return selected
 
 def livings_inference_thread(video=None):
     logging.info("Firul livings_inference_thread a pornit.")
-    if os.path.exists("models/livings.onnx"):
-        print("Fișierul există!")
-    else:
-        print("Fișierul NU există.")
     global mar_output_frame, pose_triggered
-   
-    session = ort.InferenceSession("models/livings.onnx")
-    input_name = session.get_inputs()[0].name
-    print("input_name:", input_name)
 
+
+
+    model = YOLO("models/livings.pt")
     while True:
-        # Citire frame de la PiCamera2
-        frame = picam2.capture_array()
+        if not streaming:
+            time.sleep(0.1)
+            continue
 
-        input_img = cv2.resize(frame, (640, 640))
-        img = cv2.cvtColor(input_img, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
-        img = np.transpose(img, (2, 0, 1))[np.newaxis, :]
+            
+        with frame_lock:
+            data = frame_buffer.copy() if frame_buffer is not None else None
+        if data is None:
+            time.sleep(0.05)
+            continue
+            
+        frame = data["image"]
+        gps_info = data["gps"]
+        
+        results = model.predict(source=frame, conf=0.4, stream=True)
+        
+        
+        for r in results:
+            boxes = r.boxes
+            for box in boxes:
+                cls_id = int(box.cls[0])
+                conf = float(box.conf[0])
+                
+                if 0 <= cls_id < 3:
+                    name = ["rechin", "meduza", "person"][cls_id]
+                else:
+                    print(f"[WARN] cls_id invalid {cls_id} -> ignorăm")
+                    continue
+                
+                label = f"{name} {conf:.2f}"
+                obiecte_detectate.append(name)
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 255), 2)
+                cv2.putText(frame, label, (x1, y1 - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
 
-        outputs = session.run(None, {input_name: img})
-        raw_output = outputs[0][0]  # [8400, 8]
-
-        activated_output = sigmoid(raw_output[:, :5])  # x, y, w, h, objectness
-        class_probs = sigmoid(raw_output[:, 5:]) 
-
-        final_input = np.concatenate([activated_output, class_probs], axis=1)  # [8400, 8]
-        detections = non_max_suppression(final_input)
-
-
-        obiecte_detectate = []
-        for i,det in enumerate(detections):
-            if len(det) < 6:
-                print(f"[WARN] detecția #{i} are doar {len(det)} valori: {det}")
-                continue
-            x1, y1, x2, y2, score, cls_id = det[:6]
-
-
-            print(f" detecția #{i} are doar {len(det)} valori: {det}")
-
-            if not (0.0 <= score <= 1.0):
-                print(f"[WARN] scorul nu este valid (score={score}) -> ignorăm")
-                continue
-
-            label = int(round(cls_id))
-            if 0 <= label < 3:
-                name = ["rechin", "meduza", "person"][label]
-            else:
-                print(f"[WARN] cls_id invalid (label={label}) -> ignorăm")
-                continue
-            print(f"  name   = {name}")
-
-            obiecte_detectate.append(name)
-            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
-            cv2.putText(frame, name, (int(x1), int(y1) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-
-            if name == "person":
-                pose_triggered = True
-
+        # Afișare
+        cv2.imshow("YOLOv11n - Live Detection", frame)
         socketio.emit("detection_update", {"obiecte": obiecte_detectate})
-        with mar_lock:
+    
+        with output_lock:
             mar_output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
-        time.sleep(0.05)
+        time.sleep(0.01)
+
 
 def segmentation_inference_thread(video=None):
     global seg_output_frame
