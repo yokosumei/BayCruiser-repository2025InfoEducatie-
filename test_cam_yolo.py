@@ -863,13 +863,13 @@ def set_right_stream():
             #pornire thread
             if detection_liv_thread is None or not detection_liv_thread.is_alive():
                 stop_detection_event.clear()
-                detection_liv_thread =start_thread(livings_inference_thread, "LivingsDetection"
+                detection_liv_thread =start_thread(livings_inference_thread, "LivingsDetection")
             #repornire thread
             if detection_liv_thread and detection_liv_thread.is_alive():
                 stop_detection_event.set()
                 detection_liv_thread.join()  # așteaptă să se termine curentul thread
                 detection_liv_thread.clear()
-                detection_liv_thread =start_thread(livings_inference_thread, "LivingsDetection" 
+                detection_liv_thread =start_thread(livings_inference_thread, "LivingsDetection") 
         elif selected == "xgb":
             #oprire alte threaduri
             stop_detection_event.set()
