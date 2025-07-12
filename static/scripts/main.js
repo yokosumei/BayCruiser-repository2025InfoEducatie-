@@ -4,6 +4,7 @@ let streamActive = false;
 let popupShown = false;
 let detectedPreviously = false;
 let poseStarted = false;
+let currentViewMode = 'raw';
 
 const socket = io();
 
@@ -53,6 +54,21 @@ function stopStream() {
       updateStatusIndicators();
     });
 }
+
+function toggleStreamView() {
+  const btn = document.getElementById("toggleViewBtn");
+
+  if (currentViewMode === 'raw') {
+    setStreamView('raw');
+    btn.textContent = 'SPLIT';
+    currentViewMode = 'split';
+  } else {
+    setStreamView('split');
+    btn.textContent = 'RAW';
+    currentViewMode = 'raw';
+  }
+}
+
 
 // comută între view RAW / SPLIT
 function setStreamView(mode) {
