@@ -577,11 +577,13 @@ def stream_thread():
 def livings_inference_thread(video=None):
     logging.info("Firul livings_inference_thread a pornit.")
     global mar_output_frame, frame_buffer
+    obiecte_detectate = []
 
 
 
     model = YOLO("models/livings.pt")
     while True:
+        obiecte_detectate.clear()
             
         with frame_lock:
             data = frame_buffer.copy() if frame_buffer is not None else None
