@@ -859,7 +859,7 @@ def right_feed():
                 stop_detection_event.set()
                 detection_thread.join()  # așteaptă să se termine curentul thread
                 stop_detection_event.clear()
-                detection_thread =start_thread(yolo_function_thread, "DetectionThread"))    
+                detection_thread =start_thread(yolo_function_thread, "DetectionThread")    
 
             with output_lock:
                 frame = yolo_output_frame or blank_frame()
