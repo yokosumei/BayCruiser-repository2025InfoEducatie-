@@ -468,6 +468,7 @@ def yolo_function_thread():
     logging.info("Firul 2 (detectie) a pornit.")
     
     while not stop_detection_event.is_set():
+        logging.info("Firul 2 (detectie) a pornit.")
         if not streaming:
             time.sleep(0.1)
             continue
