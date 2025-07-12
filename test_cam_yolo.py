@@ -566,6 +566,7 @@ def stream_thread():
         if data is None:
             time.sleep(0.05)
             continue
+        
         jpeg = cv2.imencode('.jpg', data["image"])[1].tobytes()
         with output_lock:
             output_frame = jpeg
@@ -613,8 +614,7 @@ def livings_inference_thread(video=None):
                 cv2.putText(frame, label, (x1, y1 - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
 
-        # Afișare
-        cv2.imshow("YOLOv11n - Live Detection", frame)
+
         socketio.emit("detection_update", {"obiecte": obiecte_detectate})
     
         with output_lock:
