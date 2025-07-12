@@ -595,11 +595,12 @@ def livings_inference_thread(video=None):
         detections = outputs[0][0]
 
         obiecte_detectate = []
-        for det in detections:
-            x1, y1, x2, y2, score, cls_id = det[:6]
+        for i,det in enumerate(detections):
             if len(det) < 6:
                 print(f"[WARN] detecția #{i} are doar {len(det)} valori: {det}")
                 continue
+            x1, y1, x2, y2, score, cls_id = det[:6]
+
             if score < 0.5:
                 continue
 
