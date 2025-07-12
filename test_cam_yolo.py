@@ -45,7 +45,7 @@ time.sleep(0.3)
 servo1.ChangeDutyCycle(0)
 servo2.ChangeDutyCycle(0)
 
-right_stream_type = "vctr"
+right_stream_type = "daria"
 
 
 detection_thread = None
@@ -859,13 +859,13 @@ def right_feed():
                 frame = yolo_output_frame or blank_frame()
 
         elif right_stream_type == "seg":
-            stop_detection_event.is_set()
+            stop_detection_event.set()
             stop_detection_liv_event.set()
 
             with seg_lock:
                 frame = seg_output_frame or blank_frame()
         elif right_stream_type == "mar":
-            stop_detection_event.is_set()
+            stop_detection_event.set()
 
             if detection_liv_thread is None or not detection_thread.is_alive():
                 detection_liv_thread=start_thread(livings_inference_thread, "LivingsDetection")
@@ -874,7 +874,7 @@ def right_feed():
             with mar_lock:
                 frame = mar_output_frame or blank_frame()
         elif right_stream_type == "xgb":
-            stop_detection_event.is_set()
+            stop_detection_event.set()
             stop_detection_liv_event.set()
             with pose_lock:
                 frame = pose_output_frame or blank_frame()
