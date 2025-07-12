@@ -578,6 +578,12 @@ def livings_inference_thread(video=None):
     session = ort.InferenceSession("/models/livings.onnx")
     input_name = session.get_inputs()[0].name
 
+    if os.path.exists("/models/livings.onnxt"):
+        print("Fișierul există!")
+    else:
+        print("Fișierul NU există.")
+    print("input_name:",input_name)
+
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
