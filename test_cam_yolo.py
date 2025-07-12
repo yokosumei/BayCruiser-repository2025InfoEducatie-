@@ -709,9 +709,7 @@ def segmentation_inference_thread(video=None):
 def pose_xgb_inference_thread(video=None):
     global pose_output_frame
 
-    session = ort.InferenceSession("models/yolo11n-pose.pt")
-    input_name = session.get_inputs()[0].name
-    output_name = session.get_outputs()[0].name
+    model = YOLO("models/yolo11n-pose.pt")
     buffer = deque(maxlen=30)
 
     while not stop_pose_event.is_set():
@@ -729,33 +727,46 @@ def pose_xgb_inference_thread(video=None):
 
         frame = data["image"]
         gps_info = data["gps"]
+        timestamp = time.time()
 
-        img_resized = cv2.resize(frame, (640, 640))
-        img_rgb = cv2.cvtColor(img_resized, cv2.COLOR_BGR2RGB)
-        img_input = img_rgb.astype(np.float32) / 255.0
-        img_input = np.transpose(img_input, (2, 0, 1))[np.newaxis, :]
+        results = model.predict(frame, stream=True)
 
-        outputs = session.run([output_name], {input_name: img_input})
-        keypoints = outputs[0][0]  # [1, 17, 3]
+        keypoints = None
+        for result in results:
+            if result.keypoints is not None and len(result.keypoints.xy) > 0:
+                keypoints = result.keypoints.xy[0].cpu().numpy()  # [17, 2]
+                confs = result.keypoints.conf[0].cpu().numpy()    # [17]
 
-        if keypoints.shape != (17, 3):
+        if keypoints is None or keypoints.shape != (17, 2):
             continue
 
-        vec34 = keypoints[:, :2].flatten()
+        vec34 = keypoints.flatten()
         buffer.append(vec34)
 
-        for (x, y, conf) in keypoints:
-            if conf > 0.4:
-                cv2.circle(img_resized, (int(x), int(y)), 3, (0, 255, 0), -1)
+        # Desenare keypoints
+        for i, (x, y) in enumerate(keypoints):
+            if confs[i] > 0.4:
+                cv2.circle(frame, (int(x), int(y)), 3, (0, 255, 0), -1)
 
         if len(buffer) == 30:
             vector_1020 = np.array(buffer).flatten()
             prediction = xgb_predict(vector_1020)
+
             if prediction == "inec":
-                cv2.putText(img_resized, "POSIBIL INEC!", (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 0, 255), 3)
+                # 🔴 Text pe ecran
+                cv2.putText(frame, "POSIBIL INEC!", (20, 60), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 0, 255), 3)
+
+                # 📌 Salvare detalii (ai opțiunea să salvezi într-un fișier sau listă globală)
+                logging.warning(f"[ALERTĂ INEC] Timp: {timestamp:.2f} | Lat: {gps_info['lat']:.6f} | Lon: {gps_info['lon']:.6f}")
+
+                # ✅ Activare servo / dronă / alertă
+                try:
+                    activate_alert(gps_info)  # tu creezi această funcție
+                except Exception as e:
+                    logging.error(f"Eroare la activare alertă: {e}")
 
         with pose_lock:
-            pose_output_frame = cv2.imencode('.jpg', img_resized)[1].tobytes()
+            pose_output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
 
         time.sleep(0.05)
 
