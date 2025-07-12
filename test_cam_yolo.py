@@ -601,8 +601,6 @@ def livings_inference_thread(video=None):
                 continue
             x1, y1, x2, y2, score, cls_id = det[:6]
 
-            if score < 0.5:
-                continue
 
             print(f"[INFO] Detecția #{i}:")
             print(f"  x1     = {x1}")
@@ -612,8 +610,18 @@ def livings_inference_thread(video=None):
             print(f"  scor   = {score}")
             print(f"  cls_id = {cls_id}")
 
-            label = int(cls_id)
-            name = ["rechin", "meduza", "person"][label]
+            if not (0.0 <= score <= 1.0):
+                print(f"[WARN] scorul nu este valid (score={score}) -> ignorăm")
+                continue
+
+            label = int(round(cls_id))
+            if 0 <= label < 3:
+                name = ["rechin", "meduza", "person"][label]
+            else:
+                print(f"[WARN] cls_id invalid (label={label}) -> ignorăm")
+                continue
+
+
             obiecte_detectate.append(name)
             cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
             cv2.putText(frame, name, (int(x1), int(y1) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
