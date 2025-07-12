@@ -604,7 +604,7 @@ def livings_inference_thread(video=None):
                 conf = float(box.conf[0])
                 
                 if 0 <= cls_id < 3:
-                    name = ["rechin", "meduza", "person"][cls_id]
+                    name = ["Meduze", "Rechin", "person"][cls_id]
                 else:
                     print(f"[WARN] cls_id invalid {cls_id} -> ignorăm")
                     continue
