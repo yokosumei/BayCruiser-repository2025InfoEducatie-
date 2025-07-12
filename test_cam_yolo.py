@@ -3,6 +3,7 @@ from flask_socketio import SocketIO
 from werkzeug.utils import secure_filename
 import onnxruntime as ort
 import uuid
+import joblib
 import eventlet
 from ultralytics import YOLO
 from picamera2 import Picamera2
@@ -68,6 +69,14 @@ output_lock = threading.Lock()
 mar_lock = threading.Lock()
 seg_lock = threading.Lock()
 pose_lock = threading.Lock()
+
+xgb_model = joblib.load("models/xgb_pipeline.joblib")
+label_map = {0: "inot", 1: "inec"}
+
+def xgb_predict(vector_1020):
+    vector_1020 = np.array(vector_1020).reshape(1, -1)
+    prediction = xgb_model.predict(vector_1020)[0]
+    return label_map.get(prediction, str(prediction))
 
 output_frame_pose = None
 output_lock_pose = threading.Lock()
@@ -647,84 +656,79 @@ def livings_inference_thread(video=None):
 def segmentation_inference_thread(video=None):
     global seg_output_frame
 
-    assert os.path.exists("models/yolo11n-seg-custom.onnx"), "Modelul de segmentare lipsește!"
-
-    session = ort.InferenceSession("models/yolo11n-seg-custom.onnx")
-    input_name = session.get_inputs()[0].name
-
-
+    logging.info("Firul segmentation_inference_thread rulează...")
+    model = YOLO("models/yolo11n-seg-custom.pt")  # <- model YOLOv11n SEGMENTARE
 
     while not stop_segmentation_event.is_set():
-        logging.info("Firul segmentation_inference_thread rulează...")
         if not streaming:
             time.sleep(0.1)
             continue
-            
+
         with frame_lock:
             data = frame_buffer.copy() if frame_buffer is not None else None
         if data is None:
             time.sleep(0.05)
             continue
-            
+
         frame = data["image"]
         gps_info = data["gps"]
 
-        # pregătire frame (la fel ca în livings)
-        input_img = cv2.resize(frame, (640, 640))
-        img = cv2.cvtColor(input_img, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
-        img = np.transpose(img, (2, 0, 1))[np.newaxis, :]
-
-        outputs = session.run(None, {input_name: img})
-        detections = outputs[0][0]
+        # rulează modelul YOLOv11n pe frame
+        results = model.predict(source=frame, conf=0.5, stream=False)
 
         nivel_detectat = None
-        for det in detections:
-            x1, y1, x2, y2, score, cls_id = det
-            if score < 0.5:
-                continue
-            cls = int(cls_id)
-            name = ["lvl_mic", "lvl_mediu", "lvl_adanc", "rip_current"][cls]
-            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0,255,255), 2)
-            cv2.putText(frame, name, (int(x1), int(y1)-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,255), 2)
-            if name.startswith("lvl"):
-                nivel_detectat = name.replace("lvl_", "")
+        annotated = frame.copy()
+
+        for r in results:
+            boxes = r.boxes
+            names = r.names
+            cls_ids = boxes.cls.tolist()
+            coords = boxes.xyxy.cpu().numpy()
+
+            for i, cls_id in enumerate(cls_ids):
+                label = names[int(cls_id)]
+                x1, y1, x2, y2 = map(int, coords[i])
+                cv2.rectangle(annotated, (x1, y1), (x2, y2), (0, 255, 255), 2)
+                cv2.putText(annotated, label, (x1, y1 - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+
+                if label in ["lvl_mic", "lvl_mediu", "lvl_adanc"]:
+                    nivel_detectat = label.replace("lvl_", "")
+                elif label == "rip_current":
+                    nivel_detectat = "rip_current"
 
         socketio.emit("detection_update", {"nivel": nivel_detectat})
+
         with seg_lock:
-            seg_output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
+            seg_output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
+
         time.sleep(0.05)
 
-    cap.release()
 
 
 def pose_xgb_inference_thread(video=None):
     global pose_output_frame
-    from your_xgb_module import xgb_predict  # înlocuiește dacă ai un fișier propriu
 
     session = ort.InferenceSession("models/yolo11n-pose.pt")
     input_name = session.get_inputs()[0].name
     output_name = session.get_outputs()[0].name
     buffer = deque(maxlen=30)
 
-
-
-
     while not stop_pose_event.is_set():
-
         logging.info("Firul pose_xgb_inference_thread rulează...")
+
         if not streaming:
             time.sleep(0.1)
             continue
-            
+
         with frame_lock:
             data = frame_buffer.copy() if frame_buffer is not None else None
         if data is None:
             time.sleep(0.05)
             continue
-            
+
         frame = data["image"]
         gps_info = data["gps"]
- 
 
         img_resized = cv2.resize(frame, (640, 640))
         img_rgb = cv2.cvtColor(img_resized, cv2.COLOR_BGR2RGB)
@@ -732,12 +736,12 @@ def pose_xgb_inference_thread(video=None):
         img_input = np.transpose(img_input, (2, 0, 1))[np.newaxis, :]
 
         outputs = session.run([output_name], {input_name: img_input})
-        keypoints = outputs[0][0]  # [1, 17, 3] → (x, y, conf)
+        keypoints = outputs[0][0]  # [1, 17, 3]
 
         if keypoints.shape != (17, 3):
             continue
 
-        vec34 = keypoints[:, :2].flatten()  # [17, 2] → [34]
+        vec34 = keypoints[:, :2].flatten()
         buffer.append(vec34)
 
         for (x, y, conf) in keypoints:
@@ -755,13 +759,6 @@ def pose_xgb_inference_thread(video=None):
 
         time.sleep(0.05)
 
-    if cap:
-        cap.release()
-
-
-def xgb_predict(vector_1020):
-    # dummy fallback, înlocuiește cu modelul real când îl ai
-    return "inec" if np.random.rand() < 0.2 else "inot"
 
 # === Flask Routes ===
 @app.route("/")
