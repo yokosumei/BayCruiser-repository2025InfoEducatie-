@@ -701,28 +701,30 @@ def pose_xgb_inference_thread(video=None):
     global pose_output_frame
     from your_xgb_module import xgb_predict  # înlocuiește dacă ai un fișier propriu
 
-    session = ort.InferenceSession("models/yolo11n-pose.onnx")
+    session = ort.InferenceSession("models/yolo11n-pose.pt")
     input_name = session.get_inputs()[0].name
     output_name = session.get_outputs()[0].name
     buffer = deque(maxlen=30)
 
-    cap = None
-    if video:
-        cap = cv2.VideoCapture(0) if video is None else cv2.VideoCapture(video)
+
 
 
     while not stop_pose_event.is_set():
-        if video:
-            ret, frame = cap.read()
-            if not ret:
-                break
-        else:
-            with frame_lock:
-                data = frame_buffer.copy() if frame_buffer else None
-            if not data:
-                time.sleep(0.05)
-                continue
-            frame = data["image"]
+
+        logging.info("Firul pose_xgb_inference_thread rulează...")
+        if not streaming:
+            time.sleep(0.1)
+            continue
+            
+        with frame_lock:
+            data = frame_buffer.copy() if frame_buffer is not None else None
+        if data is None:
+            time.sleep(0.05)
+            continue
+            
+        frame = data["image"]
+        gps_info = data["gps"]
+ 
 
         img_resized = cv2.resize(frame, (640, 640))
         img_rgb = cv2.cvtColor(img_resized, cv2.COLOR_BGR2RGB)
