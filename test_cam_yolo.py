@@ -734,8 +734,17 @@ def pose_xgb_inference_thread(video=None):
         keypoints = None
         for result in results:
             if result.keypoints is not None and len(result.keypoints.xy) > 0:
-                keypoints = result.keypoints.xy[0].cpu().numpy()  # [17, 2]
-                confs = result.keypoints.conf[0].cpu().numpy()    # [17]
+                if result.keypoints is not None and result.keypoints.xy is not None:
+                    keypoints_tensor = result.keypoints.xy
+                    confs_tensor = result.keypoints.conf
+
+                    if len(keypoints_tensor) > 0 and confs_tensor is not None:
+                        keypoints = keypoints_tensor[0].cpu().numpy()
+                        confs = confs_tensor[0].cpu().numpy()
+                    else:
+                        continue
+                else:
+                    continue
 
         if keypoints is None or keypoints.shape != (17, 2):
             continue
