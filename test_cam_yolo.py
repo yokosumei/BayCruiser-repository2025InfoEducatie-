@@ -596,9 +596,21 @@ def livings_inference_thread(video=None):
 
         obiecte_detectate = []
         for det in detections:
-            x1, y1, x2, y2, score, cls_id = det
+            x1, y1, x2, y2, score, cls_id = det[:6]
+            if len(det) < 6:
+                print(f"[WARN] detecția #{i} are doar {len(det)} valori: {det}")
+                continue
             if score < 0.5:
                 continue
+
+            print(f"[INFO] Detecția #{i}:")
+            print(f"  x1     = {x1}")
+            print(f"  y1     = {y1}")
+            print(f"  x2     = {x2}")
+            print(f"  y2     = {y2}")
+            print(f"  scor   = {score}")
+            print(f"  cls_id = {cls_id}")
+
             label = int(cls_id)
             name = ["rechin", "meduza", "person"][label]
             obiecte_detectate.append(name)
@@ -612,7 +624,7 @@ def livings_inference_thread(video=None):
         with mar_lock:
             mar_output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
         time.sleep(0.05)
-        
+
 def segmentation_inference_thread(video=None):
     global seg_output_frame
     assert os.path.exists("models/yolo11n-seg-custom.onnx"), "Modelul de segmentare lipsește!"
