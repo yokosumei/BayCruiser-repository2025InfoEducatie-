@@ -1,5 +1,5 @@
 ///video
-let streaming = false;
+
 let streamActive = false;
 let popupShown = false;
 let detectedPreviously = false;
@@ -38,8 +38,7 @@ function startStream() {
   fetch('/start_stream')
     .then(() => {
       streamActive = true;
-      streaming = true;
-      setStreamView('raw'); 
+      toggleStreamView() ;
       updateStatusIndicators();
     });
 }
@@ -49,7 +48,6 @@ function stopStream() {
   fetch('/stop_stream')
     .then(() => {
       streamActive = false;
-      streaming = false;
       document.getElementById('rawStream').style.display = 'none';
       document.getElementById('rightStream').style.display = 'none';
       updateStatusIndicators();
@@ -60,21 +58,29 @@ function stopStream() {
 
 function toggleStartStop() {
   const btn = document.getElementById("toggleStartStopBtn");
+        currentViewMode == 'raw';
+      toggleStreamView() ;
   
   if (currentStartStop === 'start') {
     startStream();
     btn.textContent = 'STOP';
     currentStartStop = 'stop';
+    document.getElementById("toggleViewBtn").enabeld=true;
   } else {
     stopStream();
     btn.textContent = 'START';
     currentStartStop = 'start';
+      document.getElementById("toggleViewBtn").enabeld=false;
   }
 }
 
 
 function toggleStreamView() {
   const btn = document.getElementById("toggleViewBtn");
+
+    if (!streamActive) {
+    return;
+  }
 
   if (currentViewMode === 'raw') {
     setStreamView('raw');
@@ -93,7 +99,7 @@ function setStreamView(mode) {
   const raw = document.getElementById("rawStream");
   const right = document.getElementById("rightStream");
 
-  if (!streaming) {
+  if (!streamActive) {
     raw.style.display = "none";
     right.style.display = "none";
     return;
