@@ -1,4 +1,4 @@
-///video
+changeRightStream///video
 
 let streamActive = false;
 let popupShown = false;

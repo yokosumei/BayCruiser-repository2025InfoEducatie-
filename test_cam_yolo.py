@@ -29,7 +29,7 @@ socketio = SocketIO(app, async_mode='threading')
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-model = YOLO("my_model.pt")
+
 picam2 = Picamera2()
 picam2.configure(picam2.create_video_configuration(main={"format": "RGB888", "size": (640, 480)}))
 picam2.start()
@@ -465,10 +465,10 @@ def yolo_function_thread():
     cam_x, cam_y = 320, 240
     PIXELS_PER_CM = 10
     object_present = False
-  
+    model = YOLO("my_model.pt")
     
     while not stop_detection_event.is_set():
-        logging.info("Firul yolo_function_thread este activ")
+        logging.info("Firul yolo_function_thread este activ...................")
         if not streaming:
             time.sleep(0.1)
             continue
@@ -846,47 +846,43 @@ def right_feed():
         global right_stream_type,detection_thread,detection_liv_thread 
     
         logging.info(f"[FLASK] right_feed: {right_stream_type}")
-        while True:
-            if not streaming:
-                time.sleep(0.1)
-                continue
+       # while True:
+
+        if right_stream_type == "yolo":
+            stop_detection_liv_event.set()
+            logging.info("se verifica  yolo_function_thread este activ")
+
+            if detection_thread is None or not detection_thread.is_alive():
+                detection_thread =start_thread(yolo_function_thread, "DetectionThread")
+
+            with output_lock:
+                frame = yolo_output_frame or blank_frame()
+
+        elif right_stream_type == "seg":
+            stop_detection_event.is_set()
+            stop_detection_liv_event.set()
+
+            with seg_lock:
+                frame = seg_output_frame or blank_frame()
+        elif right_stream_type == "mar":
+            stop_detection_event.is_set()
+
+            if detection_liv_thread is None or not detection_thread.is_alive():
+                detection_liv_thread=start_thread(livings_inference_thread, "LivingsDetection")
 
 
-            if right_stream_type == "yolo":
-                stop_detection_liv_event.set()
-                logging.info("se verifica  yolo_function_thread este activ")
+            with mar_lock:
+                frame = mar_output_frame or blank_frame()
+        elif right_stream_type == "xgb":
+            stop_detection_event.is_set()
+            stop_detection_liv_event.set()
+            with pose_lock:
+                frame = pose_output_frame or blank_frame()
+        else:
+            frame = blank_frame()
 
-                if detection_thread is None or not detection_thread.is_alive():
-                    detection_thread =start_thread(yolo_function_thread, "DetectionThread")
-
-                with output_lock:
-                    frame = yolo_output_frame or blank_frame()
-
-            elif right_stream_type == "seg":
-                stop_detection_event.is_set()
-                stop_detection_liv_event.set()
-
-                with seg_lock:
-                    frame = seg_output_frame or blank_frame()
-            elif right_stream_type == "mar":
-                stop_detection_event.is_set()
-
-                if detection_liv_thread is None or not detection_thread.is_alive():
-                    detection_liv_thread=start_thread(livings_inference_thread, "LivingsDetection")
-
-
-                with mar_lock:
-                    frame = mar_output_frame or blank_frame()
-            elif right_stream_type == "xgb":
-                stop_detection_event.is_set()
-                stop_detection_liv_event.set()
-                with pose_lock:
-                    frame = pose_output_frame or blank_frame()
-            else:
-                frame = blank_frame()
-
-            yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
-            time.sleep(0.05)
+        yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
+        time.sleep(0.05)
     return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
 @app.route("/start_official")
