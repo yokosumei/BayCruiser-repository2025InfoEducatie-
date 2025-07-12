@@ -1,7 +1,6 @@
 from flask import Flask, render_template, Response, request, jsonify
 from flask_socketio import SocketIO
 from werkzeug.utils import secure_filename
-from threading import Lock
 import onnxruntime as ort
 import uuid
 import eventlet
@@ -575,12 +574,13 @@ def stream_thread():
 def livings_inference_thread(video=None):
     logging.info("Firul livings_inference_thread a pornit.")
     global mar_output_frame, pose_triggered
-    cap = cv2.VideoCapture(0) if video is None else cv2.VideoCapture(video)
+    #cap = cv2.VideoCapture(0) if video is None else cv2.VideoCapture(video)
+    cap = cv2.VideoCapture(video)
     session = ort.InferenceSession("models/livings.onnx")
     input_name = session.get_inputs()[0].name
 
 
-    if os.path.exists("/models/livings.onnxt"):
+    if os.path.exists("models/livings.onnxt"):
         print("Fișierul există!")
     else:
         print("Fișierul NU există.")
