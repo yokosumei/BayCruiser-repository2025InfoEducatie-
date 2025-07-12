@@ -468,10 +468,11 @@ def yolo_function_thread():
     model = YOLO("my_model.pt")
     
     while not stop_detection_event.is_set():
-        logging.info("Firul yolo_function_thread este activ...................")
+    
         if not streaming:
             time.sleep(0.1)
             continue
+        logging.info("Firul yolo_function_thread este activ...................")
         frame_counter += 1
         if frame_counter % detection_frame_skip != 0:
             time.sleep(0.01)
@@ -837,6 +838,48 @@ def set_right_stream():
     if selected in ["yolo", "seg", "mar", "xgb"]:
         right_stream_type = selected
         logging.info(f"[FLASK] right_stream_type: {right_stream_type}")
+        if selected == "yolo":
+            #oprire alte threaduri
+            stop_detection_liv_event.set()
+             #pornire thread
+            if detection_thread is None or not detection_thread.is_alive():
+                stop_detection_event.clear()
+                detection_thread =start_thread(yolo_function_thread, "DetectionThread")
+            #repornire thread
+            if detection_thread and detection_thread.is_alive():
+                stop_detection_event.set()
+                detection_thread.join()  # așteaptă să se termine curentul thread
+                stop_detection_event.clear()
+                detection_thread =start_thread(yolo_function_thread, "DetectionThread")    
+
+        elif selected == "seg":
+            #oprire alte threaduri
+            stop_detection_event.set()
+            stop_detection_liv_event.set()
+            #start_thread(segmentation_inference_thread, "SegmentationDetection")
+        elif selected == "mar":
+            #oprire alte threaduri
+            stop_detection_event.set()
+            #pornire thread
+            if detection_liv_thread is None or not detection_liv_thread.is_alive():
+                stop_detection_event.clear()
+                detection_liv_thread =start_thread(livings_inference_thread, "LivingsDetection"
+            #repornire thread
+            if detection_liv_thread and detection_liv_thread.is_alive():
+                stop_detection_event.set()
+                detection_liv_thread.join()  # așteaptă să se termine curentul thread
+                detection_liv_thread.clear()
+                detection_liv_thread =start_thread(livings_inference_thread, "LivingsDetection" 
+        elif selected == "xgb":
+            #oprire alte threaduri
+            stop_detection_event.set()
+            stop_detection_liv_event.set()
+            start_thread(pose_xgb_inference_thread, "PoseXGBDetection")
+        else:
+            logging.error(f"[FLASK] Invalid stream type: {selected}")
+
+
+
         return jsonify({"status": "ok", "current": right_stream_type})
     return jsonify({"status": "invalid"})
 
@@ -844,51 +887,27 @@ def set_right_stream():
 def right_feed():
     def generate():
         global right_stream_type,detection_thread,detection_liv_thread 
-    
-        logging.info(f"[FLASK] right_feed: {right_stream_type}")
-       # while True:
 
-        if right_stream_type == "yolo":
-            stop_detection_liv_event.set()
-            logging.info("se verifica  yolo_function_thread este activ")
+        while True:
+            if right_stream_type == "yolo":
+                with output_lock:
+                    frame = yolo_output_frame or blank_frame()
+            elif right_stream_type == "seg":
 
-            if detection_thread is None or not detection_thread.is_alive():
-                stop_detection_event.clear()
-                detection_thread =start_thread(yolo_function_thread, "DetectionThread")
-            if detection_thread and detection_thread.is_alive():
-                stop_detection_event.set()
-                detection_thread.join()  # așteaptă să se termine curentul thread
-                stop_detection_event.clear()
-                detection_thread =start_thread(yolo_function_thread, "DetectionThread")    
+                with seg_lock:
+                    frame = seg_output_frame or blank_frame()
+            elif right_stream_type == "mar":
 
-            with output_lock:
-                frame = yolo_output_frame or blank_frame()
+                with mar_lock:
+                    frame = mar_output_frame or blank_frame()
+            elif right_stream_type == "xgb":
+                with pose_lock:
+                    frame = pose_output_frame or blank_frame()
+            else:
+                frame = blank_frame()
 
-        elif right_stream_type == "seg":
-            stop_detection_event.set()
-            stop_detection_liv_event.set()
-
-            with seg_lock:
-                frame = seg_output_frame or blank_frame()
-        elif right_stream_type == "mar":
-            stop_detection_event.set()
-
-            if detection_liv_thread is None or not detection_thread.is_alive():
-                detection_liv_thread=start_thread(livings_inference_thread, "LivingsDetection")
-
-
-            with mar_lock:
-                frame = mar_output_frame or blank_frame()
-        elif right_stream_type == "xgb":
-            stop_detection_event.set()
-            stop_detection_liv_event.set()
-            with pose_lock:
-                frame = pose_output_frame or blank_frame()
-        else:
-            frame = blank_frame()
-
-        yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
-        time.sleep(0.05)
+            yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
+            time.sleep(0.05)
     return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
 
 @app.route("/start_official")
