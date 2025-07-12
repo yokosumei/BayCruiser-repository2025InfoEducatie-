@@ -465,10 +465,10 @@ def yolo_function_thread():
     cam_x, cam_y = 320, 240
     PIXELS_PER_CM = 10
     object_present = False
-    logging.info("Firul 2 (detectie) a pornit.")
+  
     
     while not stop_detection_event.is_set():
-        logging.info("Firul 2 (detectie) a pornit.")
+        logging.info("Firul yolo_function_thread este activ")
         if not streaming:
             time.sleep(0.1)
             continue
@@ -854,6 +854,7 @@ def right_feed():
 
             if right_stream_type == "yolo":
                 stop_detection_liv_event.set()
+                logging.info("se verifica  yolo_function_thread este activ")
 
                 if detection_thread is None or not detection_thread.is_alive():
                     detection_thread =start_thread(yolo_function_thread, "DetectionThread")
