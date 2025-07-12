@@ -575,16 +575,12 @@ def stream_thread():
 
 def livings_inference_thread(video=None):
     logging.info("Firul livings_inference_thread a pornit.")
-    global mar_output_frame, pose_triggered
+    global mar_output_frame, frame_buffer
 
 
 
     model = YOLO("models/livings.pt")
     while True:
-        if not streaming:
-            time.sleep(0.1)
-            continue
-
             
         with frame_lock:
             data = frame_buffer.copy() if frame_buffer is not None else None
