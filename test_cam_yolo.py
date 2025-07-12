@@ -709,6 +709,18 @@ def segmentation_inference_thread(video=None):
 def pose_xgb_inference_thread(video=None):
     global pose_output_frame
 
+    POSE_CONNECTIONS = [
+    (0, 1), (0, 2),       # nose → eyes
+    (1, 3), (2, 4),       # eyes → ears
+    (5, 6),               # shoulders
+    (5, 7), (7, 9),       # left arm
+    (6, 8), (8,10),       # right arm
+    (5,11), (6,12),       # shoulders → hips
+    (11,12),              # hips
+    (11,13), (13,15),     # left leg
+    (12,14), (14,16)      # right leg
+]
+
     model = YOLO("models/yolo11n-pose.pt")
     buffer = deque(maxlen=30)
 
@@ -756,6 +768,13 @@ def pose_xgb_inference_thread(video=None):
         for i, (x, y) in enumerate(keypoints):
             if confs[i] > 0.4:
                 cv2.circle(frame, (int(x), int(y)), 3, (0, 255, 0), -1)
+        # Desenare conexiuni
+        for i1, i2 in POSE_CONNECTIONS:
+            if confs[i1] > 0.4 and confs[i2] > 0.4:
+                x1, y1 = keypoints[i1]
+                x2, y2 = keypoints[i2]
+                cv2.line(frame, (int(x1), int(y1)), (int(x2), int(y2)), (255, 0, 0), 2)
+
 
         if len(buffer) == 30:
             vector_1020 = np.array(buffer).flatten()
