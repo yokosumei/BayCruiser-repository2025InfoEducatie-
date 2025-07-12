@@ -38,7 +38,7 @@ function startStream() {
   fetch('/start_stream')
     .then(() => {
       streamActive = true;
-      toggleStreamView() ;
+      toggleStreamView();
       updateStatusIndicators();
     });
 }
@@ -58,19 +58,20 @@ function stopStream() {
 
 function toggleStartStop() {
   const btn = document.getElementById("toggleStartStopBtn");
-        currentViewMode == 'raw';
-      toggleStreamView() ;
-  
+  const viewBtn = document.getElementById("toggleViewBtn");
+  currentViewMode = 'raw';
+  toggleStreamView();
+
   if (currentStartStop === 'start') {
     startStream();
     btn.textContent = 'STOP';
     currentStartStop = 'stop';
-    document.getElementById("toggleViewBtn").enabeld=true;
+    viewBtn.disabled = false;
   } else {
     stopStream();
     btn.textContent = 'START';
     currentStartStop = 'start';
-      document.getElementById("toggleViewBtn").enabeld=false;
+    viewBtn.disabled = true;
   }
 }
 
@@ -78,7 +79,7 @@ function toggleStartStop() {
 function toggleStreamView() {
   const btn = document.getElementById("toggleViewBtn");
 
-    if (!streamActive) {
+  if (!streamActive) {
     return;
   }
 
@@ -166,8 +167,8 @@ socket.on("detection_update", data => {
       count[obj] = (count[obj] || 0) + 1;
     });
     text = Object.entries(count)
-                .map(([k, v]) => `${v} ${k}${v > 1 ? "i" : ""}`)
-                .join(", ");
+      .map(([k, v]) => `${v} ${k}${v > 1 ? "i" : ""}`)
+      .join(", ");
   }
 
   detectie.textContent = "DETECȚIE: " + text;
