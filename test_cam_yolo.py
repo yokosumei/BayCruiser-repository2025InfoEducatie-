@@ -70,7 +70,8 @@ mar_lock = threading.Lock()
 seg_lock = threading.Lock()
 pose_lock = threading.Lock()
 
-xgb_model = joblib.load("models/xgb_pipeline.joblib")
+xgb_model = joblib.load("models/3f56658a-a958-4bcb-b95e-8788a23ea212.joblib")
+
 label_map = {0: "inot", 1: "inec"}
 
 def xgb_predict(vector_1020):
