@@ -131,7 +131,7 @@ function changeRightStream(type) {
       // actualizează textul "Mod detectare"
       const label = document.getElementById("detection-mode-label");
       const nameMap = {
-        yolo: "ÎNEC (YOLO)",
+        yolo: "INEC (YOLO)",
         seg: "SEGMENTARE",
         mar: "LIVINGS (RECHINI, PERSOANE)",
         xgb: "POSE + XGBoost"
