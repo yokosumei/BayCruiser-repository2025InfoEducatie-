@@ -535,7 +535,7 @@ def detection_thread():
         for i, cls_id in enumerate(class_ids):
             label = names[int(cls_id)]
 
-            if label in ["rechin", "meduza", "person", "rip_current"]:
+            if label in ["Meduze", "Rechin", "person", "rip_current"]:
                 obiecte_detectate.append(label)
 
             if label == "lvl_mic":
@@ -619,8 +619,9 @@ def livings_inference_thread(video=None):
 
         socketio.emit("detection_update", {"obiecte": obiecte_detectate})
     
-        with output_lock:
-            mar_output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
+        with mar_lock:
+            if obiecte_detectate:
+                mar_output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
         time.sleep(0.01)
 
 
