@@ -348,10 +348,25 @@ class DroneKitGPSProvider(BaseGPSProvider):
 
         print("[DroneKit] Aterizare...")
         self.vehicle.mode = VehicleMode("LAND")
+
         while self.vehicle.armed:
-            print("  -> Așteptăm dezarmarea...")
+            alt = vehicle.location.global_relative_frame.alt
+            print(f"[LAND] Altitudine: {alt:.2f} m")
+            
+            if alt is not None and alt < 0.1:
+                print("[LAND] Altitudine mică → dezarmez")
+                vehicle._master.mav.command_long_send(
+                    vehicle._master.target_system,
+                    vehicle._master.target_component,
+                    mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+                    0, 0, 21196, 0, 0, 0, 0, 0
+                )
+                break
             time.sleep(1)
         print("[DroneKit] Aterizare completă.")
+        time.sleep(1)
+
+
         stop_land_event.set()
         return "Drone Landing"
 
