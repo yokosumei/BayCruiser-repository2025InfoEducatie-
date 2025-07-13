@@ -1238,7 +1238,7 @@ def start_pose_xgb():
         
 @socketio.on('drone_command')
 def handle_drone_command(data):
-    global land_thread, stop_land_event, event_location, goto_and_return_thread, stop_goto_and_return_event, orbit_thread, stop_orbit_event
+    global land_thread, stop_land_event, event_location, goto_and_return_thread, stop_goto_and_return_event, orbit_thread, stop_orbit_event, takeoff_thread, stop_takeoff_event, auto_thread, stop_auto_event, pose_triggered, pose_thread_started
     action = data.get('action')
     print(f"[WS] Comandă primită: {action}")
     
