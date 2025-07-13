@@ -1290,7 +1290,9 @@ def status_broadcast_loop():
                     "event_location": {
                         "lat": event_location.lat if event_location else None,
                         "lon": event_location.lon if event_location else None
-                    }
+                    },
+                    "altitude_global": gps_provider.vehicle.location.global_frame.alt if gps_provider.vehicle.location else None,
+                    "altitude_relative": gps_provider.vehicle.location.global_relative_frame.alt if gps_provider.vehicle.location else None
                 })
         except Exception as e:
             print(f"[STATUS ERROR] {e}")

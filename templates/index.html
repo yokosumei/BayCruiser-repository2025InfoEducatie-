@@ -30,19 +30,19 @@
           
           <table>
             <tr>
-              <td>
+              <td style="text-align: center;">
                   <button id="takeOffBtn" onclick="TakeOff()" class="tab-buttont">Decolare</button>
                   <button id="landBtn" onclick="Land()" class="tab-buttont">Aterizare</button>
               </td>
             </tr>
             <tr>
-              <td>
+              <td style="text-align: center;">
                   <button id="goRetBtn" onclick="startGotoAndReturn()" class="tab-buttont">GoRet</button>
                   <button id="orbitBtn" onclick="startOrbit()" class="tab-buttont">Orbit</button>
               </td>
             </tr>
             <tr>
-              <td>
+              <td style="text-align: center;">
                   <button id="autoBtn" onclick="Auto()" class="tab-buttont">Auto</button>
               </td>
             </tr>
@@ -104,7 +104,8 @@
         <li>Poziție actuală: <span id="current-coords">?</span></li>
         <li>Coordonate salvate: <span id="event-coords">?</span></li>
         <li>Ultima detecție: <span id="last-detection">N/A</span></li>
-        <li>Altitudine: <span id="altitude">N/A</span></li>
+        <li>Altitudine globală: <span id="altitude_global">N/A</span></li>
+        <li>Altitudine relativă: <span id="altitude_relative">N/A</span></li>
       </ul>
 
       <div>

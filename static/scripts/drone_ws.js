@@ -155,6 +155,8 @@ document.addEventListener("DOMContentLoaded", () => {
   } else {
     document.getElementById("event-coords").innerText = "N/A";
   }
+  document.getElementById("altitude_global").innerText = data.altitude_global;
+  document.getElementById("altitude_relative").innerText = data.altitude_relative;
 
   // ✅ APEL CORESPUNZĂTOR
   updateControlsVisibility();

@@ -219,7 +219,7 @@ html, body {
  
 /* Buton uniform pentru toate comenzile dronei */
 .tab-buttont {
-  display: block;
+  /* display: block; */
   width: 75px;
   margin: 4px 0;
   padding: 8px 12px;
