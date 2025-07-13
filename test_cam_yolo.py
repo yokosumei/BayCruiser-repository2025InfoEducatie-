@@ -1104,11 +1104,11 @@ def takeoff():
         stop_takeoff_event.clear()
         takeoff_thread =start_thread(takeoff_task, "TakeoffThread")
     #repornire thread
-    if takeoff_thread and takeoff_thread.is_alive():
-        stop_takeoff_event.set()
-        takeoff_thread.join()  # așteaptă să se termine curentul thread
-        stop_takeoff_event.clear()
-        takeoff_thread =start_thread(takeoff_task, "TakeoffThread")   
+    # if takeoff_thread and takeoff_thread.is_alive():
+    #     stop_takeoff_event.set()
+    #     takeoff_thread.join()  # așteaptă să se termine curentul thread
+    #     stop_takeoff_event.clear()
+    #     takeoff_thread =start_thread(takeoff_task, "TakeoffThread")   
 
     logging.info("[FLASK] /takeoff apelat")
     return jsonify({"status": "takeoff initiated"})
@@ -1124,11 +1124,11 @@ def land():
         stop_land_event.clear()
         land_thread = start_thread(land_task, "LandThread")
     #repornire thread
-    if land_thread and land_thread.is_alive():
-        stop_land_event.set()
-        land_thread.join()  # așteaptă să se termine curentul thread
-        stop_land_event.clear()
-        land_thread = start_thread(land_task, "LandThread")
+    # if land_thread and land_thread.is_alive():
+    #     stop_land_event.set()
+    #     land_thread.join()  # așteaptă să se termine curentul thread
+    #     stop_land_event.clear()
+    #     land_thread = start_thread(land_task, "LandThread")
 
     logging.info("[FLASK] /land apelat")
     return jsonify({"status": "landing initiated"})
@@ -1167,11 +1167,11 @@ def goto_and_return_route():
             stop_goto_and_return_event.clear()
             goto_and_return_thread = start_thread(lambda: goto_and_return(gps_provider.vehicle, event_location,4), "GotoReturnThread")
     #repornire thread
-        if goto_and_return_thread and goto_and_return_thread.is_alive():
-            stop_goto_and_return_event.set()
-            goto_and_return_thread.join()  # așteaptă să se termine curentul thread
-            stop_goto_and_return_event.clear()
-            goto_and_return_thread = start_thread(lambda: goto_and_return(gps_provider.vehicle, event_location,4), "GotoReturnThread")
+        # if goto_and_return_thread and goto_and_return_thread.is_alive():
+        #     stop_goto_and_return_event.set()
+        #     goto_and_return_thread.join()  # așteaptă să se termine curentul thread
+        #     stop_goto_and_return_event.clear()
+        #     goto_and_return_thread = start_thread(lambda: goto_and_return(gps_provider.vehicle, event_location,4), "GotoReturnThread")
 
         return jsonify({"status": "going and returning"})
     except Exception as e:
