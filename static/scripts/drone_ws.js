@@ -102,21 +102,21 @@ document.addEventListener("DOMContentLoaded", () => {
   window.Land = function () {
     if (socket && socket.connected) {
       socket.emit('drone_command', { action: 'land' });
-      alert("Comandă aterizare trimisă.");
+     // alert("Comandă aterizare trimisă.");
     }
   };
 
   window.startGotoAndReturn = function () {
     if (socket && socket.connected) {
       socket.emit('drone_command', { action: 'goto_and_return' });
-      alert("Comandă Go & Return trimisă.");
+      //alert("Comandă Go & Return trimisă.");
     }
   };
 
   window.startOrbit = function () {
     if (socket && socket.connected) {
       socket.emit('drone_command', { action: 'orbit' });
-      alert("Comandă Orbit trimisă.");
+     // alert("Comandă Orbit trimisă.");
     }
   };
 

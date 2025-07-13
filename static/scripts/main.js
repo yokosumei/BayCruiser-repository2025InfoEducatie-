@@ -238,7 +238,7 @@ function confirmDetection(answer) {
   if (answer) {
     fetch("/misca")
       .then(() => {
-        alert("Inițiere protocol de salvare.");
+        // alert("Inițiere protocol de salvare.");
         setStreamView('split');
         btn.textContent = 'RAW';
         currentViewMode = 'raw';
