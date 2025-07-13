@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width" />
+  <meta name="viewport" content="width=1280, initial-scale=0.8">
   <title>BayCruiser</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}">
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
@@ -28,12 +28,10 @@
         </div>
         <div id="Controale drona" class="tab-content">
           <button id="takeOffBtn" onclick="TakeOff()" class="tab-buttont">Decolare</button>
-          <br>
           <button id="landBtn" onclick="Land()" class="tab-buttont">Aterizare</button>
-          <br>
           <button id="goRetBtn" onclick="startGotoAndReturn()" class="tab-buttont">GoRet</button>
-          <br>
           <button id="orbitBtn" onclick="startOrbit()" class="tab-buttont">Orbit</button>
+          <button id="autoBtn" onclick="Auto()" class="tab-buttont">Auto</button>
         </div>
 
 
