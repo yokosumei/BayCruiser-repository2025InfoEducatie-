@@ -320,10 +320,11 @@ class DroneKitGPSProvider(BaseGPSProvider):
         print(f"[DroneKit] Decolare la {target_altitude}m...")
         self.vehicle.simple_takeoff(target_altitude)
 
-        while True:
+        while not stop_takeoff_event.is_set():
             alt = self.vehicle.location.global_relative_frame.alt
             print("Altitudine (față de nivelul mării):", self.vehicle.location.global_frame.alt)
-            print("Altitudine relativă (față de decolare):", self.vehicle.location.global_relative_frame.alt)
+            print("Altitudine relativă (față de decolare):", alt)
+            print("Altitudine target_altitude:", target_altitude * 0.95)
             if alt >= target_altitude * 0.95:
                 print("[DroneKit] Altitudine atinsă.")
                 break
@@ -1253,7 +1254,7 @@ def handle_drone_command(data):
             stop_takeoff_event.clear()
             takeoff_thread =start_thread(gps_provider.arm_and_takeoff(2, "GUIDED"), "WS_Takeoff")  
     elif action == 'land':
-
+        stop_takeoff_event.set()
       if land_thread is None or not land_thread.is_alive():
         stop_land_event.clear()
         land_thread = start_thread(gps_provider.land_drone(), "LandThread")
