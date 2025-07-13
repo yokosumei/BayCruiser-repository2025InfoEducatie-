@@ -659,6 +659,14 @@ def segmentation_inference_thread(video=None):
     logging.info("Firul segmentation_inference_thread rulează...")
     model = YOLO("models/yolo11n-seg-custom.pt")  # <- model YOLOv11n SEGMENTARE
 
+    # Culori personalizate pentru fiecare clasă
+    color_map = {
+        "lvl_mic": (255, 255, 0),
+        "lvl_mediu": (0, 255, 0),
+        "lvl_adanc": (0, 0, 255),
+        "rip_current": (0, 165, 255)
+    }
+
     while not stop_segmentation_event.is_set():
         if not streaming:
             time.sleep(0.1)
@@ -672,30 +680,40 @@ def segmentation_inference_thread(video=None):
 
         frame = data["image"]
         gps_info = data["gps"]
+        annotated = frame.copy()
+        nivel_detectat = None
 
         # rulează modelul YOLOv11n pe frame
         results = model.predict(source=frame, conf=0.5, stream=False)
 
-        nivel_detectat = None
-        annotated = frame.copy()
-
         for r in results:
-            boxes = r.boxes
+            masks = r.masks
             names = r.names
-            cls_ids = boxes.cls.tolist()
-            coords = boxes.xyxy.cpu().numpy()
 
-            for i, cls_id in enumerate(cls_ids):
-                label = names[int(cls_id)]
-                x1, y1, x2, y2 = map(int, coords[i])
-                cv2.rectangle(annotated, (x1, y1), (x2, y2), (0, 255, 255), 2)
-                cv2.putText(annotated, label, (x1, y1 - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+            if masks is not None and masks.data is not None:
+                for i, mask in enumerate(masks.data):
+                    if i >= len(r.boxes.cls):
+                        continue  # siguranță la indexare
 
-                if label in ["lvl_mic", "lvl_mediu", "lvl_adanc"]:
-                    nivel_detectat = label.replace("lvl_", "")
-                elif label == "rip_current":
-                    nivel_detectat = "rip_current"
+                    cls_id = int(r.boxes.cls[i].item())
+                    label = names[cls_id]
+                    color = color_map.get(label, (0, 255, 255))
+
+                    mask_np = mask.cpu().numpy()
+                    annotated[mask_np > 0.5] = color
+
+                    # Afișează eticheta în centrul măștii
+                    ys, xs = np.where(mask_np > 0.5)
+                    if len(xs) > 0 and len(ys) > 0:
+                        cx, cy = int(np.mean(xs)), int(np.mean(ys))
+                        cv2.putText(annotated, label, (cx, cy),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2, lineType=cv2.LINE_AA)
+
+                    # Interpretare nivel
+                    if label in ["lvl_mic", "lvl_mediu", "lvl_adanc"]:
+                        nivel_detectat = label.replace("lvl_", "")
+                    elif label == "rip_current":
+                        nivel_detectat = "rip_current"
 
         socketio.emit("detection_update", {"nivel": nivel_detectat})
 
@@ -703,7 +721,6 @@ def segmentation_inference_thread(video=None):
             seg_output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
 
         time.sleep(0.05)
-
 
 
 def pose_xgb_inference_thread(video=None):
