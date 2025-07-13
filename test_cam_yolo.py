@@ -1246,36 +1246,36 @@ def handle_drone_command(data):
     if action == 'takeoff':
         if takeoff_thread is None or not takeoff_thread.is_alive():
             stop_takeoff_event.clear()
-            takeoff_thread = start_thread(gps_provider.arm_and_takeoff(2, "GUIDED"), "WS_Takeoff")
-        # repornire thread
-        if takeoff_thread and takeoff_thread.is_alive():
-            stop_takeoff_event.set()
-            takeoff_thread.join()  # așteaptă să se termine curentul thread
-            stop_takeoff_event.clear()
-            takeoff_thread =start_thread(gps_provider.arm_and_takeoff(2, "GUIDED"), "WS_Takeoff")  
+            takeoff_thread = start_thread(lambda: gps_provider.arm_and_takeoff(2, "GUIDED"), "WS_Takeoff")
+        # # repornire thread
+        # if takeoff_thread and takeoff_thread.is_alive():
+        #     stop_takeoff_event.set()
+        #     takeoff_thread.join()  # așteaptă să se termine curentul thread
+        #     stop_takeoff_event.clear()
+        #     takeoff_thread = start_thread(lambda: gps_provider.arm_and_takeoff(2, "GUIDED"), "WS_Takeoff")
     elif action == 'land':
         stop_takeoff_event.set()
         if land_thread is None or not land_thread.is_alive():
             stop_land_event.clear()
-            land_thread = start_thread(gps_provider.land_drone(), "LandThread")
-        #repornire thread
-        if land_thread and land_thread.is_alive():
-            stop_land_event.set()
-            land_thread.join()  # așteaptă să se termine curentul thread
-            stop_land_event.clear()
-            land_thread = start_thread(gps_provider.land_drone(), "LandThread")  
+            land_thread = start_thread(lambda: gps_provider.land_drone(), "LandThread")
+        # #repornire thread
+        # if land_thread and land_thread.is_alive():
+        #     stop_land_event.set()
+        #     land_thread.join()  # așteaptă să se termine curentul thread
+        #     stop_land_event.clear()
+        #     land_thread = start_thread(lambda: gps_provider.land_drone(), "LandThread")
 
     elif action == 'goto_and_return':
         if event_location:
             if goto_and_return_thread is None or not goto_and_return_thread.is_alive():
                 stop_goto_and_return_event.clear()
                 goto_and_return_thread = start_thread(lambda: goto_and_return(gps_provider.vehicle, event_location,4), "GotoReturnThread")
-        #repornire thread
-            if goto_and_return_thread and goto_and_return_thread.is_alive():
-                stop_goto_and_return_event.set()
-                goto_and_return_thread.join()  # așteaptă să se termine curentul thread
-                stop_goto_and_return_event.clear()
-                goto_and_return_thread = start_thread(lambda: goto_and_return(gps_provider.vehicle, event_location,4), "GotoReturnThread")
+        # #repornire thread
+        #     if goto_and_return_thread and goto_and_return_thread.is_alive():
+        #         stop_goto_and_return_event.set()
+        #         goto_and_return_thread.join()  # așteaptă să se termine curentul thread
+        #         stop_goto_and_return_event.clear()
+        #         goto_and_return_thread = start_thread(lambda: goto_and_return(gps_provider.vehicle, event_location,4), "GotoReturnThread")
 
 
     elif action == 'orbit':
@@ -1284,12 +1284,12 @@ def handle_drone_command(data):
             if orbit_thread is None or not orbit_thread.is_alive():
                     stop_orbit_event.clear()
                     orbit_thread = start_thread(lambda: orbit_around_point(gps_provider.vehicle, event_location, radius=5, velocity=1, duration=30), "OrbitThread")
-            #repornire thread
-            if orbit_thread and orbit_thread.is_alive():
-                stop_orbit_event.set()
-                orbit_thread.join()  # așteaptă să se termine curentul thread
-                stop_orbit_event.clear()
-                orbit_thread = start_thread(lambda: orbit_around_point(gps_provider.vehicle, event_location, radius=5, velocity=1, duration=30), "OrbitThread")
+            # #repornire thread
+            # if orbit_thread and orbit_thread.is_alive():
+            #     stop_orbit_event.set()
+            #     orbit_thread.join()  # așteaptă să se termine curentul thread
+            #     stop_orbit_event.clear()
+            #     orbit_thread = start_thread(lambda: orbit_around_point(gps_provider.vehicle, event_location, radius=5, velocity=1, duration=30), "OrbitThread")
 
 
     else:
