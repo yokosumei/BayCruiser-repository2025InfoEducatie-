@@ -249,16 +249,16 @@ class DroneKitGPSProvider(BaseGPSProvider):
             return False
         
 
-        # print("[INFO] Trimit comanda de armare forțată (MAV_CMD_COMPONENT_ARM_DISARM)...")
-        # self.vehicle._master.mav.command_long_send(
-        #     self.vehicle._master.target_system,
-        #     self.vehicle._master.target_component,
-        #     mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
-        #     0,          # confirmation
-        #     1,          # param1: 1=arm, 0=disarm
-        #     21196,      # param2: magic code pentru override
-        #     0, 0, 0, 0, 0
-        # )
+        print("[INFO] Trimit comanda de armare forțată (MAV_CMD_COMPONENT_ARM_DISARM)...")
+        self.vehicle._master.mav.command_long_send(
+            self.vehicle._master.target_system,
+            self.vehicle._master.target_component,
+            mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+            0,          # confirmation
+            1,          # param1: 1=arm, 0=disarm
+            21196,      # param2: magic code pentru override
+            0, 0, 0, 0, 0
+        )
 
 
         print("..............[DroneKit] Așteptăm ca drona să fie armabilă...")
