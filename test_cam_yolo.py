@@ -218,31 +218,31 @@ class DroneKitGPSProvider(BaseGPSProvider):
             raise Exception("Drone not connected")
         return True
 
-    def _wait_until_ready(self, timeout=30):
-        if not self.ensure_connection():
-            return False
+    # def _wait_until_ready(self, timeout=30):
+    #     if not self.ensure_connection():
+    #         return False
             
-        if self.bypass:
-            print(" ByPASS=TRUE -> EKF OK:", self.vehicle.ekf_ok)
-            print("  -> GPS fix:", self.vehicle.gps_0.fix_type)
-            print("  -> Sateliți:", self.vehicle.gps_0.satellites_visible)
-            print("  -> Sistem:", self.vehicle.system_status.state)
-            print("[DroneKit] Bypass activ → simulăm dronă armabilă.")
-            return True
+    #     if self.bypass:
+    #         print(" ByPASS=TRUE -> EKF OK:", self.vehicle.ekf_ok)
+    #         print("  -> GPS fix:", self.vehicle.gps_0.fix_type)
+    #         print("  -> Sateliți:", self.vehicle.gps_0.satellites_visible)
+    #         print("  -> Sistem:", self.vehicle.system_status.state)
+    #         print("[DroneKit] Bypass activ → simulăm dronă armabilă.")
+    #         return True
 
-        print("[DroneKit] Așteptăm ca drona să fie armabilă...")
-        start = time.time()
-        while not self.vehicle.is_armable:
-            print("BYPASS=FALSE  -> EKF OK:", self.vehicle.ekf_ok)
-            print("  -> GPS fix:", self.vehicle.gps_0.fix_type)
-            print("  -> Sateliți:", self.vehicle.gps_0.satellites_visible)
-            print("  -> Sistem:", self.vehicle.system_status.state)
-            if time.time() - start > timeout:
-                print("[DroneKit] Timeout atins. Nu e armabilă.")
-                return False
-            time.sleep(1)
-        print("[DroneKit] Drona este gata.")
-        return True
+    #     print("[DroneKit] Așteptăm ca drona să fie armabilă...")
+    #     start = time.time()
+    #     while not self.vehicle.is_armable:
+    #         print("BYPASS=FALSE  -> EKF OK:", self.vehicle.ekf_ok)
+    #         print("  -> GPS fix:", self.vehicle.gps_0.fix_type)
+    #         print("  -> Sateliți:", self.vehicle.gps_0.satellites_visible)
+    #         print("  -> Sistem:", self.vehicle.system_status.state)
+    #         if time.time() - start > timeout:
+    #             print("[DroneKit] Timeout atins. Nu e armabilă.")
+    #             return False
+    #         time.sleep(1)
+    #     print("[DroneKit] Drona este gata.")
+    #     return True
     
     def wait_until_ready(self, timeout=30):
         if not self.ensure_connection():
@@ -337,7 +337,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
         while True:
             alt = self.vehicle.location.global_relative_frame.alt
             print(f"  -> Altitudine curentă: {alt:.2f} m")
-            if alt >= target_altitude * 0.95:
+            if alt >= target_altitude * 0.95 or alt:
                 print("[DroneKit] Altitudine atinsă.")
                 break
             time.sleep(1)
@@ -1111,7 +1111,7 @@ def takeoff():
     global takeoff_thread, stop_takeoff_event
     def takeoff_task():
         #GUIDED,STABILIZE
-        return gps_provider.arm_and_takeoff(2,"GUIDED")
+        return gps_provider.arm_and_takeoff(25,"GUIDED")
     
     if takeoff_thread is None or not takeoff_thread.is_alive():
         stop_takeoff_event.clear()
