@@ -1255,10 +1255,10 @@ def handle_drone_command(data):
             takeoff_thread =start_thread(gps_provider.arm_and_takeoff(2, "GUIDED"), "WS_Takeoff")  
     elif action == 'land':
         stop_takeoff_event.set()
-      if land_thread is None or not land_thread.is_alive():
-        stop_land_event.clear()
-        land_thread = start_thread(gps_provider.land_drone(), "LandThread")
-    #repornire thread
+        if land_thread is None or not land_thread.is_alive():
+            stop_land_event.clear()
+            land_thread = start_thread(gps_provider.land_drone(), "LandThread")
+        #repornire thread
         if land_thread and land_thread.is_alive():
             stop_land_event.set()
             land_thread.join()  # așteaptă să se termine curentul thread
