@@ -158,8 +158,8 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("altitude_global").innerText = data.altitude_global;
   document.getElementById("altitude_relative").innerText = data.altitude_relative;
 
-  // ✅ APEL CORESPUNZĂTOR
-  updateControlsVisibility();
+  // // ✅ APEL CORESPUNZĂTOR
+  // updateControlsVisibility();
 });
 
 
