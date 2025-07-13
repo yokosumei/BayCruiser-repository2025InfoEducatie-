@@ -324,6 +324,8 @@ class DroneKitGPSProvider(BaseGPSProvider):
             print("System status:", self.vehicle.system_status.state)
             print("GPS fix:", self.vehicle.gps_0.fix_type)
             print("Satellites:", self.vehicle.gps_0.satellites_visible)
+            print("Altitudine (față de nivelul mării):", self.vehicle.location.global_frame.alt)
+            print("Altitudine relativă (față de decolare):", self.vehicle.location.global_relative_frame.alt)
             alt = self.vehicle.location.global_relative_frame.alt
             print(f"  -> Altitudine curentă: {alt:.2f} m")
             time.sleep(1)
@@ -338,7 +340,8 @@ class DroneKitGPSProvider(BaseGPSProvider):
 
         while True:
             alt = self.vehicle.location.global_relative_frame.alt
-            print(f"  -> Altitudine curentă: {alt:.2f} m")
+            print("Altitudine (față de nivelul mării):", self.vehicle.location.global_frame.alt)
+            print("Altitudine relativă (față de decolare):", self.vehicle.location.global_relative_frame.alt)
             if alt >= target_altitude * 0.95 or alt:
                 print("[DroneKit] Altitudine atinsă.")
                 break
