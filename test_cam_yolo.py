@@ -126,6 +126,7 @@ atexit.register(cleanup)
 
 def start_thread(func, name="WorkerThread"):
     """Helper function to start daemon threads"""
+    print(f"start_thread----->: {name}")
     t = threading.Thread(target=func, name=name, daemon=True)
     t.start()
     return t
