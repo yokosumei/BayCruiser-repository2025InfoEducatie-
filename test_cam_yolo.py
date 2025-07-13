@@ -324,6 +324,8 @@ class DroneKitGPSProvider(BaseGPSProvider):
             print("System status:", self.vehicle.system_status.state)
             print("GPS fix:", self.vehicle.gps_0.fix_type)
             print("Satellites:", self.vehicle.gps_0.satellites_visible)
+            alt = self.vehicle.location.global_relative_frame.alt
+            print(f"  -> Altitudine curentă: {alt:.2f} m")
             time.sleep(1)
 
         if self.bypass:
