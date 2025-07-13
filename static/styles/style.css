@@ -18,7 +18,7 @@ header {
 #landBtn,
 #goRetBtn,
 #orbitBtn {
-  display: none;
+  display: ;
 }
 
 /* Stil pentru cutia de status */
@@ -129,7 +129,7 @@ html, body {
 }
 
 #rawStream,
-#yoloStream {
+#rightStream {
   display: none;
   width: 100%;
   height: 100%;
@@ -140,14 +140,14 @@ html, body {
 }
 
 #rawStream.split,
-#yoloStream.split {
+#rightStream.split {
   display: inline-block;
   width: 49%;
   height: 100%;
 }
 
 #rawStream.single,
-#yoloStream.single {
+#rightStream.single {
   display: inline-block;
   width: 100%;
   height: 100%;
