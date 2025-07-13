@@ -120,6 +120,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  window.Auto = function () {
+    if (socket && socket.connected) {
+      socket.emit('drone_command', { action: 'auto' });
+    }
+  };
+
   // === Status dronă ===
  socket.on('drone_status', (data) => {
   const droneIcon = document.getElementById("drone-connection");
