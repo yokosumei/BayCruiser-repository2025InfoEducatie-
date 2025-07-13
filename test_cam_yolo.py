@@ -300,13 +300,15 @@ class DroneKitGPSProvider(BaseGPSProvider):
         except:
             stop_takeoff_event.set()
             return "[DroneKit] Drone not connected"
-            
+
+        print("[DroneKit] Armare..........in mod ",vehicle_mode)
+        self.vehicle.mode = VehicleMode(vehicle_mode)
+
         if not self.wait_until_ready():
             stop_takeoff_event.set()
             return "[DroneKit] Nu e armabilă. Ieșire."
         # vehicle_mode=GUIDED,STABILIZE
-        print("[DroneKit] Armare..........in mod ",vehicle_mode)
-        self.vehicle.mode = VehicleMode(vehicle_mode)
+
         time.sleep(3)
 
         self.vehicle.armed = True
