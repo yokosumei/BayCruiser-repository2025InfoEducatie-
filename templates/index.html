@@ -64,17 +64,6 @@
               Mod detectare: -</p>
           </article>
 
-          <article id="upload-article" class="custom-article" style="display: none; text-align: center;">
-            <form id="uploadForm" action="/" method="post" enctype="multipart/form-data">
-              <input type="file" name="file" accept="video/*" required>
-              <input type="submit" value="Upload Video">
-              <hr style="height:12px;background-color:red">
-            </form>
-            <video width="640" height="480" controls autoplay>
-              <source src="{{ url_for('static', filename='uploads/result.mp4') }}" type="video/mp4">
-              Browserul tău nu suportă tag-ul video.
-            </video>
-          </article>
         </div>
       </div>
     </section>
