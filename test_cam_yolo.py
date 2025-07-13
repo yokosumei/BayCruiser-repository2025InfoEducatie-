@@ -1,3 +1,4 @@
+from matplotlib.pyplot import step
 from flask import Flask, render_template, Response, request, jsonify
 from flask_socketio import SocketIO
 from werkzeug.utils import secure_filename
@@ -60,6 +61,21 @@ stop_segmentation_event = Event()
 
 pose_thread= None
 stop_pose_event = Event()
+
+takeoff_thread = None
+stop_takeoff_event = Event()
+
+land_thread = None
+stop_land_event = Event()
+
+goto_and_return_thread = None
+stop_goto_and_return_event = Event()
+
+orbit_thread = None
+stop_orbit_event = Event()
+
+auto_thread = None
+stop_auto_event = Event()
 
 pose_triggered = False
 pose_thread_started = False
@@ -233,16 +249,16 @@ class DroneKitGPSProvider(BaseGPSProvider):
             return False
         
 
-        print("[INFO] Trimit comanda de armare forțată (MAV_CMD_COMPONENT_ARM_DISARM)...")
-        self.vehicle._master.mav.command_long_send(
-            self.vehicle._master.target_system,
-            self.vehicle._master.target_component,
-            mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
-            0,          # confirmation
-            1,          # param1: 1=arm, 0=disarm
-            21196,      # param2: magic code pentru override
-            0, 0, 0, 0, 0
-        )
+        # print("[INFO] Trimit comanda de armare forțată (MAV_CMD_COMPONENT_ARM_DISARM)...")
+        # self.vehicle._master.mav.command_long_send(
+        #     self.vehicle._master.target_system,
+        #     self.vehicle._master.target_component,
+        #     mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+        #     0,          # confirmation
+        #     1,          # param1: 1=arm, 0=disarm
+        #     21196,      # param2: magic code pentru override
+        #     0, 0, 0, 0, 0
+        # )
 
 
         print("..............[DroneKit] Așteptăm ca drona să fie armabilă...")
@@ -275,12 +291,15 @@ class DroneKitGPSProvider(BaseGPSProvider):
       
 
     def arm_and_takeoff(self, target_altitude,vehicle_mode):
+        global stop_takeoff_event
         try:
             self.ensure_connection()
         except:
+            stop_takeoff_event.set()
             return "[DroneKit] Drone not connected"
             
         if not self.wait_until_ready():
+            stop_takeoff_event.set()
             return "[DroneKit] Nu e armabilă. Ieșire."
         # vehicle_mode=GUIDED,STABILIZE
         print("[DroneKit] Armare..........in mod ",vehicle_mode)
@@ -289,7 +308,10 @@ class DroneKitGPSProvider(BaseGPSProvider):
 
         self.vehicle.armed = True
 
+
         while not self.vehicle.armed:
+            if stop_takeoff_event.is_set():
+                return "[DroneKit] Armare întreruptă."
             print("  -> Așteptăm armarea...",vehicle_mode)
             print("Mode:", self.vehicle.mode.name)
             print("Is armable:", self.vehicle.is_armable)
@@ -301,6 +323,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
 
         if self.bypass:
             print("[DroneKit] Bypass activ → simulăm decolare.")
+            stop_takeoff_event.set()
             return "Drone Takeoff (simulat)"
 
         print(f"[DroneKit] Decolare la {target_altitude}m...")
@@ -313,17 +336,20 @@ class DroneKitGPSProvider(BaseGPSProvider):
                 print("[DroneKit] Altitudine atinsă.")
                 break
             time.sleep(1)
-
+        stop_takeoff_event.set()
         return "Drone Takeoff"
 
     def land_drone(self):
+        global stop_land_event
         try:
             self.ensure_connection()
         except:
+            stop_land_event.set()
             return "[DroneKit] Drone not connected"
             
         if self.bypass:
             print("[DroneKit] Bypass activ → simulăm aterizare.")
+            stop_land_event.set()
             return "Drone Landing (simulat)"
 
         print("[DroneKit] Aterizare...")
@@ -332,6 +358,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
             print("  -> Așteptăm dezarmarea...")
             time.sleep(1)
         print("[DroneKit] Aterizare completă.")
+        stop_land_event.set()
         return "Drone Landing"
 
     def close(self):
@@ -367,13 +394,22 @@ def send_ned_velocity(velocity_x, velocity_y, velocity_z, duration, vehicle):
         time.sleep(1)
 
 def get_distance_metres(aLocation1, aLocation2):
+
     
     dlat = aLocation2.lat - aLocation1.lat
     dlon = aLocation2.lon - aLocation1.lon
     return math.sqrt((dlat*dlat) + (dlon*dlon)) * 1.113195e5
+#########################################################################
+#########################################################################
+# Initialize GPS provider
+gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider(bypass=False)
+##########################################################################
+##########################################################################
 
 def goto_and_return(vehicle, target_location, cruise_speed=5):
+    global stop_goto_and_return_event
     
+    """Zboară către un punct țintă și se întoarce la poziția inițială"""    
     home_location = vehicle.location.global_relative_frame
     vehicle.groundspeed = cruise_speed
     
@@ -394,8 +430,10 @@ def goto_and_return(vehicle, target_location, cruise_speed=5):
         time.sleep(1)
 
     print("[DRONA] Revenit la poziția inițială.")
+    stop_goto_and_return_event.set()
 
 def orbit_around_point(vehicle, center_location, radius=5, velocity=1.0, duration=20):
+    global stop_orbit_event
     """Orbit around a point using circular trajectory"""
     print("[DRONA] Încep orbitarea în jurul punctului...")
     set_roi(center_location, vehicle)
@@ -412,16 +450,20 @@ def orbit_around_point(vehicle, center_location, radius=5, velocity=1.0, duratio
         time.sleep(0.1)
 
     print("[DRONA] Orbită completă sau întreruptă.")
+    stop_orbit_event.set()
 
 def autonomous_search(vehicle, area_size=5, step=1, height=2):
     """Zboară serpuit pe aria dată și reacționează la detecție."""
-    global detected_flag, event_location
+    global detected_flag, event_location, stop_auto_event
 
     home = vehicle.location.global_relative_frame
     print("[AUTO] Locatie de start salvată.")
 
-    dx = np.linspace(0, area_size, int(area_size / step))
-    dy = np.linspace(0, area_size, int(area_size / step))
+    # dx = np.linspace(0, area_size, int(area_size / step))
+    # dy = np.linspace(0, area_size, int(area_size / step))
+
+    dx = np.arange(0, area_size + step, step)
+    dy = np.arange(0, area_size + step, step)
     
     print("[AUTO] Încep serpuirea...")
 
@@ -451,10 +493,10 @@ def autonomous_search(vehicle, area_size=5, step=1, height=2):
 
     print("[AUTO] Serpuirea terminată fără detecție.")
     vehicle.simple_goto(home)
+    stop_auto_event.set()
 
 
-# Initialize GPS provider
-gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider(bypass=False)
+
 
 def camera_thread():
     global frame_buffer
@@ -1061,20 +1103,42 @@ def activate():
     
 @app.route("/takeoff")
 def takeoff():
+    global takeoff_thread, stop_takeoff_event
     def takeoff_task():
         #GUIDED,STABILIZE
         return gps_provider.arm_and_takeoff(2,"GUIDED")
     
-    start_thread(takeoff_task, "TakeoffThread")
+    if takeoff_thread is None or not takeoff_thread.is_alive():
+        stop_takeoff_event.clear()
+        takeoff_thread =start_thread(takeoff_task, "TakeoffThread")
+    #repornire thread
+    if takeoff_thread and takeoff_thread.is_alive():
+        stop_takeoff_event.set()
+        takeoff_thread.join()  # așteaptă să se termine curentul thread
+        stop_takeoff_event.clear()
+        takeoff_thread =start_thread(takeoff_task, "TakeoffThread")   
+
+    logging.info("[FLASK] /takeoff apelat")
     return jsonify({"status": "takeoff initiated"})
 
 
 @app.route("/land")
 def land():
+    global land_thread, stop_land_event
     def land_task():
         return gps_provider.land_drone()
-    
-    start_thread(land_task, "LandThread")
+
+    if land_thread is None or not land_thread.is_alive():
+        stop_land_event.clear()
+        land_thread = start_thread(land_task, "LandThread")
+    #repornire thread
+    if land_thread and land_thread.is_alive():
+        stop_land_event.set()
+        land_thread.join()  # așteaptă să se termine curentul thread
+        stop_land_event.clear()
+        land_thread = start_thread(land_task, "LandThread")
+
+    logging.info("[FLASK] /land apelat")
     return jsonify({"status": "landing initiated"})
 
 @app.route("/return_to_event")
@@ -1101,20 +1165,29 @@ def return_to_event():
 
 @app.route("/goto_and_return")
 def goto_and_return_route():
-    global event_location
+    global event_location, goto_and_return_thread, stop_goto_and_return_event
     if not event_location:
         return jsonify({"status": "no event location"})
 
     try:
         gps_provider.ensure_connection()
-        start_thread(lambda: goto_and_return(gps_provider.vehicle, event_location,4), "GotoReturnThread")
+        if goto_and_return_thread is None or not goto_and_return_thread.is_alive():
+            stop_goto_and_return_event.clear()
+            goto_and_return_thread = start_thread(lambda: goto_and_return(gps_provider.vehicle, event_location,4), "GotoReturnThread")
+    #repornire thread
+        if goto_and_return_thread and goto_and_return_thread.is_alive():
+            stop_goto_and_return_event.set()
+            goto_and_return_thread.join()  # așteaptă să se termine curentul thread
+            stop_goto_and_return_event.clear()
+            goto_and_return_thread = start_thread(lambda: goto_and_return(gps_provider.vehicle, event_location,4), "GotoReturnThread")
+
         return jsonify({"status": "going and returning"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
 
 @app.route("/orbit")
 def orbit_route():
-    global event_location
+    global event_location, orbit_thread, stop_orbit_event
     try:
         gps_provider.ensure_connection()
     except:
@@ -1124,16 +1197,33 @@ def orbit_route():
         return jsonify({"status": "no event location"})
 
     try:
-        start_thread(lambda: orbit_around_point(gps_provider.vehicle, event_location, radius=5, velocity=1, duration=30), "OrbitThread")
+        if orbit_thread is None or not orbit_thread.is_alive():
+            stop_orbit_event.clear()
+            orbit_thread = start_thread(lambda: orbit_around_point(gps_provider.vehicle, event_location, radius=5, velocity=1, duration=30), "OrbitThread")
+    #repornire thread
+        if orbit_thread and orbit_thread.is_alive():
+            stop_orbit_event.set()
+            orbit_thread.join()  # așteaptă să se termine curentul thread
+            stop_orbit_event.clear()
+            orbit_thread = start_thread(lambda: orbit_around_point(gps_provider.vehicle, event_location, radius=5, velocity=1, duration=30), "OrbitThread")
         return jsonify({"status": "orbiting"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
 
 @app.route("/auto")
 def auto_route():
+    global auto_thread, stop_auto_event
     try:
         gps_provider.ensure_connection()
-        start_thread(lambda: autonomous_search(gps_provider.vehicle, area_size=5), "AutoThread")
+        if auto_thread is None or not auto_thread.is_alive():
+            stop_auto_event.clear()
+            auto_thread = start_thread(lambda: autonomous_search(gps_provider.vehicle, area_size=5), "AutoThread")
+    #repornire thread
+        if auto_thread and auto_thread.is_alive():
+            stop_auto_event.set()
+            auto_thread.join()  # așteaptă să se termine curentul thread
+            stop_auto_event.clear()
+            auto_thread = start_thread(lambda: autonomous_search(gps_provider.vehicle, area_size=5), "AutoThread")
         return jsonify({"status": "auto started"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
