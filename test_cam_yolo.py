@@ -245,25 +245,28 @@ class DroneKitGPSProvider(BaseGPSProvider):
     #     return True
     
     def wait_until_ready(self, timeout=30):
+        global stop_takeoff_event
         if not self.ensure_connection():
             return False
         
 
-        print("[INFO] Trimit comanda de armare forțată (MAV_CMD_COMPONENT_ARM_DISARM)...")
-        self.vehicle._master.mav.command_long_send(
-            self.vehicle._master.target_system,
-            self.vehicle._master.target_component,
-            mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
-            0,          # confirmation
-            1,          # param1: 1=arm, 0=disarm
-            21196,      # param2: magic code pentru override
-            0, 0, 0, 0, 0
-        )
-
+        # print("[INFO] Trimit comanda de armare forțată (MAV_CMD_COMPONENT_ARM_DISARM)...")
+        # self.vehicle._master.mav.command_long_send(
+        #     self.vehicle._master.target_system,
+        #     self.vehicle._master.target_component,
+        #     mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+        #     0,          # confirmation
+        #     1,          # param1: 1=arm, 0=disarm
+        #     21196,      # param2: magic code pentru override
+        #     0, 0, 0, 0, 0
+        # )
+        self.vehicle.armed = True
 
         print("..............[DroneKit] Așteptăm ca drona să fie armabilă...")
         start = time.time()
         while not self.vehicle.armed:
+            if stop_takeoff_event.is_set():
+                return "[DroneKit] Armare întreruptă."
             print("..  -> Mode:", self.vehicle.mode.name)
             print("..  -> Is armable:", self.vehicle.is_armable)
             print("..  -> ARMED:", self.vehicle.armed)
@@ -271,6 +274,9 @@ class DroneKitGPSProvider(BaseGPSProvider):
             print("..  -> GPS fix:", self.vehicle.gps_0.fix_type)
             print("..  -> Sateliți:", self.vehicle.gps_0.satellites_visible)
             print("..  -> Sistem:", self.vehicle.system_status.state)
+            print("Altitudine (față de nivelul mării):", self.vehicle.location.global_frame.alt)
+            print("Altitudine relativă (față de decolare):", self.vehicle.location.global_relative_frame.alt)
+ 
             if time.time() - start > timeout:
                 print(".....[DroneKit] Timeout atins. Nu e armabilă.")
                 return False
@@ -303,37 +309,13 @@ class DroneKitGPSProvider(BaseGPSProvider):
 
         print("[DroneKit] Armare..........in mod ",vehicle_mode)
         self.vehicle.mode = VehicleMode(vehicle_mode)
+        time.sleep(2)
 
+        
         if not self.wait_until_ready():
             stop_takeoff_event.set()
             return "[DroneKit] Nu e armabilă. Ieșire."
-        # vehicle_mode=GUIDED,STABILIZE
-
-        time.sleep(3)
-
-        self.vehicle.armed = True
-
-
-        while not self.vehicle.armed:
-            if stop_takeoff_event.is_set():
-                return "[DroneKit] Armare întreruptă."
-            print("  -> Așteptăm armarea...",vehicle_mode)
-            print("Mode:", self.vehicle.mode.name)
-            print("Is armable:", self.vehicle.is_armable)
-            print("EKF OK:", self.vehicle.ekf_ok)
-            print("System status:", self.vehicle.system_status.state)
-            print("GPS fix:", self.vehicle.gps_0.fix_type)
-            print("Satellites:", self.vehicle.gps_0.satellites_visible)
-            print("Altitudine (față de nivelul mării):", self.vehicle.location.global_frame.alt)
-            print("Altitudine relativă (față de decolare):", self.vehicle.location.global_relative_frame.alt)
-            alt = self.vehicle.location.global_relative_frame.alt
-            print(f"  -> Altitudine curentă: {alt:.2f} m")
-            time.sleep(1)
-
-        if self.bypass:
-            print("[DroneKit] Bypass activ → simulăm decolare.")
-            stop_takeoff_event.set()
-            return "Drone Takeoff (simulat)"
+  
 
         print(f"[DroneKit] Decolare la {target_altitude}m...")
         self.vehicle.simple_takeoff(target_altitude)
@@ -342,7 +324,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
             alt = self.vehicle.location.global_relative_frame.alt
             print("Altitudine (față de nivelul mării):", self.vehicle.location.global_frame.alt)
             print("Altitudine relativă (față de decolare):", self.vehicle.location.global_relative_frame.alt)
-            if alt >= target_altitude * 0.95 or alt:
+            if alt >= target_altitude * 0.95:
                 print("[DroneKit] Altitudine atinsă.")
                 break
             time.sleep(1)
@@ -1116,7 +1098,7 @@ def takeoff():
     global takeoff_thread, stop_takeoff_event
     def takeoff_task():
         #GUIDED,STABILIZE
-        return gps_provider.arm_and_takeoff(25,"GUIDED")
+        return gps_provider.arm_and_takeoff(2,"GUIDED")
     
     if takeoff_thread is None or not takeoff_thread.is_alive():
         stop_takeoff_event.clear()
