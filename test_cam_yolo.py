@@ -217,7 +217,8 @@ class DroneKitGPSProvider(BaseGPSProvider):
             logging.debug(f"[GPS] lat={value.lat}, lon={value.lon}, alt={value.alt}")
         except Exception as e:
             logging.exception("[GPS] Eroare în gps_callback")
-
+    def get_location(self):
+        return self.location
     def ensure_connection(self):
         if not self.connected or self.vehicle is None:
             raise Exception("Drone not connected")
