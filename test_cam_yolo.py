@@ -668,6 +668,7 @@ def stream_thread():
         if data is None:
             time.sleep(0.05)
             continue
+        logging.info("Firul stream_thread rulează...")
         
         jpeg = cv2.imencode('.jpg', data["image"])[1].tobytes()
         with output_lock:
