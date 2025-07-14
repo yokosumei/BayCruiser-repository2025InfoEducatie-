@@ -1139,7 +1139,7 @@ def start_pose_xgb():
         
 @socketio.on('drone_command')
 def handle_drone_command(data):
-    global   event_location,        
+    global event_location
     action = data.get('action')
     print(f"[WS] Comandă primită: {action}")
 
