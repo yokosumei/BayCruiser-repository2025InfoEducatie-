@@ -496,7 +496,10 @@ class DroneKitGPSProvider(BaseGPSProvider):
                         print("[AUTO] Detecție activată! Mă duc la locația salvată.")
                         self.vehicle.simple_goto(event_location)
                         time.sleep(5)
-                        self.orbit_around_point(event_location, radius=3, duration=20)
+                        
+                        self._handle_orbit({"location": event_location, "radius": 3, "speed": 1.0, "duration": 20})
+                        
+     
                         print("[AUTO] Activez servomotorul!")
                         activate_servos()
                         print("[AUTO] Revin la punctul inițial...")
@@ -1155,6 +1158,10 @@ def handle_drone_command(data):
         gps_provider.enqueue_command("orbit", {"location": event_location, "radius": 5, "speed": 1.0, "duration": 20})
     elif action == 'auto_search':
         gps_provider.enqueue_command("auto_search", {"area_size": 5, "step": 1, "height": 2, "speed": 4})
+    elif action == 'mission':
+          gps_provider.enqueue_command("takeoff", {"altitude": 2, "mode": "GUIDED"})
+          gps_provider.enqueue_command("auto_search", {"area_size": 5, "step": 1, "height": 2, "speed": 4})
+          gps_provider.enqueue_command("land")      
     else:
         print(f"[WS] Comandă necunoscută: {action}")
         
