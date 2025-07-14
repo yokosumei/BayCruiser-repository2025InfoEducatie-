@@ -122,7 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.Auto = function () {
     if (socket && socket.connected) {
-      socket.emit('drone_command', { action: 'auto' });
+      socket.emit('drone_command', { action: 'auto_search' });
     }
   };
 
