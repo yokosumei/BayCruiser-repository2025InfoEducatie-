@@ -244,10 +244,6 @@ html, body {
   padding: 4px 5px;
   margin-bottom: 3px;
 }
-.tab-content-wrapper {
-  background: url("/static/img/bg-tab.jpg") no-repeat center center;
-  background-size: cover;
-}
 
 .popup-alert {
   position: fixed;
