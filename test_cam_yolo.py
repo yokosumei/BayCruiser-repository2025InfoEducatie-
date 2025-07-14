@@ -1192,7 +1192,7 @@ def handle_drone_command(data):
     print(f"[WS] Comandă primită: {action}")
 
     if action == 'takeoff':
-        gps_provider.enqueue_command("takeoff", {"altitude": 2, "mode": "GUIDED"})
+        gps_provider.enqueue_command("takeoff", {"altitude": 1, "mode": "GUIDED"})
     elif action == 'land':
        gps_provider.enqueue_command("land")
     elif action == 'goto_and_return':
