@@ -140,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
     droneIcon.title = "Dronă deconectată";
   }
 
-  document.getElementById("battery").innerText = data.battery.level + "%";
+  // document.getElementById("battery").innerText = data.battery.level + "%";
   document.getElementById("armed").innerText = data.armed ? "DA" : "NU";
   document.getElementById("mode").innerText = data.mode;
 
