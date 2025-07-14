@@ -257,3 +257,36 @@ function displayServoMessage() {
     .then(() => alert("Servomotorul a fost mișcat"))
     .catch(() => alert("Eroare la mișcarea servomotorului."));
 }
+
+// === STREAM SWITCH LEFT + RIGHT (auto din backend) ===
+socket.on("stream_config_update", (data) => {
+  console.log("[SOCKET] stream_config_update:", data);
+  const left = document.getElementById("rawStream");
+  const right = document.getElementById("rightStream");
+
+  if (left && data.left) {
+    if (data.left === "raw") left.src = "/video_feed";
+    else if (data.left === "mar") left.src = "/mar_feed";
+    else if (data.left === "seg") left.src = "/seg_feed";
+    else if (data.left === "xgb") left.src = "/xgb_feed";
+  }
+
+  if (right && data.right) {
+    if (data.right === "xgb") right.src = "/xgb_feed";
+    else if (data.right === "seg") right.src = "/seg_feed";
+    else if (data.right === "mar") right.src = "/mar_feed";
+    else if (data.right === "yolo") right.src = "/yolo_feed";
+  }
+
+  // actualizează textul "Mod detectare"
+  const label = document.getElementById("detection-mode-label");
+  const nameMap = {
+    yolo: "INEC (YOLO)",
+    seg: "SEGMENTARE",
+    mar: "LIVINGS (RECHINI, PERSOANE)",
+    xgb: "POSE + XGBoost"
+  };
+  if (label && data.right) {
+    label.textContent = "Mod detectare: " + (nameMap[data.right] || data.right.toUpperCase());
+  }
+});
