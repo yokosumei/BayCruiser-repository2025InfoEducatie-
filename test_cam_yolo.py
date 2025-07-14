@@ -547,7 +547,7 @@ def camera_thread():
         with frame_lock:
             frame_buffer = {"image": frame.copy(), "gps": gps_snapshot}
         time.sleep(0.01)
-        logging.info("Firul yolo_funcamera_threadction_thread este activ...................")  
+        # logging.info("Firul camera_thread este activ...................")  
 
 def yolo_function_thread():
     global frame_buffer, yolo_output_frame, detected_flag, popup_sent, last_detection_time, frame_counter, event_location
@@ -668,7 +668,7 @@ def stream_thread():
         if data is None:
             time.sleep(0.05)
             continue
-        print("Firul stream_thread rulează...")
+        # print("Firul stream_thread rulează...")
         
         jpeg = cv2.imencode('.jpg', data["image"])[1].tobytes()
         with output_lock:
