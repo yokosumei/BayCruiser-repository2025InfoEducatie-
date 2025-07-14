@@ -293,12 +293,13 @@ class DroneKitGPSProvider(BaseGPSProvider):
 
     def land_drone(self):
         global stop_takeoff_event
+        print("[DroneKit] Aterizare..eeeeeeeeeeeeeeeeeeeee.")
         try:
             self.ensure_connection()
         except:
             return "[DroneKit] Drone not connected"
 
-
+        print("[DroneKit] Aterizare..bbbbbbbbb.")
         stop_takeoff_event.set()
         print("[DroneKit] Aterizare...")
         self.vehicle.mode = VehicleMode("LAND")
@@ -337,6 +338,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
 
             if command == "land":
                 self.current_state = "LANDING"
+                print("[STATE] LANDING.............................................................")
                 self.land_drone()
                 self.current_state = "IDLE"
                 continue
