@@ -71,11 +71,7 @@ stop_pose_event = Event()
 
 stop_takeoff_event = Event()
 
-
-
-
-
-
+smart_stream_mode = False
 
 
 
@@ -720,6 +716,23 @@ def livings_inference_thread(video=None):
                 cv2.putText(frame, label, (x1, y1 - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
 
+        if smart_stream_mode:
+            for r in results:
+                for box in r.boxes:
+                    cls_id = int(box.cls[0])
+                    if cls_id == 2:  # person
+                        print("[SMART SWITCH] Detected person → switching to raw + xgb")
+                        stop_detection_liv_event.set()
+                        stop_segmentation_event.set()
+
+                        socketio.emit("stream_config_update", {"left": "raw", "right": "xgb"})
+
+                        global pose_thread, stop_pose_event
+                        if pose_thread is None or not pose_thread.is_alive():
+                            stop_pose_event.clear()
+                            pose_thread = start_thread(pose_xgb_inference_thread, "PoseXGBDetection")
+                        return        
+
 
         socketio.emit("detection_update", {"obiecte": obiecte_detectate})
     
@@ -801,6 +814,8 @@ def segmentation_inference_thread(video=None):
 
 def pose_xgb_inference_thread(video=None):
     global pose_output_frame
+    global pose_output_frame
+    last_inec_time = time.time() 
 
     POSE_CONNECTIONS = [
     (0, 1), (0, 2),       # nose → eyes
@@ -894,8 +909,17 @@ def pose_xgb_inference_thread(video=None):
                         "lon": lon_str
                     }}) 
 
-                # ✅ Activare servo / dronă / alertă
-
+        if smart_stream_mode and time.time() - last_inec_time > 10:
+            print("[SMART SWITCH] No inec in 10s → switching back to mar + seg")
+            stop_pose_event.set()
+            global detection_liv_thread, segmnetation_thread
+            stop_detection_liv_event.clear()
+            stop_segmentation_event.clear()
+            start_thread(livings_inference_thread, "LivingsThread")
+            start_thread(segmentation_inference_thread, "SegmentationThread")
+            socketio.emit("stream_config_update", {"left": "mar", "right": "seg"})
+            return
+           
 
         with pose_lock:
             pose_output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
@@ -1143,6 +1167,24 @@ def start_pose_xgb():
     return jsonify({"status": "xgb started"})
 
         
+@app.route("/start_smart_mode")
+def start_smart_mode():
+    global smart_stream_mode
+    smart_stream_mode = True
+    socketio.emit("stream_config_update", {"left": "mar", "right": "seg"})
+
+    stop_detection_event.set()
+    stop_pose_event.set()
+
+    stop_detection_liv_event.clear()
+    stop_segmentation_event.clear()
+
+    start_thread(segmentation_inference_thread, "SegmentationThread")
+    start_thread(livings_inference_thread, "LivingsThread")
+
+    return jsonify({"status": "smart stream mode activated"})
+
+
 @socketio.on('drone_command')
 def handle_drone_command(data):
     global event_location
