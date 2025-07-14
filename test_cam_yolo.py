@@ -1209,12 +1209,12 @@ def status_broadcast_loop():
             print(f"[STATUS ERROR] {e}")
         time.sleep(1)
 
-
+start_thread(camera_thread, "CameraThread")
+start_thread(stream_thread, "StreamThread")
+start_thread(status_broadcast_loop, "StatusBroadcast")
 
 if __name__ == "__main__":
-    start_thread(camera_thread, "CameraThread")
-    start_thread(stream_thread, "StreamThread")
-    start_thread(status_broadcast_loop, "StatusBroadcast")
+
 
     logging.info("Pornire server Flask + SocketIO")
     socketio.run(app, host="0.0.0.0", port=5000)
