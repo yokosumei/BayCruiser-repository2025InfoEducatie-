@@ -127,8 +127,6 @@ def cleanup():
 atexit.register(cleanup)
 
 def start_thread(func, name="WorkerThread"):
-    """Helper function to start daemon threads"""
-    print(f"start_thread----->: {name}")
     t = threading.Thread(target=func, name=name, daemon=True)
     t.start()
     return t
@@ -668,7 +666,7 @@ def stream_thread():
         if data is None:
             time.sleep(0.05)
             continue
-        logging.info("Firul stream_thread rulează...")
+        print("Firul stream_thread rulează...")
         
         jpeg = cv2.imencode('.jpg', data["image"])[1].tobytes()
         with output_lock:
