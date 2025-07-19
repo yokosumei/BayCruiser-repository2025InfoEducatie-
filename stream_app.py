@@ -87,6 +87,7 @@ pose_lock = threading.Lock()
 xgb_model = joblib.load("models/xgb_pipeline.joblib")
 label_map = {0: "inot", 1: "inec"}
 
+# Clasifică activitatea ca înot sau posibil înec, pe baza unui vector de 1020(flatten din 30 frame-uri * 34 keypoints) coordonate extrase din keypoints.
 def xgb_predict(vector_1020):
     vector_1020 = np.array(vector_1020).reshape(1, -1)
     prediction = xgb_model.predict(vector_1020)[0]
@@ -121,12 +122,13 @@ def cleanup():
     except: pass
 
 atexit.register(cleanup)
-
+# Pornește un thread daemon care rulează funcția specificată.
+# Este folosit pentru a executa procese paralele (ex: camere, inferență, streaming) fără a bloca aplicația.
 def start_thread(func, name="WorkerThread"):
     t = threading.Thread(target=func, name=name, daemon=True)
     t.start()
     return t
-
+# Activează și apoi resetează două servomotoare pentru a executa aruncarea colacului.
 def activate_servos():
     logging.debug("Activare servomotoare")
     servo1.ChangeDutyCycle(12.5)
@@ -141,6 +143,8 @@ def activate_servos():
     servo1.ChangeDutyCycle(0)
     servo2.ChangeDutyCycle(0)
 
+# Generează un cadru negru (blank) de 640x480.
+# Folosit când nu există frame disponibil pentru a evita erorile în stream.
 def blank_frame():
     img = np.zeros((480, 640, 3), dtype=np.uint8)
     _, buffer = cv2.imencode('.jpg', img)
@@ -316,9 +320,16 @@ class DroneKitGPSProvider(BaseGPSProvider):
 
         print("[DroneKit] Aterizare completă.")
         return "Drone Landing"
+# Adaugă o comandă în coada de execuție pentru dronă.
+# Comenzile pot fi: takeoff, land, orbit, auto_search etc.
+# Vor fi procesate de state machine în ordinea primirii.
 
     def enqueue_command(self, command, args=None):
         self.command_queue.put((command, args or {}))
+
+# Rulează un state machine pentru dronă care procesează comenzile primite din coadă (`command_queue`).
+# Fiecare comandă este tratată secvențial: takeoff → zboară → revino → aterizează etc.
+# Se ocupă de logica de zbor autonom și controlează tranziția între stările dronei (IDLE, TAKING_OFF, IN_AIR, LANDING).
 
     def _run_state_machine(self):
         # Pas 0: Conectare obligatorie
@@ -361,8 +372,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
             self.current_command = None
 
 
-
-
+# Returnează un snapshot cu starea curentă a dronei: poziție, altitudine, mod, stare armare și conexiune.
     def get_status(self):
         return {
             "state": self.current_state,
@@ -403,7 +413,11 @@ class DroneKitGPSProvider(BaseGPSProvider):
         for _ in range(duration):
             self.vehicle.send_mavlink(msg)
             time.sleep(1)
-    #######################COMANDS########################
+
+    #----Comenzi drona----
+    
+    # Trimite drona să orbiteze în jurul unei locații date (ex: locația unei detecții).
+    # Se mișcă în cerc pe baza calculelor NED (velocity în North-East-Down).
     def _handle_orbit(self, args):
 
         center_location = args.get("location")
@@ -428,6 +442,7 @@ class DroneKitGPSProvider(BaseGPSProvider):
 
             print("[DRONA] Orbită completă sau întreruptă.")
 
+    # Trimite drona la o locație dată, așteaptă, apoi se întoarce la punctul de decolare.
     def _handle_goto_and_return(self, args):
 
 
@@ -463,6 +478,9 @@ class DroneKitGPSProvider(BaseGPSProvider):
         dlat = aLocation2.lat - aLocation1.lat
         dlon = aLocation2.lon - aLocation1.lon
         return math.sqrt((dlat*dlat) + (dlon*dlon)) * 1.113195e5
+
+    # Execută o căutare automată pe o zonă definită (serpuita), oprindu-se dacă se detectează un pericol.
+    # În caz de detecție, zboară acolo, orbitează pentru asigurarea alarmei, activează servomotorul, apoi revine la bază.
 
     def _handle_auto_search(self, args):
         global detected_flag, event_location
@@ -524,7 +542,8 @@ gps_provider = MockGPSProvider() if USE_SIMULATOR else DroneKitGPSProvider(bypas
 ##########################################################################
 ##########################################################################
 
-
+# Capturează frame-uri de la cameră și le salvează împreună cu datele GPS curente într-un buffer global.
+# Rulează constant și este sursa de date pentru toate celelalte threaduri de detecție sau streaming.
 
 def camera_thread():
     global frame_buffer
@@ -545,6 +564,9 @@ def camera_thread():
         time.sleep(0.01)
         # logging.info("Firul camera_thread este activ...................")  
 
+# Rulează modelul YOLOv11 pe frame-urile capturate pentru a detecta obiecte, inclusiv „om_la_inec”.
+# În caz de detecție, salvează poziția GPS și trimite informații prin WebSocket.
+# Marchează pe imagine offsetul și distanța față de centrul camerei.
 def yolo_function_thread():
     global frame_buffer, yolo_output_frame, detected_flag, popup_sent, last_detection_time, frame_counter, event_location
     cam_x, cam_y = 320, 240
@@ -651,7 +673,9 @@ def yolo_function_thread():
         with output_lock:
             yolo_output_frame = cv2.imencode('.jpg', annotated)[1].tobytes()
         time.sleep(0.01)
-
+        
+# Trimite constant frame-ul brut capturat de cameră către interfața web.
+# Scrie rezultatul JPEG în `output_frame` pentru ruta `/video_feed`.
 def stream_thread():
     global output_frame
     logging.info("Firul 3 (livrare raw) a pornit.")
@@ -672,6 +696,9 @@ def stream_thread():
         time.sleep(0.05)
 
 
+# Rulează modelul YOLO pentru detecția de forme de viață: meduze, rechini și oameni.
+# Dacă este activat modul smart, schimbă automat streamul cu modul de clasificare înec (`xgb`) când detectează o persoană.
+# În orice caz, trimite etichetele detectate prin WebSocket și le desenează în streamul `mar_feed`.
 
 def livings_inference_thread(video=None):
 
@@ -741,6 +768,10 @@ def livings_inference_thread(video=None):
                 mar_output_frame = cv2.imencode('.jpg', frame)[1].tobytes()
         time.sleep(0.01)
 
+# Rulează modelul YOLOv11 de segmentare semantică pentru a colora zonele din apă pe baza adâncimii sau a curenților de rupere.
+# Suportă clase ca: „lvl_mic”, „lvl_mediu”, „lvl_adanc”, „rip_current”.
+# Fiecare mască este desenată peste imaginea originală și este transmisă prin streamul `seg_feed`.
+# Trimite și eticheta corespunzătoare prin WebSocket la frontend.
 
 def segmentation_inference_thread(video=None):
     global seg_output_frame
@@ -811,7 +842,10 @@ def segmentation_inference_thread(video=None):
 
         time.sleep(0.05)
 
-
+# Aplică YOLO Pose Estimation pe fiecare frame și extrage 34 de coordonate per frame (x, y).
+# Păstrează un buffer de 30 frame-uri consecutive, le transformă într-un vector [1020] și face clasificare cu XGBoost.
+# Dacă este detectat „inec”, trimite alertă prin WebSocket și marchează frame-ul.
+# Dacă nu apare niciun „inec” timp de 10 secunde în modul smart, revine automat la streamul inițial `mar + seg`.
 def pose_xgb_inference_thread(video=None):
     global pose_output_frame
     global pose_output_frame
@@ -931,7 +965,7 @@ def pose_xgb_inference_thread(video=None):
 @app.route("/")
 def index():
     return render_template("index.html")
-
+# Trimite streamul video brut de la cameră către browser, tip MJPEG.
 @app.route("/video_feed")
 def video_feed():
     def generate():
@@ -1077,7 +1111,9 @@ def set_right_stream():
 
         return jsonify({"status": "ok", "current": right_stream_type})
     return jsonify({"status": "invalid"})
-
+    
+# Trimite streamul ales (YOLO, segmentare etc.) către interfață.
+# Se schimbă în funcție de `right_stream_type`.
 @app.route("/right_feed")
 def right_feed():
     def generate():
@@ -1104,7 +1140,8 @@ def right_feed():
             yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
             time.sleep(0.05)
     return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
-
+# Pornește threadurile `seg` + `mar`, și pornește clasificarea înec (`xgb`) doar când se activează `pose_triggered`.
+# Garantează că inferența complexă începe doar dacă a fost activată explicit.
 @app.route("/start_official")
 def start_official():
     global pose_thread_started
@@ -1140,7 +1177,8 @@ def stop_stream():
 @app.route("/detection_status")
 def detection_status():
     return jsonify({"detected": popup_sent})
-
+    
+# Activează manual servomotoarele printr-un request GET.
 @app.route("/misca")
 def activate():
     activate_servos()
@@ -1166,7 +1204,8 @@ def start_pose_xgb():
     start_thread(lambda: pose_xgb_inference_thread(), "XGBThread")
     return jsonify({"status": "xgb started"})
 
-        
+# Activează modul „smart stream” – dacă detectează „person” în `livings` și comută automat la `pose_xgb`.
+# Când nu se mai detectează înec, revine la `mar + seg`.        
 @app.route("/start_smart_mode")
 def start_smart_mode():
     global smart_stream_mode
@@ -1224,7 +1263,7 @@ def handle_joystick(data):
         send_ned_velocity(x, y, z, 1, vehicle)
     except Exception as e:
         print(f"[JOYSTICK ERROR] {e}")
-        
+ # Trimite periodic (la fiecare secundă) prin WebSocket statusul actual al dronei: stare, mod, baterie, poziție, etc.       
 def status_broadcast_loop():
     while True:
         try:
