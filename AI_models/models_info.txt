@@ -16,3 +16,9 @@ Modele suplimentare descrise în documentație (dar neincluse in repository fiin
 4. yolo11n-pose.pt– pose estimation;
 5. xgb_model.joblib– clasificare înec vs. înot in functie de tensorul primit de la yolo11n-pose;
 
+Linkuri youtube folosite pentru testarea modelelor de recunoastere:
+-https://youtu.be/4mmonFB1ljk?si=3WSLpwKOyKk8spwf -curenti marini
+-https://youtu.be/PjGsDw1I9bU?si=qd3955XQI06qSY30 -jellyfish
+-https://youtu.be/aoFU0DXi9GI?si=qhyIbdjOYhU6WwmI -rechini&oameni
+
+
