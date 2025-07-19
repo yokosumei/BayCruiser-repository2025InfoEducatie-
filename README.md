@@ -1,42 +1,43 @@
-# BayCruiser 
-[![Status](https://img.shields.io/badge/status-active-brightgreen?style=flat-square)]()
-[![Platform](https://img.shields.io/badge/platform-RaspberryPi4-blue?style=flat-square)]()
-[![Python](https://img.shields.io/badge/python-3.11+-blue?style=flat-square)]()
-[![AI Model](https://img.shields.io/badge/YOLOv11+Pose+XGBoost-functional-orange?style=flat-square)]()
+## 🔽 Ghiduri rapide
 
-> Dronă autonomă de salvare echipată cu inteligență artificială, rulată în timp real pe Raspberry Pi 4B. Detectează persoane în pericol de înec și reacționează automat.
-
-![](media/overview.jpg)
+- [🧰 Setup complet](#setup)
+- [🎥 Demo detectare](#demo)
+- [🤖 Cum funcționează clasificarea](#xgb)
 
 ---
 
-## 📜 Descriere generală
+### <a name="setup"></a>🧰 Setup complet
 
-**BayCruiser** este un sistem AI + dronă + interfață web pentru prevenirea înecurilor. Detectează persoane și analizează comportamentul (înot vs. înec) folosind YOLOv11 Pose + XGBoost. În caz de pericol, activează drona autonom, transmite video live și salvează poziția GPS.
+<details>
+  <summary><strong>Show instructions</strong></summary>
 
-Sistemul este modular, rulează local și este adaptat pentru salvare acvatică inteligentă.
+(… aici conținutul complet pentru setup …)
 
----
-
-## 🚀 Getting Started
-
-Instrucțiuni rapide pentru a rula proiectul pe Raspberry Pi sau PC.
-
-### ✅ Prerequisites
-
-- Python 3.11+
-- Raspberry Pi 4B
-- Cameră (ex: PiCamera2)
-- Dronă compatibilă cu MAVLink
-- Servo conectat la GPIO
-- YOLOv11 Pose model (NCNN) + XGBoost
+</details>
 
 ---
 
-### 🔧 Installing
+### <a name="demo"></a>🎥 Demo detectare
 
-```bash
-git clone https://github.com/username/BayCruiser.git
-cd BayCruiser
-pip install -r requirements.txt
-python main.py
+<details>
+  <summary><strong>Show demo</strong></summary>
+
+(… demo cu poză + descriere …)
+
+</details>
+
+---
+
+### <a name="xgb"></a>🤖 Cum funcționează clasificarea
+
+<details>
+  <summary><strong>Explică-mi clasificarea cu XGBoost</strong></summary>
+
+Modelul XGBoost primește vectori 1020 (30 frameuri × 34 coordonate) extrași cu YOLO Pose.  
+Apoi decide între două clase: `inec` și `inot`.  
+Dacă se detectează `inec`, sistemul:
+- Activează popupul de confirmare
+- Salvează timestamp + coordonate
+- Pornește drona
+
+</details>
