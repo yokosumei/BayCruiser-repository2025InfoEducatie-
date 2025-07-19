@@ -1,10 +1,8 @@
-# BayCruiser 🚁🌊
-
+# BayCruiser 
 [![Status](https://img.shields.io/badge/status-active-brightgreen?style=flat-square)]()
 [![Platform](https://img.shields.io/badge/platform-RaspberryPi4-blue?style=flat-square)]()
 [![Python](https://img.shields.io/badge/python-3.11+-blue?style=flat-square)]()
 [![AI Model](https://img.shields.io/badge/YOLOv11+Pose+XGBoost-functional-orange?style=flat-square)]()
-[![License](https://img.shields.io/badge/license-MIT-yellow?style=flat-square)]()
 
 > Dronă autonomă de salvare echipată cu inteligență artificială, rulată în timp real pe Raspberry Pi 4B. Detectează persoane în pericol de înec și reacționează automat.
 
