@@ -1,7 +1,23 @@
-flask
-ultralytics
-opencv-python
-picamera2
-RPi.GPIO
-numpy
-dronekit
+# Web backend
+flask==2.3.3
+flask-socketio==5.3.6
+eventlet==0.33.3
+
+# AI & Machine Learning
+torch==2.2.0
+ultralytics==8.1.0
+opencv-python==4.9.0.80
+joblib==1.4.0
+numpy==1.26.4
+scikit-learn==1.4.2
+pandas==2.2.2
+
+# Dronă
+dronekit==2.9.2
+pymavlink==2.4.43
+
+# Raspberry Pi (doar dacă rulezi pe Pi, lasă comentariu dacă e opțional)
+picamera2 @ git+https://github.com/raspberrypi/picamera2.git
+
+# ONNX + NCNN (dacă folosești ONNX/NCNN în thread separat, opțional)
+onnxruntime==1.17.1
