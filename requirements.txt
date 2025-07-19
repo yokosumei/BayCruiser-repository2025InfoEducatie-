@@ -16,8 +16,6 @@ pandas==2.2.2
 dronekit==2.9.2
 pymavlink==2.4.43
 
-# Raspberry Pi (doar dacă rulezi pe Pi, lasă comentariu dacă e opțional)
+# Raspberry Pi camera
 picamera2 @ git+https://github.com/raspberrypi/picamera2.git
 
-# ONNX + NCNN (dacă folosești ONNX/NCNN în thread separat, opțional)
-onnxruntime==1.17.1
