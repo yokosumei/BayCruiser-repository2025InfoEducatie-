@@ -1,0 +1,18 @@
+==== MODELE FOLOSITE ÎN BAYCRUISER =====
+
+In cadrul repositoryul se afla modelul folosit pentru demonstratia autonomiei:
+==========================================
+1. my.model.pt:
+   - Tip: YOLOv11 custom;
+   - Rol: Detectarea clasei `om_la_inec` în timp real;
+   - Format: PyTorch (.pt);
+   - Dimensiune: ~5MB;
+   - Locație runtime: se încarcă din acest folder de către `main.py`;
+
+Modele suplimentare descrise în documentație (dar neincluse in repository fiind puse local pe Raspberry Pi):
+==============================================
+2. yolo11n-seg-custom.pt– segmentare adâncime apă și curenți;
+3. livings.pt– detectare persoane, meduze, rechini;
+4. yolo11n-pose.pt– pose estimation;
+5. xgb_model.joblib– clasificare înec vs. înot in functie de tensorul primit de la yolo11n-pose;
+
