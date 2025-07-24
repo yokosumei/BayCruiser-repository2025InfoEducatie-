@@ -258,6 +258,23 @@ function displayServoMessage() {
     .catch(() => alert("Eroare la mișcarea servomotorului."));
 }
 
+function activateServos() {
+  const msgDiv = document.getElementById("servo-status-msg");
+
+  fetch("/misca")
+    .then(response => {
+      if (response.ok) {
+        showServoMessage("Servomotor activat cu succes.", true);
+      } else {
+        showServoMessage("Eroare la activarea servomotorului.", false);
+      }
+    })
+    .catch(error => {
+      console.error("Eroare fetch /misca:", error);
+      showServoMessage("Conexiune eșuată cu serverul.", false);
+    });
+}
+
 // === STREAM SWITCH LEFT + RIGHT (auto din backend) ===
 socket.on("stream_config_update", (data) => {
   console.log("[SOCKET] stream_config_update:", data);
