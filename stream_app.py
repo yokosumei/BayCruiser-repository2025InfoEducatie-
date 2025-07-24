@@ -301,7 +301,11 @@ class DroneKitGPSProvider(BaseGPSProvider):
         print("[DroneKit] Aterizare..bbbbbbbbb.")
         stop_takeoff_event.set()
         print("[DroneKit] Aterizare...")
-        self.vehicle.mode = VehicleMode("LAND")
+        try:
+            self.vehicle.flush()
+        except Exception as e:
+            print(f"[WARN] flush() failed: {e}")
+        
 
         while self.vehicle.armed:
             alt = self.vehicle.location.global_relative_frame.alt
@@ -419,28 +423,53 @@ class DroneKitGPSProvider(BaseGPSProvider):
     # Trimite drona să orbiteze în jurul unei locații date (ex: locația unei detecții).
     # Se mișcă în cerc pe baza calculelor NED (velocity în North-East-Down).
     def _handle_orbit(self, args):
-
+        
         center_location = args.get("location")
         radius = args.get("radius", 5)
         velocity = args.get("speed", 1.0)
         duration = args.get("duration", 20)
-        if center_location and radius > 0 and velocity > 0 and duration > 0:
+    
+        if not (center_location and radius > 0 and velocity > 0 and duration > 0):
+            print("[ORBIT] Parametri invalizi. Abort.")
+            return
+    
+        print("[DRONA] Incep orbitarea in jurul punctului...")
+        self.set_roi(center_location)
+        try:
+            self.vehicle.flush()
+        except Exception as e:
+            print(f"[WARN] flush() failed: {e}")
+    
+        angular_velocity = velocity / radius 
+        step_time = 0.2 
+        steps = int(duration / step_time)
+    
+        angle = 0
+        start_time = time.monotonic()
+    
+        for step in range(steps):
+            if self.vehicle.mode.name != "GUIDED":
+                print("[ORBIT] Mod schimbat. Oprire orbita.")
+                break
+    
+            vx = -velocity * math.sin(angle)
+            vy = velocity * math.cos(angle)
+    
+            self.send_ned_velocity(vx, vy, 0, 1)
+            try:
+                self.vehicle.flush()
+            except Exception as e:
+                print(f"[WARN] flush() failed at step {step}: {e}")
+    
+            angle += angular_velocity * step_time
+            elapsed = time.monotonic() - start_time
+            if elapsed > duration:
+                break
+    
+            time.sleep(step_time)
+    
+        print("[DRONA] Orbita completa/ intrerupta.")
 
-            print("[DRONA] Încep orbitarea în jurul punctului...")
-            self.set_roi(center_location)
-
-            angle = 0
-            step_time = 1
-            steps = int(duration / step_time)
-
-            for _ in range(steps):
-                vx = -velocity * math.sin(angle)
-                vy = velocity * math.cos(angle)
-                self.send_ned_velocity(vx, vy, 0, 1)
-                angle += (velocity / radius) * step_time
-                time.sleep(0.1)
-
-            print("[DRONA] Orbită completă sau întreruptă.")
 
     # Trimite drona la o locație dată, așteaptă, apoi se întoarce la punctul de decolare.
     def _handle_goto_and_return(self, args):
@@ -483,58 +512,103 @@ class DroneKitGPSProvider(BaseGPSProvider):
     # În caz de detecție, zboară acolo, orbitează pentru asigurarea alarmei, activează servomotorul, apoi revine la bază.
 
     def _handle_auto_search(self, args):
-        global detected_flag, event_location
+    global detected_flag, event_location
 
-        area_size = args.get("area_size", 5)
-        step = args.get("step", 1)
-        height = args.get("height", 2)
-        speed = args.get("speed", 4)
-        if area_size and step and height and speed:
-            print("[DRONA] Execut misiune...")
-            home = self.vehicle.location.global_relative_frame
-            self.vehicle.groundspeed = speed
-            print("[AUTO] Locatie de start salvată.")
+    if self.vehicle.mode.name != "GUIDED":
+        print("[AUTO] Modul actual nu este GUIDED. Abort misiune.")
+        return
 
-            # dx = np.linspace(0, area_size, int(area_size / step))
-            # dy = np.linspace(0, area_size, int(area_size / step))
+    area_size = args.get("area_size", 5)
+    step = args.get("step", 1)
+    height = args.get("height", 2)
+    speed = args.get("speed", 4)
 
-            dx = np.arange(0, area_size + step, step)
-            dy = np.arange(0, area_size + step, step)
-            
-            print("[AUTO] Încep serpuirea...")
+    if not all([area_size, step, height, speed]):
+        print("[AUTO] Parametri insuficienti. Abort.")
+        return
 
-            for i, y in enumerate(dy):
-                for x in (dx if i % 2 == 0 else reversed(dx)):
-                    if detected_flag and event_location:
-                        print("[AUTO] Detecție activată! Mă duc la locația salvată.")
-                        self.vehicle.simple_goto(event_location)
-                        time.sleep(5)
-                        
-                        self._handle_orbit({"location": event_location, "radius": 3, "speed": 1.0, "duration": 20})
-                        
-     
-                        print("[AUTO] Activez servomotorul!")
-                        activate_servos()
-                        print("[AUTO] Revin la punctul inițial...")
-                        self.vehicle.simple_goto(home)
-                        while self.get_distance_metres(self.vehicle.location.global_relative_frame, home) > 2:
-                            time.sleep(1)
-                        print("[AUTO] Misiune completă.")
-                        return
-                    
-                    new_location = LocationGlobalRelative(
-                        home.lat + (y / 111111),  # ~1 grad lat ≈ 111km
-                        home.lon + (x / (111111 * math.cos(math.radians(home.lat)))),
-                        height
-                    )
-                    self.vehicle.simple_goto(new_location)
-                    while self.get_distance_metres(self.vehicle.location.global_relative_frame, new_location) > 2:
-                        time.sleep(1)
+    print("[DRONA] Execut misiune...")
 
-            print("[AUTO] Misiune completă fără detecție.")
-            self.vehicle.simple_goto(home)
-            while self.get_distance_metres(self.vehicle.location.global_relative_frame, home) > 2:
-                time.sleep(1)
+    home = LocationGlobalRelative(
+        self.vehicle.location.global_relative_frame.lat,
+        self.vehicle.location.global_relative_frame.lon,
+        self.vehicle.location.global_relative_frame.alt
+    )
+    self.vehicle.groundspeed = speed
+    print(f"[AUTO] Locatie de start: ({home.lat:.6f}, {home.lon:.6f})")
+
+    dx = np.arange(0, area_size + step, step)
+    dy = np.arange(0, area_size + step, step)
+
+    print("[AUTO] Incep serpuirea...")
+
+    def go_and_wait(target, label="destinatie", timeout=15):
+        self.vehicle.simple_goto(target)
+        try:
+            self.vehicle.flush()
+        except Exception as e:
+            print(f"[WARN] flush() failed: {e}")
+
+        start = time.time()
+        while True:
+            if self.vehicle.mode.name != "GUIDED":
+                print(f"[AUTO] Modul schimbat în {self.vehicle.mode.name}. Oprire misiune.")
+                return False
+
+            dist = self.get_distance_metres(self.vehicle.location.global_relative_frame, target)
+            print(f"[AUTO] Distanta pana la {label}: {dist:.2f} m")
+
+            if dist <= 2:
+                print(f"[AUTO] Ajuns la {label}.")
+                return True
+
+            if time.time() - start > timeout:
+                print(f"[AUTO] Timeout la {label}.")
+                return False
+
+            time.sleep(0.3)
+
+    for i, y in enumerate(dy):
+        for x in (dx if i % 2 == 0 else reversed(dx)):
+
+            if self.vehicle.mode.name != "GUIDED":
+                print(f"[AUTO] ⚠Modul schimbat în {self.vehicle.mode.name}. Intrerup misiunea.")
+                return
+
+            if detected_flag and event_location:
+                print("[AUTO] Detectie activata! Deplasare la locația salvata.")
+                go_and_wait(event_location, "locatia de detectie", timeout=10)
+
+                print("[AUTO] Orbitare...")
+                self._handle_orbit({
+                    "location": event_location,
+                    "radius": 3,
+                    "speed": 1.0,
+                    "duration": 20
+                })
+
+                print("[AUTO] Activez servomotorul!")
+                activate_servos()
+
+                print("[AUTO] Revenire la baza...")
+                go_and_wait(home, "baza", timeout=20)
+
+                print("[AUTO] Misiune completa.")
+                return
+
+            new_location = LocationGlobalRelative(
+                home.lat + (y / 111111),
+                home.lon + (x / (111111 * math.cos(math.radians(home.lat)))),
+                height
+            )
+            print(f"[AUTO] Merg la punctul ({x},{y}) → ({new_location.lat:.6f}, {new_location.lon:.6f})")
+            go_and_wait(new_location, f"punct ({x},{y})", timeout=10)
+
+    print("[AUTO] Misiune completă fara detectie. Revenire la baza...")
+    go_and_wait(home, "bază", timeout=20)
+    print("[AUTO] Misiune încheiata.")
+
+
 #########################################################################
 #########################################################################
 # Initialize GPS provider
@@ -1231,7 +1305,7 @@ def handle_drone_command(data):
     print(f"[WS] Comandă primită: {action}")
 
     if action == 'takeoff':
-        gps_provider.enqueue_command("takeoff", {"altitude": 1, "mode": "GUIDED"})
+        gps_provider.enqueue_command("takeoff", {"altitude": 2, "mode": "GUIDED"})
     elif action == 'land':
        gps_provider.enqueue_command("land")
     elif action == 'goto_and_return':
