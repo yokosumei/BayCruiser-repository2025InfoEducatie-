@@ -130,7 +130,7 @@ def start_thread(func, name="WorkerThread"):
     return t
 # Activează și apoi resetează două servomotoare pentru a executa aruncarea colacului.
 def activate_servos():
-    logging.debug("Activare servomotoare")
+    print("Activare servomotoare")
     servo1.ChangeDutyCycle(12.5)
     servo2.ChangeDutyCycle(2.5)
     time.sleep(0.3)
@@ -142,7 +142,7 @@ def activate_servos():
     time.sleep(0.3)
     servo1.ChangeDutyCycle(0)
     servo2.ChangeDutyCycle(0)
-    logging.debug("Finalizare activare servomotoare")
+    print("Finalizare activare servomotoare")
 
 # Generează un cadru negru (blank) de 640x480.
 # Folosit când nu există frame disponibil pentru a evita erorile în stream.
