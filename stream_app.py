@@ -512,101 +512,101 @@ class DroneKitGPSProvider(BaseGPSProvider):
     # În caz de detecție, zboară acolo, orbitează pentru asigurarea alarmei, activează servomotorul, apoi revine la bază.
 
     def _handle_auto_search(self, args):
-    global detected_flag, event_location
+        global detected_flag, event_location
 
-    if self.vehicle.mode.name != "GUIDED":
-        print("[AUTO] Modul actual nu este GUIDED. Abort misiune.")
-        return
+        if self.vehicle.mode.name != "GUIDED":
+            print("[AUTO] Modul actual nu este GUIDED. Abort misiune.")
+            return
 
-    area_size = args.get("area_size", 5)
-    step = args.get("step", 1)
-    height = args.get("height", 2)
-    speed = args.get("speed", 4)
+        area_size = args.get("area_size", 5)
+        step = args.get("step", 1)
+        height = args.get("height", 2)
+        speed = args.get("speed", 4)
 
-    if not all([area_size, step, height, speed]):
-        print("[AUTO] Parametri insuficienti. Abort.")
-        return
+        if not all([area_size, step, height, speed]):
+            print("[AUTO] Parametri insuficienti. Abort.")
+            return
 
-    print("[DRONA] Execut misiune...")
+        print("[DRONA] Execut misiune...")
 
-    home = LocationGlobalRelative(
-        self.vehicle.location.global_relative_frame.lat,
-        self.vehicle.location.global_relative_frame.lon,
-        self.vehicle.location.global_relative_frame.alt
-    )
-    self.vehicle.groundspeed = speed
-    print(f"[AUTO] Locatie de start: ({home.lat:.6f}, {home.lon:.6f})")
+        home = LocationGlobalRelative(
+            self.vehicle.location.global_relative_frame.lat,
+            self.vehicle.location.global_relative_frame.lon,
+            self.vehicle.location.global_relative_frame.alt
+        )
+        self.vehicle.groundspeed = speed
+        print(f"[AUTO] Locatie de start: ({home.lat:.6f}, {home.lon:.6f})")
 
-    dx = np.arange(0, area_size + step, step)
-    dy = np.arange(0, area_size + step, step)
+        dx = np.arange(0, area_size + step, step)
+        dy = np.arange(0, area_size + step, step)
 
-    print("[AUTO] Incep serpuirea...")
+        print("[AUTO] Incep serpuirea...")
 
-    def go_and_wait(target, label="destinatie", timeout=15):
-        self.vehicle.simple_goto(target)
-        try:
-            self.vehicle.flush()
-        except Exception as e:
-            print(f"[WARN] flush() failed: {e}")
+        def go_and_wait(target, label="destinatie", timeout=15):
+            self.vehicle.simple_goto(target)
+            try:
+                self.vehicle.flush()
+            except Exception as e:
+                print(f"[WARN] flush() failed: {e}")
 
-        start = time.time()
-        while True:
-            if self.vehicle.mode.name != "GUIDED":
-                print(f"[AUTO] Modul schimbat în {self.vehicle.mode.name}. Oprire misiune.")
-                return False
+            start = time.time()
+            while True:
+                if self.vehicle.mode.name != "GUIDED":
+                    print(f"[AUTO] Modul schimbat în {self.vehicle.mode.name}. Oprire misiune.")
+                    return False
 
-            dist = self.get_distance_metres(self.vehicle.location.global_relative_frame, target)
-            print(f"[AUTO] Distanta pana la {label}: {dist:.2f} m")
+                dist = self.get_distance_metres(self.vehicle.location.global_relative_frame, target)
+                print(f"[AUTO] Distanta pana la {label}: {dist:.2f} m")
 
-            if dist <= 2:
-                print(f"[AUTO] Ajuns la {label}.")
-                return True
+                if dist <= 2:
+                    print(f"[AUTO] Ajuns la {label}.")
+                    return True
 
-            if time.time() - start > timeout:
-                print(f"[AUTO] Timeout la {label}.")
-                return False
+                if time.time() - start > timeout:
+                    print(f"[AUTO] Timeout la {label}.")
+                    return False
 
-            time.sleep(0.3)
+                time.sleep(0.3)
 
-    for i, y in enumerate(dy):
-        for x in (dx if i % 2 == 0 else reversed(dx)):
+        for i, y in enumerate(dy):
+            for x in (dx if i % 2 == 0 else reversed(dx)):
 
-            if self.vehicle.mode.name != "GUIDED":
-                print(f"[AUTO] ⚠Modul schimbat în {self.vehicle.mode.name}. Intrerup misiunea.")
-                return
+                if self.vehicle.mode.name != "GUIDED":
+                    print(f"[AUTO] ⚠Modul schimbat în {self.vehicle.mode.name}. Intrerup misiunea.")
+                    return
 
-            if detected_flag and event_location:
-                print("[AUTO] Detectie activata! Deplasare la locația salvata.")
-                go_and_wait(event_location, "locatia de detectie", timeout=10)
+                if detected_flag and event_location:
+                    print("[AUTO] Detectie activata! Deplasare la locația salvata.")
+                    go_and_wait(event_location, "locatia de detectie", timeout=10)
 
-                print("[AUTO] Orbitare...")
-                self._handle_orbit({
-                    "location": event_location,
-                    "radius": 3,
-                    "speed": 1.0,
-                    "duration": 20
-                })
+                    print("[AUTO] Orbitare...")
+                    self._handle_orbit({
+                        "location": event_location,
+                        "radius": 3,
+                        "speed": 1.0,
+                        "duration": 20
+                    })
 
-                print("[AUTO] Activez servomotorul!")
-                activate_servos()
+                    print("[AUTO] Activez servomotorul!")
+                    activate_servos()
 
-                print("[AUTO] Revenire la baza...")
-                go_and_wait(home, "baza", timeout=20)
+                    print("[AUTO] Revenire la baza...")
+                    go_and_wait(home, "baza", timeout=20)
 
-                print("[AUTO] Misiune completa.")
-                return
+                    print("[AUTO] Misiune completa.")
+                    return
 
-            new_location = LocationGlobalRelative(
-                home.lat + (y / 111111),
-                home.lon + (x / (111111 * math.cos(math.radians(home.lat)))),
-                height
-            )
-            print(f"[AUTO] Merg la punctul ({x},{y}) → ({new_location.lat:.6f}, {new_location.lon:.6f})")
-            go_and_wait(new_location, f"punct ({x},{y})", timeout=10)
+                new_location = LocationGlobalRelative(
+                    home.lat + (y / 111111),
+                    home.lon + (x / (111111 * math.cos(math.radians(home.lat)))),
+                    height
+                )
+                print(f"[AUTO] Merg la punctul ({x},{y}) → ({new_location.lat:.6f}, {new_location.lon:.6f})")
+                go_and_wait(new_location, f"punct ({x},{y})", timeout=10)
 
-    print("[AUTO] Misiune completă fara detectie. Revenire la baza...")
-    go_and_wait(home, "bază", timeout=20)
-    print("[AUTO] Misiune încheiata.")
+        print("[AUTO] Misiune completă fara detectie. Revenire la baza...")
+        go_and_wait(home, "bază", timeout=20)
+        print("[AUTO] Misiune încheiata.")
 
 
 #########################################################################
