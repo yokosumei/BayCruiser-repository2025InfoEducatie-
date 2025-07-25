@@ -142,6 +142,7 @@ def activate_servos():
     time.sleep(0.3)
     servo1.ChangeDutyCycle(0)
     servo2.ChangeDutyCycle(0)
+    logging.debug("Finalizare activare servomotoare")
 
 # Generează un cadru negru (blank) de 640x480.
 # Folosit când nu există frame disponibil pentru a evita erorile în stream.
@@ -1255,6 +1256,7 @@ def detection_status():
 # Activează manual servomotoarele printr-un request GET.
 @app.route("/misca")
 def activate():
+    print("Comanda actionare servomotoare")
     activate_servos()
     return "Servomotor activat"
   
