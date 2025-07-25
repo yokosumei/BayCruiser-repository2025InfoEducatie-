@@ -45,6 +45,8 @@ picam2.start()
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(11, GPIO.OUT)
 GPIO.setup(12, GPIO.OUT)
+GPIO.setup(29, GPIO.OUT)
+GPIO.setup(31, GPIO.OUT)
 servo1 = GPIO.PWM(11, 50)
 servo2 = GPIO.PWM(12, 50)
 servo1.start(7.5)
@@ -131,6 +133,9 @@ def start_thread(func, name="WorkerThread"):
 # Activează și apoi resetează două servomotoare pentru a executa aruncarea colacului.
 def activate_servos():
     print("Activare servomotoare")
+    GPIO.output(29, GPIO.HIGH) 
+    GPIO.output(31, GPIO.HIGH)  
+
     servo1.ChangeDutyCycle(12.5)
     servo2.ChangeDutyCycle(2.5)
     time.sleep(0.3)
@@ -142,6 +147,8 @@ def activate_servos():
     time.sleep(0.3)
     servo1.ChangeDutyCycle(0)
     servo2.ChangeDutyCycle(0)
+    GPIO.output(29, GPIO.LOW)
+    GPIO.output(31, GPIO.LOW)
     print("Finalizare activare servomotoare")
 
 # Generează un cadru negru (blank) de 640x480.
